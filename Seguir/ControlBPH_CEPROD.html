@@ -1,0 +1,3002 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self' data: blob:; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self';">
+  <meta name="referrer" content="no-referrer" />
+  <title>Control BPH</title>
+  <style>
+    :root {
+      --azul: #163a5f;
+      --azul-2: #245b8f;
+      --celeste: #eaf3fb;
+      --verde: #1f9d55;
+      --amarillo: #e0a800;
+      --rojo: #d64545;
+      --gris: #687385;
+      --borde: #dce3ea;
+      --fondo: #f4f7fa;
+      --blanco: #ffffff;
+      --sombra: 0 10px 28px rgba(20, 45, 75, .10);
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--fondo);
+      color: #243447;
+    }
+
+    [hidden] {
+      display: none !important
+    }
+
+    .contenedor {
+      width: min(1320px, 94%);
+      margin: 24px auto 40px;
+    }
+
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background:
+        radial-gradient(circle at top left, rgba(53, 117, 171, .24), transparent 34%),
+        linear-gradient(145deg, #102d4c, #1f537f);
+    }
+
+    .auth-card {
+      width: min(480px, 100%);
+      background: #fff;
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: 0 22px 70px rgba(0, 0, 0, .28);
+    }
+
+    .auth-logo {
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 15px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--azul), var(--azul-2));
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: 2px;
+      font-size: 22px;
+    }
+
+    .auth-card h1 {
+      margin: 0 0 8px;
+      text-align: center;
+      color: var(--azul);
+      font-size: 25px;
+    }
+
+    .auth-card>p,
+    .auth-panel>p {
+      color: #5d6f81;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .auth-panel {
+      margin-top: 20px;
+    }
+
+    .auth-panel .campo {
+      margin-bottom: 13px;
+    }
+
+    .auth-error {
+      min-height: 20px;
+      color: var(--rojo);
+      font-weight: 700;
+      font-size: 13px;
+      margin: 8px 0;
+    }
+
+    .auth-note {
+      margin-top: 18px;
+      background: #f4f8fc;
+      border: 1px solid #d8e5f0;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      color: #53677a;
+      line-height: 1.45;
+    }
+
+    .encabezado {
+      background: linear-gradient(135deg, var(--azul), var(--azul-2));
+      color: #fff;
+      padding: 22px 26px;
+      border-radius: 18px;
+      box-shadow: var(--sombra);
+    }
+
+    .encabezado-principal {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .encabezado h1 {
+      margin: 0 0 6px;
+      font-size: clamp(23px, 3vw, 34px);
+    }
+
+    .encabezado p {
+      margin: 0;
+      opacity: .9;
+    }
+
+    .sigla {
+      min-width: 120px;
+      text-align: center;
+      background: rgba(255, 255, 255, .15);
+      border: 1px solid rgba(255, 255, 255, .25);
+      padding: 13px 19px;
+      border-radius: 14px;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    .barra-sesion {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 17px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255, 255, 255, .2);
+    }
+
+    .sesion-dato {
+      background: rgba(255, 255, 255, .12);
+      border: 1px solid rgba(255, 255, 255, .18);
+      padding: 8px 11px;
+      border-radius: 9px;
+      font-size: 12px;
+    }
+
+    .sesion-dato strong {
+      font-size: 13px;
+    }
+
+    .spacer {
+      flex: 1
+    }
+
+    .btn-header {
+      background: rgba(255, 255, 255, .14);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, .28);
+    }
+
+    .aviso-seguridad {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      margin: 18px 0;
+      padding: 15px 17px;
+      border-radius: 13px;
+      background: #fff8dc;
+      border: 1px solid #efd678;
+      color: #6b5410;
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .aviso-seguridad .icono {
+      font-size: 22px;
+    }
+
+    .resumen {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .tarjeta {
+      background: var(--blanco);
+      border: 1px solid var(--borde);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 6px 18px rgba(20, 45, 75, .06);
+    }
+
+    .tarjeta span {
+      display: block;
+      color: var(--gris);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .tarjeta strong {
+      font-size: 26px;
+      color: var(--azul);
+    }
+
+    .grid-principal {
+      display: grid;
+      grid-template-columns: 1.6fr .8fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--blanco);
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+      box-shadow: var(--sombra);
+      overflow: hidden;
+    }
+
+    .panel-titulo {
+      padding: 17px 21px;
+      background: #f9fbfd;
+      border-bottom: 1px solid var(--borde);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panel-titulo h2 {
+      margin: 0;
+      color: var(--azul);
+      font-size: 20px;
+    }
+
+    .panel-contenido {
+      padding: 22px;
+    }
+
+    .datos {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .campo {
+      min-width: 0
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #31465e;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid #cfd8e3;
+      border-radius: 9px;
+      padding: 11px 12px;
+      font-size: 14px;
+      background: #fff;
+      color: #243447;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--azul-2);
+      box-shadow: 0 0 0 3px rgba(36, 91, 143, .12);
+    }
+
+    input[readonly],
+    select:disabled {
+      background: #eef2f6;
+      color: #586879;
+      cursor: not-allowed;
+    }
+
+    .seccion-parametros {
+      margin-top: 18px;
+    }
+
+    .seccion-parametros h3 {
+      margin: 0 0 10px;
+      color: var(--azul);
+      font-size: 17px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--celeste);
+    }
+
+    .fila-parametro {
+      display: grid;
+      grid-template-columns: 1fr 145px;
+      gap: 12px;
+      align-items: center;
+      border-bottom: 1px solid #edf1f5;
+      padding: 10px 0;
+    }
+
+    .fila-parametro:last-child {
+      border-bottom: none
+    }
+
+    .fila-parametro p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .estado-cumple {
+      color: var(--verde)
+    }
+
+    .estado-no {
+      color: var(--rojo)
+    }
+
+    .estado-na {
+      color: var(--gris)
+    }
+
+    .control-color-uniforme {
+      margin-top: 14px;
+      padding: 16px;
+      background: #f7fbff;
+      border: 1px solid #cfe0f1;
+      border-radius: 12px;
+    }
+
+    .control-color-uniforme h4 {
+      margin: 0 0 6px;
+      color: var(--azul);
+      font-size: 15px;
+    }
+
+    .control-color-uniforme>p {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: #51657a;
+      line-height: 1.45;
+    }
+
+    .calendario-colores {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(92px, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .dia-color {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: #fff;
+      border: 1px solid #dbe6f0;
+      border-radius: 9px;
+      padding: 8px 6px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .muestra-color {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      display: inline-block;
+      flex: 0 0 13px;
+      border: 1px solid rgba(0, 0, 0, .12);
+    }
+
+    .color-rojo {
+      background: #d64545
+    }
+
+    .color-amarillo {
+      background: #f2c94c
+    }
+
+    .color-verde {
+      background: #27ae60
+    }
+
+    .color-neutro {
+      background: #b7c1cc
+    }
+
+    .fila-control-color {
+      display: grid;
+      grid-template-columns: 1fr 170px 145px;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .indicacion-color {
+      margin: 0;
+      font-size: 13px;
+      color: #596d82;
+    }
+
+    .indicacion-color strong {
+      color: var(--azul)
+    }
+
+    .botones {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      border: none;
+      border-radius: 9px;
+      padding: 11px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      transition: .2s;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px)
+    }
+
+    button:disabled {
+      opacity: .48;
+      cursor: not-allowed
+    }
+
+    .btn-principal {
+      background: var(--azul-2);
+      color: white
+    }
+
+    .btn-guardar {
+      background: var(--verde);
+      color: white
+    }
+
+    .btn-secundario {
+      background: #e9eef3;
+      color: #294058
+    }
+
+    .btn-peligro {
+      background: #fff0f0;
+      color: var(--rojo);
+      border: 1px solid #f3c4c4
+    }
+
+    .btn-advertencia {
+      background: #fff6d6;
+      color: #7c5d00;
+      border: 1px solid #efd780
+    }
+
+    .btn-pequeno {
+      padding: 7px 10px;
+      font-size: 12px
+    }
+
+    .medidor-panel {
+      position: sticky;
+      top: 18px;
+    }
+
+    .medidor {
+      width: 220px;
+      height: 220px;
+      margin: 4px auto 18px;
+      border-radius: 50%;
+      background: conic-gradient(var(--rojo) 0deg, #e7edf3 0deg);
+      display: grid;
+      place-items: center;
+      position: relative;
+      transition: background .5s ease;
+    }
+
+    .medidor::before {
+      content: "";
+      width: 168px;
+      height: 168px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: inset 0 0 0 1px #e6ebf0;
+    }
+
+    .medidor-texto {
+      position: absolute;
+      text-align: center;
+    }
+
+    .medidor-texto strong {
+      display: block;
+      font-size: 42px;
+      color: var(--azul);
+    }
+
+    .medidor-texto span {
+      color: var(--gris);
+      font-size: 13px;
+    }
+
+    .resultado {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 10px;
+      border-radius: 10px;
+      background: #f1f4f7;
+      margin-bottom: 18px;
+    }
+
+    .barra-grupo {
+      margin: 14px 0
+    }
+
+    .barra-cabecera {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .barra {
+      width: 100%;
+      height: 10px;
+      background: #e7edf3;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .barra>div {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: var(--azul-2);
+      transition: width .4s ease;
+    }
+
+    .leyenda {
+      border-top: 1px solid var(--borde);
+      margin-top: 18px;
+      padding-top: 14px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .tabla-panel {
+      margin-top: 18px
+    }
+
+    .tabla-wrap {
+      overflow: auto
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1000px;
+    }
+
+    th,
+    td {
+      padding: 11px 10px;
+      border-bottom: 1px solid #e7edf3;
+      text-align: left;
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f7fafc;
+      color: #35506c;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    tr.anulado td {
+      background: #fafafa;
+      color: #7b8794;
+      text-decoration: none;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-verde {
+      background: #e7f7ee;
+      color: #177d43
+    }
+
+    .badge-amarillo {
+      background: #fff7d6;
+      color: #8a6500
+    }
+
+    .badge-rojo {
+      background: #fdeaea;
+      color: #b62e2e
+    }
+
+    .badge-gris {
+      background: #edf0f3;
+      color: #596674
+    }
+
+    .badge-azul {
+      background: #e8f1fa;
+      color: #225985
+    }
+
+    .vacio {
+      text-align: center;
+      padding: 26px;
+      color: var(--gris);
+    }
+
+    .nota {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--gris);
+      line-height: 1.45;
+    }
+
+    .seguridad-panel {
+      margin-top: 18px;
+    }
+
+    .seguridad-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .subpanel {
+      border: 1px solid var(--borde);
+      border-radius: 13px;
+      padding: 16px;
+      background: #fbfcfe;
+    }
+
+    .subpanel h3 {
+      margin: 0 0 13px;
+      color: var(--azul);
+      font-size: 16px;
+    }
+
+    .estado-integridad {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.4;
+      margin-bottom: 12px;
+    }
+
+    .integridad-ok {
+      background: #e9f7ef;
+      color: #176d3e;
+      border: 1px solid #b8e5ca
+    }
+
+    .integridad-error {
+      background: #fdecec;
+      color: #9e2929;
+      border: 1px solid #f0bcbc
+    }
+
+    .integridad-revisando {
+      background: #eef4fa;
+      color: #355c7d;
+      border: 1px solid #ceddea
+    }
+
+    .usuarios-tabla {
+      min-width: 600px;
+    }
+
+    .auditoria-tabla {
+      min-width: 1000px;
+    }
+
+    .privacidad {
+      margin-top: 10px;
+      background: #f6f8fa;
+      border-left: 4px solid var(--azul-2);
+      padding: 11px 13px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: #53677a;
+    }
+
+    @media (max-width:1000px) {
+      .grid-principal {
+        grid-template-columns: 1fr
+      }
+
+      .medidor-panel {
+        position: static
+      }
+
+      .resumen {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      .seguridad-grid {
+        grid-template-columns: 1fr
+      }
+
+      .calendario-colores {
+        grid-template-columns: repeat(3, 1fr)
+      }
+    }
+
+    @media (max-width:650px) {
+      .datos {
+        grid-template-columns: 1fr
+      }
+
+      .fila-parametro {
+        grid-template-columns: 1fr
+      }
+
+      .fila-control-color {
+        grid-template-columns: 1fr
+      }
+
+      .resumen {
+        grid-template-columns: 1fr
+      }
+
+      .panel-contenido {
+        padding: 16px
+      }
+
+      .calendario-colores {
+        grid-template-columns: repeat(2, 1fr)
+      }
+
+      .barra-sesion {
+        align-items: stretch
+      }
+
+      .spacer {
+        display: none
+      }
+
+      .btn-header {
+        width: 100%
+      }
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(10, 28, 47, .72);
+    }
+
+    .modal-card {
+      width: min(460px, 100%);
+      background: #fff;
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 22px 70px rgba(0, 0, 0, .30);
+    }
+
+    .modal-card h2 {
+      margin: 0 0 8px;
+      color: var(--azul);
+      font-size: 22px;
+    }
+
+    .modal-card>p {
+      margin: 0 0 18px;
+      color: #5d6f81;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .modal-acciones {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    @media print {
+      body {
+        background: white
+      }
+
+      .botones,
+      .btn-accion,
+      .barra-sesion,
+      .aviso-seguridad,
+      .seguridad-panel {
+        display: none !important
+      }
+
+      .contenedor {
+        width: 100%;
+        margin: 0
+      }
+
+      .panel,
+      .encabezado,
+      .tarjeta {
+        box-shadow: none
+      }
+
+      .medidor-panel {
+        position: static
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <section class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+      <div class="auth-logo">BPH</div>
+      <h1>Control BPH</h1>
+
+      <div class="auth-panel" id="setupPanel" hidden>
+        <p>
+          Primera apertura: cree el PIN del usuario administrador <strong>EVA MORALES</strong>.
+          El PIN se almacena mediante una derivación criptográfica y no como texto visible.
+        </p>
+        <div class="campo">
+          <label for="setupPin">Nuevo PIN o contraseña</label>
+          <input id="setupPin" type="password" minlength="6" maxlength="64" autocomplete="new-password"
+            placeholder="Mínimo 6 caracteres" />
+        </div>
+        <div class="campo">
+          <label for="setupPinConfirm">Confirmar PIN o contraseña</label>
+          <input id="setupPinConfirm" type="password" minlength="6" maxlength="64" autocomplete="new-password"
+            placeholder="Repita el PIN" />
+        </div>
+        <div class="auth-error" id="setupError"></div>
+        <button class="btn-principal" style="width:100%" onclick="configurarPrimeraVez()">
+          Crear acceso administrador
+        </button>
+      </div>
+
+      <div class="auth-panel" id="loginPanel" hidden>
+        <div class="campo">
+          <label for="loginUser">Usuario</label>
+          <select id="loginUser" autocomplete="username"></select>
+        </div>
+        <div class="campo">
+          <label for="loginPin">PIN o contraseña</label>
+          <input id="loginPin" type="password" maxlength="64" autocomplete="current-password"
+            placeholder="Ingrese su acceso" />
+        </div>
+        <div class="auth-error" id="loginError"></div>
+        <button class="btn-principal" style="width:100%" onclick="iniciarSesion()">
+          Ingresar
+        </button>
+      </div>
+
+      <div class="auth-note">
+        Esta edición incorpora seguridad local, cifrado de respaldos y trazabilidad.
+        Para uso institucional en varias computadoras todavía se recomienda un servidor con HTTPS,
+        base de datos y cuentas centralizadas.
+      </div>
+    </div>
+  </section>
+
+  <section class="modal-overlay" id="modalCambioPin" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tituloCambioPin">
+      <h2 id="tituloCambioPin">Cambiar PIN</h2>
+      <p>
+        Ingrese el PIN actual y defina uno nuevo de al menos 6 caracteres.
+      </p>
+
+      <div class="campo">
+        <label for="pinActualCambio">PIN actual</label>
+        <input id="pinActualCambio" type="password" maxlength="64" autocomplete="current-password"
+          placeholder="Ingrese su PIN actual" />
+      </div>
+
+      <div class="campo" style="margin-top:12px">
+        <label for="pinNuevoCambio">Nuevo PIN</label>
+        <input id="pinNuevoCambio" type="password" minlength="6" maxlength="64" autocomplete="new-password"
+          placeholder="Mínimo 6 caracteres" />
+      </div>
+
+      <div class="campo" style="margin-top:12px">
+        <label for="pinConfirmarCambio">Confirmar nuevo PIN</label>
+        <input id="pinConfirmarCambio" type="password" minlength="6" maxlength="64" autocomplete="new-password"
+          placeholder="Repita el nuevo PIN" />
+      </div>
+
+      <div class="auth-error" id="errorCambioPin"></div>
+
+      <div class="modal-acciones">
+        <button class="btn-secundario" type="button" onclick="cerrarModalCambioPin()">Cancelar</button>
+        <button class="btn-principal" type="button" id="btnConfirmarCambioPin" onclick="confirmarCambioPin()">Guardar
+          nuevo PIN</button>
+      </div>
+    </div>
+  </section>
+
+  <main class="contenedor" id="app" hidden>
+    <section class="encabezado">
+      <div class="encabezado-principal">
+        <div>
+          <h1>Control BPH</h1>
+          <p>Evaluación protegida de higiene personal y uniforme.</p>
+        </div>
+        <div class="sigla">BPH</div>
+      </div>
+
+      <div class="barra-sesion">
+        <div class="sesion-dato">Usuario: <strong id="sesionUsuario">—</strong></div>
+        <div class="sesion-dato">Rol: <strong id="sesionRol">—</strong></div>
+        <div class="sesion-dato">Bloqueo en: <strong id="sesionTiempo">10:00</strong></div>
+        <div class="sesion-dato">Integridad: <strong id="sesionIntegridad">Revisando</strong></div>
+        <div class="spacer"></div>
+        <button class="btn-header" onclick="abrirModalCambioPin()">Cambiar PIN</button>
+        <button class="btn-header" onclick="cerrarSesion('Cierre manual')">Cerrar sesión</button>
+      </div>
+    </section>
+
+    <section class="aviso-seguridad">
+      <div class="icono">🔐</div>
+      <div>
+        <strong>Protección activa:</strong> el evaluador se toma de la sesión iniciada, no existe eliminación
+        definitiva,
+        las anulaciones requieren motivo, se registra una bitácora y los respaldos se exportan cifrados.
+        No registre diagnósticos médicos ni información innecesaria en observaciones.
+      </div>
+    </section>
+
+    <section class="resumen">
+      <div class="tarjeta"><span>Evaluaciones activas visibles</span><strong id="totalEvaluados">0</strong></div>
+      <div class="tarjeta"><span>Promedio general</span><strong id="promedioGeneral">0%</strong></div>
+      <div class="tarjeta"><span>Mejor resultado</span><strong id="mejorResultado">0%</strong></div>
+      <div class="tarjeta"><span>Evaluaciones no conformes</span><strong id="noConformes">0</strong></div>
+    </section>
+
+    <section class="grid-principal">
+      <div class="panel">
+        <div class="panel-titulo">
+          <h2>Formulario de evaluación</h2>
+          <span class="badge badge-azul" id="permisoRegistro">Registro autorizado</span>
+        </div>
+
+        <div class="panel-contenido">
+          <div class="datos">
+            <div>
+              <label for="nombre">Nombre del trabajador</label>
+              <select id="nombre">
+                <option value="">Seleccionar personal</option>
+                <option value="DEYSI POZO ILLANES">DEYSI POZO ILLANES</option>
+                <option value="MAYDA PINTO CUBA">MAYDA PINTO CUBA</option>
+                <option value="FERNANDO TARQUI">FERNANDO TARQUI</option>
+                <option value="DEYNA AYALA">DEYNA AYALA</option>
+                <option value="MARITSA PEREZ">MARITSA PEREZ</option>
+                <option value="LAURA FRANCO">LAURA FRANCO</option>
+                <option value="YULIANA MANSILLA">YULIANA MANSILLA</option>
+                <option value="CRISTHIAN VASQUEZ">CRISTHIAN VASQUEZ</option>
+                <option value="EVA MORALES">EVA MORALES</option>
+                <option value="HUGO RIVERA">HUGO RIVERA</option>
+                <option value="ERIKA LANDA">ERIKA LANDA</option>
+                <option value="EDUARDO GUTIERREZ">EDUARDO GUTIERREZ</option>
+                <option value="YONY QUINTEROS">YONY QUINTEROS</option>
+                <option value="SANTIAGO BATISTA">SANTIAGO BATISTA</option>
+                <option value="YESICA QUENTASI">YESICA QUENTASI</option>
+                <option value="FRANCISCO">FRANCISCO</option>
+                <option value="NATALIA SORIA">NATALIA SORIA</option>
+                <option value="J. CARLOS SUPAYABE">J. CARLOS SUPAYABE</option>
+                <option value="VALERIA ESPINOZA">VALERIA ESPINOZA</option>
+                <option value="CÉSAR STROEBEL">CÉSAR STROEBEL</option>
+                <option value="MARISOL PINTO">MARISOL PINTO</option>
+              </select>
+            </div>
+            <div>
+              <label for="area">Área / sección</label>
+              <select id="area">
+                <option value="">Seleccionar área</option>
+                <option value="Cárnicos">Cárnicos</option>
+                <option value="Comidas MAP">Comidas MAP</option>
+                <option value="F.F.V.V.">F.F.V.V.</option>
+                <option value="Panificación">Panificación</option>
+              </select>
+            </div>
+            <div>
+              <label for="fecha">Fecha de evaluación</label>
+              <input id="fecha" type="date" />
+            </div>
+            <div>
+              <label for="evaluador">Evaluador autenticado</label>
+              <input id="evaluador" type="text" readonly />
+            </div>
+          </div>
+
+          <div class="seccion-parametros">
+            <h3>1. Higiene personal</h3>
+            <div id="grupoHigiene"></div>
+          </div>
+
+          <div class="seccion-parametros">
+            <h3>2. Uniforme</h3>
+            <div id="grupoUniforme"></div>
+
+            <div class="control-color-uniforme">
+              <h4>Control del punto de color del uniforme</h4>
+              <p>
+                El punto permite verificar la rotación y el lavado diario del uniforme.
+                El sistema compara automáticamente el color observado con el correspondiente a la fecha.
+              </p>
+
+              <div class="calendario-colores" aria-label="Programación semanal de colores">
+                <div class="dia-color"><span class="muestra-color color-rojo"></span>Lunes: Rojo</div>
+                <div class="dia-color"><span class="muestra-color color-amarillo"></span>Martes: Amarillo</div>
+                <div class="dia-color"><span class="muestra-color color-verde"></span>Miércoles: Verde</div>
+                <div class="dia-color"><span class="muestra-color color-rojo"></span>Jueves: Rojo</div>
+                <div class="dia-color"><span class="muestra-color color-amarillo"></span>Viernes: Amarillo</div>
+                <div class="dia-color"><span class="muestra-color color-verde"></span>Sábado: Verde</div>
+              </div>
+
+              <div class="fila-control-color">
+                <div>
+                  <label>8. Punto de color correspondiente al día</label>
+                  <p class="indicacion-color" id="indicacionColorUniforme">
+                    Seleccione una fecha para conocer el color esperado.
+                  </p>
+                </div>
+                <div>
+                  <label for="colorUniformeObservado">Color observado</label>
+                  <select id="colorUniformeObservado">
+                    <option value="">Seleccionar color</option>
+                    <option value="Rojo">Rojo</option>
+                    <option value="Amarillo">Amarillo</option>
+                    <option value="Verde">Verde</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="resultadoColorUniforme">Resultado</label>
+                  <select class="evaluacion" data-categoria="uniforme"
+                    data-parametro="Punto de color del uniforme correspondiente al día" id="resultadoColorUniforme"
+                    disabled>
+                    <option value="">Pendiente</option>
+                    <option value="1">Cumple</option>
+                    <option value="0">No cumple</option>
+                    <option value="na">No aplica</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="seccion-parametros">
+            <label for="observaciones">Observaciones y acciones correctivas</label>
+            <textarea id="observaciones" rows="4" maxlength="500"
+              placeholder="Describa únicamente el incumplimiento operativo y la acción tomada. Máximo 500 caracteres."></textarea>
+            <div class="nota">
+              Privacidad: no escriba diagnósticos, antecedentes médicos ni otra información personal que no sea
+              necesaria para la inocuidad.
+            </div>
+          </div>
+
+          <div class="botones">
+            <button class="btn-principal" onclick="calcularIndicador()">Calcular indicador</button>
+            <button class="btn-guardar" id="btnGuardar" onclick="guardarEvaluacion()">Guardar evaluación</button>
+            <button class="btn-secundario" onclick="limpiarFormulario()">Limpiar</button>
+            <button class="btn-secundario permiso-supervisor" onclick="exportarExcel()">Exportar a Excel</button>
+            <button class="btn-secundario permiso-supervisor" onclick="exportarCSV()">Exportar CSV</button>
+            <button class="btn-secundario" onclick="window.print()">Imprimir</button>
+          </div>
+
+          <div class="nota">
+            Los ítems marcados como “No aplica” no se consideran en el denominador.
+            No se permite una evaluación activa duplicada para la misma persona, área y fecha.
+          </div>
+        </div>
+      </div>
+
+      <aside class="panel medidor-panel">
+        <div class="panel-titulo">
+          <h2>Resultado actual</h2>
+        </div>
+        <div class="panel-contenido">
+          <div class="medidor" id="medidor">
+            <div class="medidor-texto">
+              <strong id="porcentaje">0%</strong>
+              <span>cumplimiento BPH</span>
+            </div>
+          </div>
+
+          <div class="resultado" id="clasificacion">Sin evaluar</div>
+
+          <div class="barra-grupo">
+            <div class="barra-cabecera">
+              <span>Higiene personal</span>
+              <strong id="porcentajeHigiene">0%</strong>
+            </div>
+            <div class="barra">
+              <div id="barraHigiene"></div>
+            </div>
+          </div>
+
+          <div class="barra-grupo">
+            <div class="barra-cabecera">
+              <span>Uniforme</span>
+              <strong id="porcentajeUniforme">0%</strong>
+            </div>
+            <div class="barra">
+              <div id="barraUniforme"></div>
+            </div>
+          </div>
+
+          <div class="leyenda">
+            <div><span class="muestra-color color-verde"></span> <b>90% a 100%:</b> Conforme</div>
+            <div><span class="muestra-color color-amarillo"></span> <b>80% a 89%:</b> Aceptable con mejora</div>
+            <div><span class="muestra-color color-rojo"></span> <b>Menor a 80%:</b> No conforme</div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel tabla-panel">
+      <div class="panel-titulo">
+        <h2>Historial de evaluaciones</h2>
+        <span class="nota" id="alcanceHistorial"></span>
+      </div>
+      <div class="tabla-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th>Trabajador</th>
+              <th>Área</th>
+              <th>Higiene</th>
+              <th>Uniforme</th>
+              <th>Color del uniforme</th>
+              <th>Indicador BPH</th>
+              <th>Clasificación</th>
+              <th>Evaluador</th>
+              <th>Registro</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tablaEvaluaciones"></tbody>
+        </table>
+        <div class="vacio" id="mensajeVacio">Todavía no existen evaluaciones visibles.</div>
+      </div>
+    </section>
+
+    <section class="panel seguridad-panel permiso-supervisor" id="panelSeguridad">
+      <div class="panel-titulo">
+        <h2>Seguridad, respaldos y auditoría</h2>
+        <button class="btn-secundario btn-pequeno" onclick="actualizarPanelSeguridad()">Actualizar verificación</button>
+      </div>
+
+      <div class="panel-contenido">
+        <div class="seguridad-grid">
+          <div class="subpanel">
+            <h3>Estado de integridad</h3>
+            <div class="estado-integridad integridad-revisando" id="estadoIntegridad">
+              Revisando las cadenas de integridad de evaluaciones y bitácora...
+            </div>
+            <p class="nota">
+              Esta verificación detecta alteraciones accidentales o modificaciones directas de los datos.
+              No sustituye una base de datos protegida en un servidor.
+            </p>
+          </div>
+
+          <div class="subpanel">
+            <h3>Respaldo cifrado</h3>
+            <p class="nota">
+              El respaldo usa AES-GCM y una clave definida al exportar. La clave no se almacena.
+              Sin esa clave no será posible recuperar el archivo.
+            </p>
+            <div class="botones">
+              <button class="btn-principal" onclick="exportarRespaldoCifrado()">Exportar respaldo cifrado</button>
+              <button class="btn-advertencia" onclick="seleccionarRespaldo()">Importar respaldo</button>
+              <input id="archivoRespaldo" type="file" accept=".bphsecure,application/json" hidden />
+            </div>
+          </div>
+        </div>
+
+        <div class="subpanel" id="gestionUsuarios" style="margin-top:18px" hidden>
+          <h3>Gestión de usuarios y permisos</h3>
+          <div class="privacidad" style="margin-bottom:14px">
+            <strong>Acceso exclusivo:</strong> únicamente EVA MORALES puede crear, activar,
+            deshabilitar o modificar cuentas y permisos.
+          </div>
+          <div class="datos">
+            <div>
+              <label for="usuarioGestion">Usuario</label>
+              <select id="usuarioGestion">
+                <option value="DEYSI POZO ILLANES">DEYSI POZO ILLANES</option>
+                <option value="MAYDA PINTO CUBA">MAYDA PINTO CUBA</option>
+                <option value="FERNANDO TARQUI">FERNANDO TARQUI</option>
+                <option value="DEYNA AYALA">DEYNA AYALA</option>
+                <option value="MARITSA PEREZ">MARITSA PEREZ</option>
+                <option value="LAURA FRANCO">LAURA FRANCO</option>
+                <option value="YULIANA MANSILLA">YULIANA MANSILLA</option>
+                <option value="CRISTHIAN VASQUEZ">CRISTHIAN VASQUEZ</option>
+                <option value="EVA MORALES">EVA MORALES</option>
+                <option value="HUGO RIVERA">HUGO RIVERA</option>
+                <option value="ERIKA LANDA">ERIKA LANDA</option>
+                <option value="EDUARDO GUTIERREZ">EDUARDO GUTIERREZ</option>
+                <option value="YONY QUINTEROS">YONY QUINTEROS</option>
+                <option value="SANTIAGO BATISTA">SANTIAGO BATISTA</option>
+                <option value="YESICA QUENTASI">YESICA QUENTASI</option>
+                <option value="FRANCISCO">FRANCISCO</option>
+                <option value="NATALIA SORIA">NATALIA SORIA</option>
+                <option value="J. CARLOS SUPAYABE">J. CARLOS SUPAYABE</option>
+                <option value="VALERIA ESPINOZA">VALERIA ESPINOZA</option>
+                <option value="CÉSAR STROEBEL">CÉSAR STROEBEL</option>
+                <option value="MARISOL PINTO">MARISOL PINTO</option>
+              </select>
+            </div>
+            <div>
+              <label for="rolGestion">Rol</label>
+              <select id="rolGestion">
+                <option value="evaluador">Evaluador</option>
+                <option value="supervisor">Supervisor de Calidad</option>
+                <option value="administrador">Administrador</option>
+              </select>
+            </div>
+            <div>
+              <label for="pinGestion">Nuevo PIN o contraseña</label>
+              <input id="pinGestion" type="password" minlength="6" maxlength="64" autocomplete="new-password"
+                placeholder="Mínimo 6 caracteres" />
+            </div>
+            <div>
+              <label for="usuarioActivo">Estado de la cuenta</label>
+              <select id="usuarioActivo">
+                <option value="true">Activa</option>
+                <option value="false">Deshabilitada</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-guardar" onclick="guardarUsuario()">Guardar usuario</button>
+
+          <div class="tabla-wrap" style="margin-top:15px">
+            <table class="usuarios-tabla">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th>PIN configurado</th>
+                </tr>
+              </thead>
+              <tbody id="tablaUsuarios"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="subpanel" style="margin-top:18px">
+          <h3>Bitácora de auditoría</h3>
+          <div class="tabla-wrap">
+            <table class="auditoria-tabla">
+              <thead>
+                <tr>
+                  <th>Fecha y hora</th>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Acción</th>
+                  <th>Detalle</th>
+                  <th>Huella</th>
+                </tr>
+              </thead>
+              <tbody id="tablaAuditoria"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="privacidad">
+          <strong>Matriz de permisos:</strong> el Evaluador registra y consulta sus propias evaluaciones;
+          el Supervisor consulta todo, exporta, respalda y anula; el Administrador además gestiona usuarios.
+          Las evaluaciones anuladas permanecen en el historial.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    "use strict";
+
+    const CLAVES = {
+      seguridad: "bph_seguridad_v2",
+      registros: "bph_registros_v2",
+      auditoria: "bph_auditoria_v2",
+      sesion: "bph_sesion_v2",
+      legado: "evaluacionesBPH"
+    };
+
+    const PERSONAL = [
+      "DEYSI POZO ILLANES",
+      "MAYDA PINTO CUBA",
+      "FERNANDO TARQUI",
+      "DEYNA AYALA",
+      "MARITSA PEREZ",
+      "LAURA FRANCO",
+      "YULIANA MANSILLA",
+      "CRISTHIAN VASQUEZ",
+      "EVA MORALES",
+      "HUGO RIVERA",
+      "ERIKA LANDA",
+      "EDUARDO GUTIERREZ",
+      "YONY QUINTEROS",
+      "SANTIAGO BATISTA",
+      "YESICA QUENTASI",
+      "FRANCISCO",
+      "NATALIA SORIA",
+      "J. CARLOS SUPAYABE",
+      "VALERIA ESPINOZA",
+      "CÉSAR STROEBEL",
+      "MARISOL PINTO"
+    ];
+    const ADMIN_INICIAL = "EVA MORALES";
+    const TIEMPO_SESION_MS = 10 * 60 * 1000;
+    const MAX_INTENTOS = 5;
+    const BLOQUEO_MS = 5 * 60 * 1000;
+
+    const parametros = {
+      higiene: [
+        "Manos limpias y correctamente lavadas",
+        "Uñas cortas, limpias y sin esmalte",
+        "Cabello completamente recogido y cubierto",
+        "Ausencia de joyas, reloj u objetos personales",
+        "Sin heridas expuestas o lesiones sin protección",
+        "No presenta condiciones visibles que comprometan la inocuidad",
+        "Cumple el lavado de manos en los momentos establecidos"
+      ],
+      uniforme: [
+        "Uniforme completo, limpio y en buen estado",
+        "Cofia o gorro correctamente colocado",
+        "Barbijo correctamente utilizado, cuando corresponde",
+        "Calzado cerrado, limpio y exclusivo del área",
+        "Mandil o delantal limpio y correctamente colocado",
+        "Guantes limpios y utilizados cuando corresponde",
+        "Uniforme sin objetos sueltos que puedan contaminar el producto"
+      ]
+    };
+
+    const coloresPorDia = {
+      1: "Rojo",
+      2: "Amarillo",
+      3: "Verde",
+      4: "Rojo",
+      5: "Amarillo",
+      6: "Verde"
+    };
+
+    let sesionActual = null;
+    let resultadoActual = {
+      general: 0,
+      higiene: 0,
+      uniforme: 0,
+      clasificacion: "Sin evaluar"
+    };
+
+    function tieneCrypto() {
+      return Boolean(window.crypto && window.crypto.subtle && window.crypto.getRandomValues);
+    }
+
+    function bytesABase64(bytes) {
+      let binario = "";
+      bytes.forEach(b => binario += String.fromCharCode(b));
+      return btoa(binario);
+    }
+
+    function base64ABytes(texto) {
+      const binario = atob(texto);
+      return Uint8Array.from(binario, c => c.charCodeAt(0));
+    }
+
+    function generarId() {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      const aleatorio = new Uint32Array(4);
+      crypto.getRandomValues(aleatorio);
+      return [...aleatorio].map(n => n.toString(16).padStart(8, "0")).join("-");
+    }
+
+    async function hashTexto(texto) {
+      if (!tieneCrypto()) throw new Error("El navegador no ofrece Web Crypto.");
+      const datos = new TextEncoder().encode(texto);
+      const hash = await crypto.subtle.digest("SHA-256", datos);
+      return bytesABase64(new Uint8Array(hash));
+    }
+
+    async function derivarPin(pin, salBase64) {
+      const sal = salBase64 ? base64ABytes(salBase64) : crypto.getRandomValues(new Uint8Array(16));
+      const material = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(pin),
+        "PBKDF2",
+        false,
+        ["deriveBits"]
+      );
+      const bits = await crypto.subtle.deriveBits(
+        { name: "PBKDF2", salt: sal, iterations: 150000, hash: "SHA-256" },
+        material,
+        256
+      );
+      return {
+        sal: bytesABase64(sal),
+        hash: bytesABase64(new Uint8Array(bits))
+      };
+    }
+
+    function leerJSON(clave, valorPredeterminado) {
+      try {
+        const valor = localStorage.getItem(clave);
+        return valor ? JSON.parse(valor) : valorPredeterminado;
+      } catch (error) {
+        return valorPredeterminado;
+      }
+    }
+
+    function guardarJSON(clave, valor) {
+      localStorage.setItem(clave, JSON.stringify(valor));
+    }
+
+    function obtenerConfiguracion() {
+      return leerJSON(CLAVES.seguridad, null);
+    }
+
+
+    function sincronizarListaPersonal() {
+      const config = obtenerConfiguracion();
+      if (!config || !Array.isArray(config.usuarios)) return config;
+
+      const equivalenciasAnteriores = {
+        "Eva": "EVA MORALES",
+        "Marisol": "MARISOL PINTO",
+        "Cesár": "CÉSAR STROEBEL",
+        "Valeria": "VALERIA ESPINOZA"
+      };
+
+      const usuarioAnteriorPorNuevo = {};
+      config.usuarios.forEach(usuario => {
+        const nombreNuevo = equivalenciasAnteriores[usuario.nombre] || usuario.nombre;
+        if (PERSONAL.includes(nombreNuevo) && !usuarioAnteriorPorNuevo[nombreNuevo]) {
+          usuarioAnteriorPorNuevo[nombreNuevo] = usuario;
+        }
+      });
+
+      const administradorAnterior = config.usuarios.find(
+        usuario => usuario.rol === "administrador" && usuario.hashPin
+      );
+
+      config.usuarios = PERSONAL.map(nombre => {
+        const anterior = usuarioAnteriorPorNuevo[nombre] ||
+          (nombre === ADMIN_INICIAL ? administradorAnterior : null);
+
+        if (anterior) {
+          return {
+            ...anterior,
+            nombre,
+            rol: nombre === ADMIN_INICIAL ? "administrador" :
+              (anterior.rol === "administrador" ? "evaluador" : (anterior.rol || "evaluador")),
+            activo: nombre === ADMIN_INICIAL ? true : Boolean(anterior.activo),
+            intentosFallidos: Number(anterior.intentosFallidos || 0),
+            bloqueadoHasta: Number(anterior.bloqueadoHasta || 0)
+          };
+        }
+
+        return {
+          nombre,
+          rol: nombre === ADMIN_INICIAL ? "administrador" : "evaluador",
+          activo: nombre === ADMIN_INICIAL ? false : false,
+          sal: "",
+          hashPin: "",
+          intentosFallidos: 0,
+          bloqueadoHasta: 0
+        };
+      });
+
+      config.version = 4;
+      config.actualizadoEn = new Date().toISOString();
+      guardarJSON(CLAVES.seguridad, config);
+
+      try {
+        const sesion = JSON.parse(sessionStorage.getItem(CLAVES.sesion) || "null");
+        if (sesion && equivalenciasAnteriores[sesion.usuario]) {
+          sesion.usuario = equivalenciasAnteriores[sesion.usuario];
+          sessionStorage.setItem(CLAVES.sesion, JSON.stringify(sesion));
+        }
+      } catch (error) {
+        sessionStorage.removeItem(CLAVES.sesion);
+      }
+
+      return config;
+    }
+
+    function obtenerRegistros() {
+      const registros = leerJSON(CLAVES.registros, []);
+      return Array.isArray(registros) ? registros : [];
+    }
+
+    function obtenerAuditoria() {
+      const auditoria = leerJSON(CLAVES.auditoria, []);
+      return Array.isArray(auditoria) ? auditoria : [];
+    }
+
+    function rolLegible(rol) {
+      return ({
+        evaluador: "Evaluador",
+        supervisor: "Supervisor de Calidad",
+        administrador: "Administrador"
+      })[rol] || rol;
+    }
+
+    function puedeSupervisar() {
+      return Boolean(sesionActual && ["supervisor", "administrador"].includes(sesionActual.rol));
+    }
+
+    function esAdministrador() {
+      return Boolean(
+        sesionActual &&
+        sesionActual.usuario === ADMIN_INICIAL &&
+        sesionActual.rol === "administrador"
+      );
+    }
+
+    async function configurarPrimeraVez() {
+      const error = document.getElementById("setupError");
+      error.textContent = "";
+
+      if (!tieneCrypto()) {
+        error.textContent = "Abra el archivo con una versión actual de Chrome o Edge para usar la seguridad criptográfica.";
+        return;
+      }
+
+      const pin = document.getElementById("setupPin").value;
+      const confirmar = document.getElementById("setupPinConfirm").value;
+
+      if (pin.length < 6) {
+        error.textContent = "El PIN o contraseña debe tener al menos 6 caracteres.";
+        return;
+      }
+      if (pin !== confirmar) {
+        error.textContent = "Las contraseñas no coinciden.";
+        return;
+      }
+
+      const credencial = await derivarPin(pin);
+      const usuarios = PERSONAL.map(nombre => ({
+        nombre,
+        rol: nombre === ADMIN_INICIAL ? "administrador" : "evaluador",
+        activo: nombre === ADMIN_INICIAL,
+        sal: nombre === ADMIN_INICIAL ? credencial.sal : "",
+        hashPin: nombre === ADMIN_INICIAL ? credencial.hash : "",
+        intentosFallidos: 0,
+        bloqueadoHasta: 0
+      }));
+
+      guardarJSON(CLAVES.seguridad, {
+        version: 4,
+        creadoEn: new Date().toISOString(),
+        usuarios
+      });
+
+      document.getElementById("setupPin").value = "";
+      document.getElementById("setupPinConfirm").value = "";
+      mostrarLogin();
+    }
+
+    function mostrarLogin() {
+      const config = obtenerConfiguracion();
+      const select = document.getElementById("loginUser");
+      select.innerHTML = "";
+
+      (config?.usuarios || [])
+        .filter(u => u.activo && u.hashPin)
+        .forEach(u => {
+          const option = document.createElement("option");
+          option.value = u.nombre;
+          option.textContent = `${u.nombre} — ${rolLegible(u.rol)}`;
+          select.appendChild(option);
+        });
+
+      document.getElementById("setupPanel").hidden = true;
+      document.getElementById("loginPanel").hidden = false;
+      document.getElementById("loginError").textContent = "";
+
+      if (!select.options.length) {
+        document.getElementById("loginError").textContent =
+          "No existen cuentas activas. Restablezca la configuración local o contacte al administrador.";
+      }
+    }
+
+    async function iniciarSesion() {
+      const error = document.getElementById("loginError");
+      error.textContent = "";
+
+      const nombre = document.getElementById("loginUser").value;
+      const pin = document.getElementById("loginPin").value;
+      const config = obtenerConfiguracion();
+      const usuario = config?.usuarios?.find(u => u.nombre === nombre);
+
+      if (!usuario || !usuario.activo || !usuario.hashPin) {
+        error.textContent = "La cuenta seleccionada no está disponible.";
+        return;
+      }
+
+      if (usuario.bloqueadoHasta && Date.now() < usuario.bloqueadoHasta) {
+        const minutos = Math.ceil((usuario.bloqueadoHasta - Date.now()) / 60000);
+        error.textContent = `Cuenta bloqueada temporalmente. Intente nuevamente en ${minutos} minuto(s).`;
+        return;
+      }
+
+      const derivado = await derivarPin(pin, usuario.sal);
+
+      if (derivado.hash !== usuario.hashPin) {
+        usuario.intentosFallidos = (usuario.intentosFallidos || 0) + 1;
+        if (usuario.intentosFallidos >= MAX_INTENTOS) {
+          usuario.bloqueadoHasta = Date.now() + BLOQUEO_MS;
+          usuario.intentosFallidos = 0;
+          error.textContent = "Cuenta bloqueada durante 5 minutos por intentos fallidos.";
+        } else {
+          error.textContent = `Acceso incorrecto. Intento ${usuario.intentosFallidos} de ${MAX_INTENTOS}.`;
+        }
+        guardarJSON(CLAVES.seguridad, config);
+        await registrarAuditoria("LOGIN_FALLIDO", `Intento fallido para ${nombre}`, nombre, usuario.rol);
+        return;
+      }
+
+      usuario.intentosFallidos = 0;
+      usuario.bloqueadoHasta = 0;
+      guardarJSON(CLAVES.seguridad, config);
+
+      sesionActual = {
+        usuario: usuario.nombre,
+        rol: usuario.rol,
+        expiraEn: Date.now() + TIEMPO_SESION_MS
+      };
+      sessionStorage.setItem(CLAVES.sesion, JSON.stringify(sesionActual));
+      document.getElementById("loginPin").value = "";
+
+      await registrarAuditoria("INICIO_SESION", "Acceso autorizado", usuario.nombre, usuario.rol);
+      await abrirAplicacion();
+    }
+
+    async function abrirAplicacion() {
+      document.getElementById("authOverlay").hidden = true;
+      document.getElementById("app").hidden = false;
+      document.getElementById("sesionUsuario").textContent = sesionActual.usuario;
+      document.getElementById("sesionRol").textContent = rolLegible(sesionActual.rol);
+      document.getElementById("evaluador").value = sesionActual.usuario;
+
+      document.querySelectorAll(".permiso-supervisor").forEach(el => {
+        el.hidden = !puedeSupervisar();
+      });
+      document.getElementById("gestionUsuarios").hidden = !esAdministrador();
+      document.getElementById("alcanceHistorial").textContent = puedeSupervisar()
+        ? "Vista completa, incluidas evaluaciones anuladas."
+        : "Por seguridad, solo se muestran las evaluaciones registradas por su usuario.";
+
+      aplicarPermisosFormulario();
+      await migrarDatosLegados();
+      await actualizarTodo();
+      reiniciarActividad();
+    }
+
+    function aplicarPermisosFormulario() {
+      const autorizado = ["evaluador", "supervisor", "administrador"].includes(sesionActual?.rol);
+      document.getElementById("btnGuardar").disabled = !autorizado;
+      document.getElementById("permisoRegistro").textContent =
+        autorizado ? "Registro autorizado" : "Solo consulta";
+    }
+
+    async function cerrarSesion(motivo = "Cierre manual") {
+      if (sesionActual) {
+        await registrarAuditoria(
+          motivo === "Sesión expirada" ? "SESION_EXPIRADA" : "CIERRE_SESION",
+          motivo,
+          sesionActual.usuario,
+          sesionActual.rol
+        );
+      }
+      sesionActual = null;
+      sessionStorage.removeItem(CLAVES.sesion);
+      document.getElementById("app").hidden = true;
+      document.getElementById("authOverlay").hidden = false;
+      mostrarLogin();
+    }
+
+    function reiniciarActividad() {
+      if (!sesionActual) return;
+      sesionActual.expiraEn = Date.now() + TIEMPO_SESION_MS;
+      sessionStorage.setItem(CLAVES.sesion, JSON.stringify(sesionActual));
+    }
+
+    function actualizarTemporizador() {
+      if (!sesionActual) return;
+      const restante = sesionActual.expiraEn - Date.now();
+      if (restante <= 0) {
+        cerrarSesion("Sesión expirada");
+        return;
+      }
+      const minutos = Math.floor(restante / 60000);
+      const segundos = Math.floor((restante % 60000) / 1000);
+      document.getElementById("sesionTiempo").textContent =
+        `${String(minutos).padStart(2, "0")}:${String(segundos).padStart(2, "0")}`;
+    }
+
+    function abrirModalCambioPin() {
+      if (!sesionActual) {
+        alert("Debe iniciar sesión para cambiar el PIN.");
+        return;
+      }
+
+      document.getElementById("pinActualCambio").value = "";
+      document.getElementById("pinNuevoCambio").value = "";
+      document.getElementById("pinConfirmarCambio").value = "";
+      document.getElementById("errorCambioPin").textContent = "";
+      document.getElementById("modalCambioPin").hidden = false;
+
+      setTimeout(() => {
+        document.getElementById("pinActualCambio").focus();
+      }, 50);
+    }
+
+    function cerrarModalCambioPin() {
+      document.getElementById("modalCambioPin").hidden = true;
+      document.getElementById("pinActualCambio").value = "";
+      document.getElementById("pinNuevoCambio").value = "";
+      document.getElementById("pinConfirmarCambio").value = "";
+      document.getElementById("errorCambioPin").textContent = "";
+    }
+
+    async function confirmarCambioPin() {
+      const error = document.getElementById("errorCambioPin");
+      const boton = document.getElementById("btnConfirmarCambioPin");
+      error.textContent = "";
+
+      if (!sesionActual) {
+        error.textContent = "La sesión ya no está activa. Ingrese nuevamente.";
+        return;
+      }
+
+      const actual = document.getElementById("pinActualCambio").value;
+      const nuevo = document.getElementById("pinNuevoCambio").value;
+      const confirmar = document.getElementById("pinConfirmarCambio").value;
+
+      if (!actual) {
+        error.textContent = "Ingrese el PIN actual.";
+        return;
+      }
+
+      if (nuevo.length < 6) {
+        error.textContent = "El nuevo PIN debe tener al menos 6 caracteres.";
+        return;
+      }
+
+      if (nuevo !== confirmar) {
+        error.textContent = "La confirmación del nuevo PIN no coincide.";
+        return;
+      }
+
+      if (actual === nuevo) {
+        error.textContent = "El nuevo PIN debe ser diferente al PIN actual.";
+        return;
+      }
+
+      const config = obtenerConfiguracion();
+      const usuario = config?.usuarios?.find(u => u.nombre === sesionActual.usuario);
+
+      if (!usuario || !usuario.sal || !usuario.hashPin) {
+        error.textContent = "No se encontró una credencial válida para este usuario.";
+        return;
+      }
+
+      boton.disabled = true;
+      boton.textContent = "Verificando...";
+
+      try {
+        const verificacion = await derivarPin(actual, usuario.sal);
+
+        if (verificacion.hash !== usuario.hashPin) {
+          await registrarAuditoria(
+            "CAMBIO_PIN_RECHAZADO",
+            "La credencial actual no coincidió"
+          );
+          error.textContent = "El PIN actual es incorrecto.";
+          return;
+        }
+
+        const credencial = await derivarPin(nuevo);
+        usuario.sal = credencial.sal;
+        usuario.hashPin = credencial.hash;
+        usuario.intentosFallidos = 0;
+        usuario.bloqueadoHasta = 0;
+
+        guardarJSON(CLAVES.seguridad, config);
+
+        await registrarAuditoria(
+          "PIN_CAMBIADO",
+          "El usuario actualizó correctamente su credencial"
+        );
+
+        cerrarModalCambioPin();
+        alert("PIN actualizado correctamente. Utilice el nuevo PIN en su próximo ingreso.");
+      } catch (errorTecnico) {
+        console.error(errorTecnico);
+        error.textContent =
+          "No se pudo cambiar el PIN. Abra el archivo en una versión actual de Chrome o Edge.";
+      } finally {
+        boton.disabled = false;
+        boton.textContent = "Guardar nuevo PIN";
+      }
+    }
+
+    async function guardarUsuario() {
+      if (!esAdministrador()) {
+        alert("Solo EVA MORALES puede crear, activar o modificar usuarios.");
+        return;
+      }
+
+      const nombre = document.getElementById("usuarioGestion").value;
+      const rol = document.getElementById("rolGestion").value;
+
+      if (nombre !== ADMIN_INICIAL && rol === "administrador") {
+        alert("El rol Administrador está reservado exclusivamente para EVA MORALES.");
+        return;
+      }
+      const activo = document.getElementById("usuarioActivo").value === "true";
+      const nuevoPin = document.getElementById("pinGestion").value;
+      const config = obtenerConfiguracion();
+      const usuario = config.usuarios.find(u => u.nombre === nombre);
+
+      if (!usuario) return;
+
+      if (nombre === sesionActual.usuario && !activo) {
+        alert("No puede deshabilitar la cuenta con la que tiene la sesión iniciada.");
+        return;
+      }
+
+      const administradoresActivos = config.usuarios.filter(
+        u => u.activo && u.rol === "administrador" && u.nombre !== nombre
+      ).length;
+
+      if (usuario.rol === "administrador" && (!activo || rol !== "administrador") && administradoresActivos === 0) {
+        alert("Debe existir al menos una cuenta administradora activa.");
+        return;
+      }
+
+      if (!usuario.hashPin && nuevoPin.length < 6) {
+        alert("Para activar una cuenta nueva debe definir un PIN de al menos 6 caracteres.");
+        return;
+      }
+
+      if (nuevoPin && nuevoPin.length < 6) {
+        alert("El nuevo PIN debe tener al menos 6 caracteres.");
+        return;
+      }
+
+      usuario.rol = nombre === ADMIN_INICIAL ? "administrador" : rol;
+      usuario.activo = activo;
+
+      if (nuevoPin) {
+        const credencial = await derivarPin(nuevoPin);
+        usuario.sal = credencial.sal;
+        usuario.hashPin = credencial.hash;
+      }
+
+      guardarJSON(CLAVES.seguridad, config);
+      document.getElementById("pinGestion").value = "";
+      await registrarAuditoria(
+        "USUARIO_ACTUALIZADO",
+        `${nombre}; rol=${rolLegible(rol)}; activo=${activo}; credencial=${nuevoPin ? "actualizada" : "sin cambio"}`
+      );
+      renderizarUsuarios();
+      alert("Configuración del usuario guardada.");
+    }
+
+    function crearParametros() {
+      crearGrupo("grupoHigiene", parametros.higiene, "higiene");
+      crearGrupo("grupoUniforme", parametros.uniforme, "uniforme");
+    }
+
+    function crearGrupo(idContenedor, lista, categoria) {
+      const contenedor = document.getElementById(idContenedor);
+      contenedor.innerHTML = lista.map((texto, i) => `
+        <div class="fila-parametro">
+          <p>${i + 1}. ${escaparHTML(texto)}</p>
+          <select class="evaluacion" data-categoria="${categoria}"
+                  data-parametro="${escaparAtributo(texto)}" aria-label="${escaparAtributo(texto)}">
+            <option value="">Seleccionar</option>
+            <option value="1">Cumple</option>
+            <option value="0">No cumple</option>
+            <option value="na">No aplica</option>
+          </select>
+        </div>
+      `).join("");
+
+      contenedor.querySelectorAll("select").forEach(select => {
+        select.addEventListener("change", () => {
+          cambiarColorSelect(select);
+          calcularIndicador(false);
+        });
+      });
+    }
+
+    function cambiarColorSelect(select) {
+      select.classList.remove("estado-cumple", "estado-no", "estado-na");
+      if (select.value === "1") select.classList.add("estado-cumple");
+      if (select.value === "0") select.classList.add("estado-no");
+      if (select.value === "na") select.classList.add("estado-na");
+    }
+
+    function obtenerFechaLocalHoy() {
+      const ahora = new Date();
+      const local = new Date(ahora.getTime() - ahora.getTimezoneOffset() * 60000);
+      return local.toISOString().slice(0, 10);
+    }
+
+    function obtenerColorEsperado(fecha) {
+      if (!fecha) return null;
+      const fechaLocal = new Date(`${fecha}T12:00:00`);
+      return coloresPorDia[fechaLocal.getDay()] || null;
+    }
+
+    function claseMuestraColor(color) {
+      if (color === "Rojo") return "color-rojo";
+      if (color === "Amarillo") return "color-amarillo";
+      if (color === "Verde") return "color-verde";
+      return "color-neutro";
+    }
+
+    function actualizarControlColorUniforme() {
+      const fecha = document.getElementById("fecha").value;
+      const observado = document.getElementById("colorUniformeObservado");
+      const resultado = document.getElementById("resultadoColorUniforme");
+      const indicacion = document.getElementById("indicacionColorUniforme");
+      const esperado = obtenerColorEsperado(fecha);
+
+      resultado.value = "";
+
+      if (!fecha) {
+        indicacion.textContent = "Seleccione una fecha para conocer el color esperado.";
+      } else if (!esperado) {
+        indicacion.innerHTML =
+          '<span class="muestra-color color-neutro" style="vertical-align:-2px;margin-right:5px"></span>' +
+          "<strong>Domingo:</strong> no existe un color programado.";
+        resultado.value = "na";
+      } else {
+        indicacion.innerHTML =
+          `<span class="muestra-color ${claseMuestraColor(esperado)}" style="vertical-align:-2px;margin-right:5px"></span>` +
+          `Color esperado: <strong>${esperado}</strong>.`;
+        if (observado.value) {
+          resultado.value = observado.value === esperado ? "1" : "0";
+        }
+      }
+
+      cambiarColorSelect(resultado);
+      calcularIndicador(false);
+    }
+
+    function textoResultado(valor) {
+      if (valor === "1") return "Cumple";
+      if (valor === "0") return "No cumple";
+      if (valor === "na") return "No aplica";
+      return "Pendiente";
+    }
+
+    function obtenerDetalleCategoria(categoria) {
+      return [...document.querySelectorAll(`select.evaluacion[data-categoria="${categoria}"]`)]
+        .map(select => ({
+          parametro: select.dataset.parametro || select.getAttribute("aria-label") || "Parámetro",
+          resultado: textoResultado(select.value)
+        }));
+    }
+
+    function obtenerPuntaje(categoria) {
+      const selects = [...document.querySelectorAll(`select[data-categoria="${categoria}"]`)];
+      const aplicables = selects.filter(s => s.value !== "na" && s.value !== "");
+      const cumple = aplicables.filter(s => s.value === "1").length;
+
+      return {
+        porcentaje: aplicables.length ? Math.round((cumple / aplicables.length) * 100) : 0,
+        respondidos: selects.filter(s => s.value !== "").length,
+        total: selects.length
+      };
+    }
+
+    function calcularIndicador(mostrarAlerta = true) {
+      const higiene = obtenerPuntaje("higiene");
+      const uniforme = obtenerPuntaje("uniforme");
+      const totalRespondidos = higiene.respondidos + uniforme.respondidos;
+      const totalItems = higiene.total + uniforme.total;
+
+      if (mostrarAlerta && totalRespondidos < totalItems) {
+        alert("Complete todos los parámetros antes de calcular el indicador.");
+        return null;
+      }
+
+      const porcentajes = [];
+      if (higiene.respondidos) porcentajes.push(higiene.porcentaje);
+      if (uniforme.respondidos) porcentajes.push(uniforme.porcentaje);
+
+      const general = porcentajes.length
+        ? Math.round(porcentajes.reduce((a, b) => a + b, 0) / porcentajes.length)
+        : 0;
+
+      let clasificacion = "Sin evaluar";
+      let color = "#d64545";
+      let fondo = "#f1f4f7";
+      let texto = "#243447";
+
+      if (totalRespondidos) {
+        if (general >= 90) {
+          clasificacion = "Conforme";
+          color = "#1f9d55";
+          fondo = "#e7f7ee";
+          texto = "#177d43";
+        } else if (general >= 80) {
+          clasificacion = "Aceptable con mejora";
+          color = "#e0a800";
+          fondo = "#fff7d6";
+          texto = "#8a6500";
+        } else {
+          clasificacion = "No conforme";
+          color = "#d64545";
+          fondo = "#fdeaea";
+          texto = "#b62e2e";
+        }
+      }
+
+      resultadoActual = {
+        general,
+        higiene: higiene.porcentaje,
+        uniforme: uniforme.porcentaje,
+        clasificacion
+      };
+
+      document.getElementById("porcentaje").textContent = `${general}%`;
+      document.getElementById("porcentajeHigiene").textContent = `${higiene.porcentaje}%`;
+      document.getElementById("porcentajeUniforme").textContent = `${uniforme.porcentaje}%`;
+      document.getElementById("barraHigiene").style.width = `${higiene.porcentaje}%`;
+      document.getElementById("barraUniforme").style.width = `${uniforme.porcentaje}%`;
+
+      const grados = general * 3.6;
+      document.getElementById("medidor").style.background =
+        `conic-gradient(${color} 0deg ${grados}deg, #e7edf3 ${grados}deg 360deg)`;
+
+      const caja = document.getElementById("clasificacion");
+      caja.textContent = clasificacion;
+      caja.style.background = fondo;
+      caja.style.color = texto;
+
+      return resultadoActual;
+    }
+
+    function contenidoRegistroParaHash(r) {
+      return {
+        id: r.id,
+        fecha: r.fecha,
+        nombre: r.nombre,
+        area: r.area,
+        evaluador: r.evaluador,
+        creadoPor: r.creadoPor,
+        creadoEn: r.creadoEn,
+        higiene: r.higiene,
+        uniforme: r.uniforme,
+        general: r.general,
+        clasificacion: r.clasificacion,
+        colorEsperado: r.colorEsperado,
+        colorObservado: r.colorObservado,
+        cumplimientoColor: r.cumplimientoColor,
+        detalleHigiene: r.detalleHigiene,
+        detalleUniforme: r.detalleUniforme,
+        observaciones: r.observaciones,
+        estado: r.estado,
+        anuladoEn: r.anuladoEn || "",
+        anuladoPor: r.anuladoPor || "",
+        motivoAnulacion: r.motivoAnulacion || ""
+      };
+    }
+
+    async function recalcularCadenaRegistros(registros) {
+      let anterior = "INICIO";
+      for (const registro of registros) {
+        registro.hashAnterior = anterior;
+        registro.hashIntegridad = await hashTexto(
+          JSON.stringify(contenidoRegistroParaHash(registro)) + "|" + anterior
+        );
+        anterior = registro.hashIntegridad;
+      }
+      return registros;
+    }
+
+    async function verificarCadenaRegistros(registros) {
+      let anterior = "INICIO";
+      for (const registro of registros) {
+        const esperado = await hashTexto(
+          JSON.stringify(contenidoRegistroParaHash(registro)) + "|" + anterior
+        );
+        if (registro.hashAnterior !== anterior || registro.hashIntegridad !== esperado) {
+          return false;
+        }
+        anterior = registro.hashIntegridad;
+      }
+      return true;
+    }
+
+    function contenidoAuditoriaParaHash(a) {
+      return {
+        id: a.id,
+        fechaHora: a.fechaHora,
+        usuario: a.usuario,
+        rol: a.rol,
+        accion: a.accion,
+        detalle: a.detalle
+      };
+    }
+
+    async function recalcularCadenaAuditoria(auditoria) {
+      let anterior = "INICIO";
+      for (const evento of auditoria) {
+        evento.hashAnterior = anterior;
+        evento.hashIntegridad = await hashTexto(
+          JSON.stringify(contenidoAuditoriaParaHash(evento)) + "|" + anterior
+        );
+        anterior = evento.hashIntegridad;
+      }
+      return auditoria;
+    }
+
+    async function verificarCadenaAuditoria(auditoria) {
+      let anterior = "INICIO";
+      for (const evento of auditoria) {
+        const esperado = await hashTexto(
+          JSON.stringify(contenidoAuditoriaParaHash(evento)) + "|" + anterior
+        );
+        if (evento.hashAnterior !== anterior || evento.hashIntegridad !== esperado) {
+          return false;
+        }
+        anterior = evento.hashIntegridad;
+      }
+      return true;
+    }
+
+    async function registrarAuditoria(accion, detalle, usuarioForzado = null, rolForzado = null) {
+      if (!tieneCrypto()) return;
+
+      const auditoria = obtenerAuditoria();
+      const ultimoHash = auditoria.length
+        ? auditoria[auditoria.length - 1].hashIntegridad
+        : "INICIO";
+
+      const evento = {
+        id: generarId(),
+        fechaHora: new Date().toISOString(),
+        usuario: usuarioForzado || sesionActual?.usuario || "SISTEMA",
+        rol: rolForzado || sesionActual?.rol || "sistema",
+        accion,
+        detalle: String(detalle || "").slice(0, 600),
+        hashAnterior: ultimoHash
+      };
+
+      evento.hashIntegridad = await hashTexto(
+        JSON.stringify(contenidoAuditoriaParaHash(evento)) + "|" + ultimoHash
+      );
+
+      auditoria.push(evento);
+      guardarJSON(CLAVES.auditoria, auditoria);
+    }
+
+    async function guardarEvaluacion() {
+      if (!sesionActual) return;
+
+      const nombre = document.getElementById("nombre").value;
+      const area = document.getElementById("area").value;
+      const fecha = document.getElementById("fecha").value;
+      const observaciones = document.getElementById("observaciones").value.trim();
+
+      if (!nombre || !area || !fecha) {
+        alert("Complete nombre, área y fecha.");
+        return;
+      }
+
+      if (fecha > obtenerFechaLocalHoy()) {
+        alert("No se permiten evaluaciones con fecha futura.");
+        return;
+      }
+
+      const selects = [...document.querySelectorAll(".evaluacion")];
+      if (selects.some(s => s.value === "")) {
+        alert("Complete todos los parámetros de evaluación.");
+        return;
+      }
+
+      const registros = obtenerRegistros();
+      const duplicado = registros.some(r =>
+        r.estado !== "ANULADA" &&
+        r.fecha === fecha &&
+        r.nombre === nombre &&
+        r.area === area
+      );
+
+      if (duplicado) {
+        alert("Ya existe una evaluación activa para esa persona, área y fecha. Anule la anterior si debe corregirla.");
+        return;
+      }
+
+      const resultado = calcularIndicador(false);
+      const registro = {
+        id: generarId(),
+        fecha,
+        nombre,
+        area,
+        evaluador: sesionActual.usuario,
+        creadoPor: sesionActual.usuario,
+        creadoEn: new Date().toISOString(),
+        higiene: resultado.higiene,
+        uniforme: resultado.uniforme,
+        general: resultado.general,
+        clasificacion: resultado.clasificacion,
+        colorEsperado: obtenerColorEsperado(fecha) || "No aplica",
+        colorObservado: document.getElementById("colorUniformeObservado").value || "No aplica",
+        cumplimientoColor: textoResultado(document.getElementById("resultadoColorUniforme").value),
+        detalleHigiene: obtenerDetalleCategoria("higiene"),
+        detalleUniforme: obtenerDetalleCategoria("uniforme"),
+        observaciones: observaciones.slice(0, 500),
+        estado: "ACTIVA",
+        anuladoEn: "",
+        anuladoPor: "",
+        motivoAnulacion: "",
+        hashAnterior: "",
+        hashIntegridad: ""
+      };
+
+      registros.push(registro);
+      await recalcularCadenaRegistros(registros);
+      guardarJSON(CLAVES.registros, registros);
+
+      await registrarAuditoria(
+        "EVALUACION_CREADA",
+        `ID=${registro.id}; trabajador=${nombre}; área=${area}; fecha=${fecha}; BPH=${registro.general}%`
+      );
+
+      alert("Evaluación guardada con trazabilidad e integridad.");
+      limpiarFormulario();
+      await actualizarTodo();
+    }
+
+    async function anularRegistro(id) {
+      if (!puedeSupervisar()) return;
+
+      const motivo = prompt("Indique el motivo de la anulación. Este dato quedará en la bitácora:");
+      if (motivo === null) return;
+      const limpio = motivo.trim();
+
+      if (limpio.length < 8) {
+        alert("El motivo debe explicar la causa con al menos 8 caracteres.");
+        return;
+      }
+
+      const registros = obtenerRegistros();
+      const registro = registros.find(r => r.id === id);
+
+      if (!registro || registro.estado === "ANULADA") return;
+
+      registro.estado = "ANULADA";
+      registro.anuladoEn = new Date().toISOString();
+      registro.anuladoPor = sesionActual.usuario;
+      registro.motivoAnulacion = limpio.slice(0, 300);
+
+      await recalcularCadenaRegistros(registros);
+      guardarJSON(CLAVES.registros, registros);
+
+      await registrarAuditoria(
+        "EVALUACION_ANULADA",
+        `ID=${id}; motivo=${registro.motivoAnulacion}`
+      );
+
+      await actualizarTodo();
+      alert("La evaluación fue anulada. El registro no se eliminó.");
+    }
+
+    function registrosVisibles() {
+      const todos = obtenerRegistros();
+      if (puedeSupervisar()) return todos;
+      return todos.filter(r => r.creadoPor === sesionActual?.usuario || r.evaluador === sesionActual?.usuario);
+    }
+
+    function renderizarTabla() {
+      const registros = registrosVisibles()
+        .slice()
+        .sort((a, b) => String(b.creadoEn || b.fecha).localeCompare(String(a.creadoEn || a.fecha)));
+
+      const tbody = document.getElementById("tablaEvaluaciones");
+      const mensaje = document.getElementById("mensajeVacio");
+      mensaje.style.display = registros.length ? "none" : "block";
+
+      tbody.innerHTML = registros.map(r => {
+        const anulada = r.estado === "ANULADA";
+        const claseResultado = anulada
+          ? "badge-gris"
+          : r.general >= 90 ? "badge-verde" : r.general >= 80 ? "badge-amarillo" : "badge-rojo";
+
+        const accion = puedeSupervisar() && !anulada
+          ? `<button class="btn-peligro btn-pequeno btn-accion" onclick="anularRegistro('${escaparAtributo(r.id)}')">Anular</button>`
+          : "—";
+
+        const detalleAnulacion = anulada
+          ? `<br><small>Por ${escaparHTML(r.anuladoPor || "—")} · ${formatearFechaHora(r.anuladoEn)}<br>${escaparHTML(r.motivoAnulacion || "")}</small>`
+          : "";
+
+        return `
+          <tr class="${anulada ? "anulado" : ""}">
+            <td><span class="badge ${anulada ? "badge-gris" : "badge-verde"}">${anulada ? "ANULADA" : "ACTIVA"}</span>${detalleAnulacion}</td>
+            <td>${formatearFecha(r.fecha)}</td>
+            <td><strong>${escaparHTML(r.nombre)}</strong></td>
+            <td>${escaparHTML(r.area)}</td>
+            <td>${Number(r.higiene) || 0}%</td>
+            <td>${Number(r.uniforme) || 0}%</td>
+            <td>
+              <strong>${escaparHTML(r.colorObservado || "—")}</strong>
+              <br><small>Esperado: ${escaparHTML(r.colorEsperado || "—")} · ${escaparHTML(r.cumplimientoColor || "")}</small>
+            </td>
+            <td><strong>${Number(r.general) || 0}%</strong></td>
+            <td><span class="badge ${claseResultado}">${escaparHTML(anulada ? "Sin efecto" : r.clasificacion)}</span></td>
+            <td>${escaparHTML(r.evaluador || r.creadoPor || "—")}</td>
+            <td>${formatearFechaHora(r.creadoEn)}</td>
+            <td>${accion}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function actualizarResumen() {
+      const activos = registrosVisibles().filter(r => r.estado !== "ANULADA");
+      const total = activos.length;
+      const promedio = total
+        ? Math.round(activos.reduce((s, r) => s + Number(r.general || 0), 0) / total)
+        : 0;
+      const mejor = total ? Math.max(...activos.map(r => Number(r.general || 0))) : 0;
+      const noConformes = activos.filter(r => Number(r.general) < 80).length;
+
+      document.getElementById("totalEvaluados").textContent = total;
+      document.getElementById("promedioGeneral").textContent = `${promedio}%`;
+      document.getElementById("mejorResultado").textContent = `${mejor}%`;
+      document.getElementById("noConformes").textContent = noConformes;
+    }
+
+    function limpiarFormulario() {
+      document.getElementById("nombre").value = "";
+      document.getElementById("area").value = "";
+      document.getElementById("observaciones").value = "";
+      document.getElementById("fecha").value = obtenerFechaLocalHoy();
+      document.getElementById("fecha").max = obtenerFechaLocalHoy();
+      document.getElementById("colorUniformeObservado").value = "";
+
+      document.querySelectorAll(".evaluacion").forEach(s => {
+        s.value = "";
+        cambiarColorSelect(s);
+      });
+
+      resultadoActual = { general: 0, higiene: 0, uniforme: 0, clasificacion: "Sin evaluar" };
+      document.getElementById("porcentaje").textContent = "0%";
+      document.getElementById("porcentajeHigiene").textContent = "0%";
+      document.getElementById("porcentajeUniforme").textContent = "0%";
+      document.getElementById("barraHigiene").style.width = "0%";
+      document.getElementById("barraUniforme").style.width = "0%";
+      document.getElementById("medidor").style.background =
+        "conic-gradient(#d64545 0deg, #e7edf3 0deg)";
+
+      const caja = document.getElementById("clasificacion");
+      caja.textContent = "Sin evaluar";
+      caja.style.background = "#f1f4f7";
+      caja.style.color = "#243447";
+      actualizarControlColorUniforme();
+    }
+
+    function protegerCeldaExcel(valor) {
+      const texto = String(valor ?? "");
+      return /^[=+\-@]/.test(texto.trimStart()) ? "'" + texto : texto;
+    }
+
+    function escaparXML(valor) {
+      return String(valor ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+    }
+
+    function nombreHojaSeguro(nombre) {
+      return String(nombre).replace(/[\\\/\?\*\[\]:]/g, " ").slice(0, 31);
+    }
+
+    function crearHojaExcelXML(nombre, filas) {
+      if (!filas.length) filas = [{ "Información": "Sin registros" }];
+      const encabezados = Object.keys(filas[0]);
+
+      const filaEncabezado = encabezados.map(h =>
+        `<Cell ss:StyleID="Header"><Data ss:Type="String">${escaparXML(h)}</Data></Cell>`
+      ).join("");
+
+      const cuerpo = filas.map(fila => {
+        const celdas = encabezados.map(encabezado => {
+          const valorOriginal = fila[encabezado] ?? "";
+          const esNumero = typeof valorOriginal === "number" && Number.isFinite(valorOriginal);
+          const valor = esNumero ? valorOriginal : protegerCeldaExcel(valorOriginal);
+          return `<Cell><Data ss:Type="${esNumero ? "Number" : "String"}">${escaparXML(valor)}</Data></Cell>`;
+        }).join("");
+        return `<Row>${celdas}</Row>`;
+      }).join("");
+
+      return `
+        <Worksheet ss:Name="${escaparXML(nombreHojaSeguro(nombre))}">
+          <Table>
+            <Row>${filaEncabezado}</Row>
+            ${cuerpo}
+          </Table>
+          <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+            <FreezePanes/>
+            <FrozenNoSplit/>
+            <SplitHorizontal>1</SplitHorizontal>
+            <TopRowBottomPane>1</TopRowBottomPane>
+            <ProtectObjects>False</ProtectObjects>
+            <ProtectScenarios>False</ProtectScenarios>
+          </WorksheetOptions>
+        </Worksheet>`;
+    }
+
+    async function exportarExcel() {
+      if (!puedeSupervisar()) return;
+
+      const registros = obtenerRegistros();
+      if (!registros.length) {
+        alert("No existen evaluaciones para exportar.");
+        return;
+      }
+
+      const resumen = registros.map(r => ({
+        "Estado": r.estado || "ACTIVA",
+        "Fecha": r.fecha,
+        "Trabajador": r.nombre,
+        "Área": r.area,
+        "Higiene personal (%)": Number(r.higiene) || 0,
+        "Uniforme (%)": Number(r.uniforme) || 0,
+        "Color esperado": r.colorEsperado || "",
+        "Color observado": r.colorObservado || "",
+        "Cumplimiento del color": r.cumplimientoColor || "",
+        "Indicador BPH (%)": Number(r.general) || 0,
+        "Clasificación": r.clasificacion || "",
+        "Evaluador": r.evaluador || r.creadoPor || "",
+        "Fecha y hora del registro": r.creadoEn || "",
+        "Anulado por": r.anuladoPor || "",
+        "Fecha de anulación": r.anuladoEn || "",
+        "Motivo de anulación": r.motivoAnulacion || "",
+        "Observaciones y acciones correctivas": r.observaciones || "",
+        "ID": r.id
+      }));
+
+      const detalle = [];
+      registros.forEach(r => {
+        const items = [
+          ...(r.detalleHigiene || []).map(item => ({ ...item, categoria: "Higiene personal" })),
+          ...(r.detalleUniforme || []).map(item => ({ ...item, categoria: "Uniforme" }))
+        ];
+        items.forEach(item => detalle.push({
+          "Estado": r.estado || "ACTIVA",
+          "Fecha": r.fecha,
+          "Trabajador": r.nombre,
+          "Área": r.area,
+          "Categoría": item.categoria,
+          "Parámetro evaluado": item.parametro,
+          "Resultado": item.resultado,
+          "Evaluador": r.evaluador || r.creadoPor || "",
+          "ID evaluación": r.id
+        }));
+      });
+
+      const programaColores = [
+        { "Día": "Lunes", "Color del punto": "Rojo" },
+        { "Día": "Martes", "Color del punto": "Amarillo" },
+        { "Día": "Miércoles", "Color del punto": "Verde" },
+        { "Día": "Jueves", "Color del punto": "Rojo" },
+        { "Día": "Viernes", "Color del punto": "Amarillo" },
+        { "Día": "Sábado", "Color del punto": "Verde" }
+      ];
+
+      const auditoria = obtenerAuditoria().map(a => ({
+        "Fecha y hora": a.fechaHora,
+        "Usuario": a.usuario,
+        "Rol": rolLegible(a.rol),
+        "Acción": a.accion,
+        "Detalle": a.detalle,
+        "Huella": a.hashIntegridad
+      }));
+
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+        <?mso-application progid="Excel.Sheet"?>
+        <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+          xmlns:o="urn:schemas-microsoft-com:office:office"
+          xmlns:x="urn:schemas-microsoft-com:office:excel"
+          xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+          <Styles>
+            <Style ss:ID="Default" ss:Name="Normal">
+              <Alignment ss:Vertical="Bottom"/>
+              <Borders/>
+              <Font/>
+              <Interior/>
+              <NumberFormat/>
+              <Protection/>
+            </Style>
+            <Style ss:ID="Header">
+              <Font ss:Bold="1"/>
+              <Interior ss:Color="#DCEAF7" ss:Pattern="Solid"/>
+            </Style>
+          </Styles>
+          ${crearHojaExcelXML("Evaluaciones", resumen)}
+          ${crearHojaExcelXML("Detalle BPH", detalle)}
+          ${crearHojaExcelXML("Control de colores", programaColores)}
+          ${crearHojaExcelXML("Auditoría", auditoria)}
+        </Workbook>`;
+
+      descargarBlob(
+        new Blob(["\uFEFF" + xml], { type: "application/vnd.ms-excel;charset=utf-8;" }),
+        `evaluaciones_BPH_seguras_${obtenerFechaLocalHoy()}.xls`
+      );
+
+      await registrarAuditoria("EXPORTACION_EXCEL", `Registros exportados=${registros.length}`);
+      renderizarAuditoria();
+    }
+
+    async function exportarCSV() {
+      if (!puedeSupervisar()) return;
+      const registros = obtenerRegistros();
+
+      if (!registros.length) {
+        alert("No existen evaluaciones para exportar.");
+        return;
+      }
+
+      const encabezados = [
+        "Estado", "Fecha", "Trabajador", "Área", "Higiene personal (%)", "Uniforme (%)",
+        "Color esperado", "Color observado", "Cumplimiento del color",
+        "Indicador BPH (%)", "Clasificación", "Evaluador", "Fecha y hora",
+        "Anulado por", "Motivo de anulación", "Observaciones", "ID"
+      ];
+
+      const filas = registros.map(r => [
+        r.estado || "ACTIVA", r.fecha, r.nombre, r.area, Number(r.higiene) || 0, Number(r.uniforme) || 0,
+        r.colorEsperado || "", r.colorObservado || "", r.cumplimientoColor || "",
+        Number(r.general) || 0, r.clasificacion || "", r.evaluador || r.creadoPor || "",
+        r.creadoEn || "", r.anuladoPor || "", r.motivoAnulacion || "", r.observaciones || "", r.id
+      ]);
+
+      const csv = [encabezados, ...filas]
+        .map(fila => fila.map(valor =>
+          `"${protegerCeldaExcel(valor).replace(/"/g, '""')}"`
+        ).join(","))
+        .join("\n");
+
+      descargarBlob(
+        new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" }),
+        `evaluaciones_BPH_seguras_${obtenerFechaLocalHoy()}.csv`
+      );
+
+      await registrarAuditoria("EXPORTACION_CSV", `Registros exportados=${registros.length}`);
+      renderizarAuditoria();
+    }
+
+    async function derivarClaveRespaldo(frase, sal, usos) {
+      const material = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(frase),
+        "PBKDF2",
+        false,
+        ["deriveKey"]
+      );
+
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: sal, iterations: 250000, hash: "SHA-256" },
+        material,
+        { name: "AES-GCM", length: 256 },
+        false,
+        usos
+      );
+    }
+
+    async function exportarRespaldoCifrado() {
+      if (!puedeSupervisar()) return;
+
+      const frase = prompt("Defina una clave para cifrar el respaldo (mínimo 8 caracteres):");
+      if (frase === null) return;
+      if (frase.length < 8) {
+        alert("La clave del respaldo debe tener al menos 8 caracteres.");
+        return;
+      }
+      const confirmar = prompt("Repita la clave del respaldo:");
+      if (confirmar !== frase) {
+        alert("Las claves no coinciden.");
+        return;
+      }
+
+      const contenido = {
+        formato: "BPH-RESPALDO",
+        version: 2,
+        exportadoEn: new Date().toISOString(),
+        registros: obtenerRegistros(),
+        auditoria: obtenerAuditoria()
+      };
+
+      const sal = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const clave = await derivarClaveRespaldo(frase, sal, ["encrypt"]);
+      const cifrado = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        clave,
+        new TextEncoder().encode(JSON.stringify(contenido))
+      );
+
+      const archivo = {
+        formato: "BPH-SECURE-BACKUP",
+        version: 1,
+        algoritmo: "AES-GCM",
+        derivacion: "PBKDF2-SHA256-250000",
+        sal: bytesABase64(sal),
+        iv: bytesABase64(iv),
+        datos: bytesABase64(new Uint8Array(cifrado))
+      };
+
+      descargarBlob(
+        new Blob([JSON.stringify(archivo, null, 2)], { type: "application/json" }),
+        `respaldo_BPH_${obtenerFechaLocalHoy()}.bphsecure`
+      );
+
+      await registrarAuditoria(
+        "RESPALDO_EXPORTADO",
+        `Evaluaciones=${contenido.registros.length}; eventos=${contenido.auditoria.length}`
+      );
+      renderizarAuditoria();
+      alert("Respaldo cifrado generado. Guarde la clave en un lugar seguro y separado.");
+    }
+
+    function seleccionarRespaldo() {
+      if (!puedeSupervisar()) return;
+      document.getElementById("archivoRespaldo").click();
+    }
+
+    async function importarRespaldo(evento) {
+      if (!puedeSupervisar()) return;
+      const archivo = evento.target.files?.[0];
+      evento.target.value = "";
+      if (!archivo) return;
+
+      const frase = prompt("Ingrese la clave con la que se cifró el respaldo:");
+      if (frase === null) return;
+
+      try {
+        const contenedor = JSON.parse(await archivo.text());
+        if (contenedor.formato !== "BPH-SECURE-BACKUP") {
+          throw new Error("Formato no reconocido.");
+        }
+
+        const sal = base64ABytes(contenedor.sal);
+        const iv = base64ABytes(contenedor.iv);
+        const datos = base64ABytes(contenedor.datos);
+        const clave = await derivarClaveRespaldo(frase, sal, ["decrypt"]);
+        const descifrado = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, clave, datos);
+        const contenido = JSON.parse(new TextDecoder().decode(descifrado));
+
+        if (
+          contenido.formato !== "BPH-RESPALDO" ||
+          !Array.isArray(contenido.registros) ||
+          !Array.isArray(contenido.auditoria)
+        ) {
+          throw new Error("El contenido del respaldo no es válido.");
+        }
+
+        if (!confirm(
+          `Se reemplazarán los datos locales actuales por ${contenido.registros.length} evaluaciones y ` +
+          `${contenido.auditoria.length} eventos de auditoría. ¿Continuar?`
+        )) {
+          return;
+        }
+
+        const registros = await recalcularCadenaRegistros(contenido.registros);
+        const auditoria = await recalcularCadenaAuditoria(contenido.auditoria);
+
+        guardarJSON(CLAVES.registros, registros);
+        guardarJSON(CLAVES.auditoria, auditoria);
+
+        await registrarAuditoria(
+          "RESPALDO_IMPORTADO",
+          `Archivo=${archivo.name}; evaluaciones=${registros.length}; eventos restaurados=${auditoria.length}`
+        );
+
+        await actualizarTodo();
+        alert("Respaldo importado y cadenas de integridad reconstruidas.");
+      } catch (error) {
+        await registrarAuditoria("RESPALDO_RECHAZADO", `Archivo=${archivo.name}; error=${error.message}`);
+        alert("No se pudo abrir el respaldo. Verifique el archivo y la clave.");
+      }
+    }
+
+    function descargarBlob(blob, nombre) {
+      const enlace = document.createElement("a");
+      enlace.href = URL.createObjectURL(blob);
+      enlace.download = nombre;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
+    }
+
+    async function migrarDatosLegados() {
+      const actuales = obtenerRegistros();
+      const legados = leerJSON(CLAVES.legado, []);
+
+      if (actuales.length || !Array.isArray(legados) || !legados.length) return;
+
+      const migrados = legados.map(r => ({
+        id: String(r.id || generarId()),
+        fecha: r.fecha || obtenerFechaLocalHoy(),
+        nombre: r.nombre || "Sin identificar",
+        area: r.area || "Sin identificar",
+        evaluador: r.evaluador || "MIGRADO",
+        creadoPor: r.evaluador || "MIGRADO",
+        creadoEn: r.creadoEn || new Date(Number(r.id) || Date.now()).toISOString(),
+        higiene: Number(r.higiene) || 0,
+        uniforme: Number(r.uniforme) || 0,
+        general: Number(r.general) || 0,
+        clasificacion: r.clasificacion || "Sin clasificar",
+        colorEsperado: r.colorEsperado || "",
+        colorObservado: r.colorObservado || "",
+        cumplimientoColor: r.cumplimientoColor || "",
+        detalleHigiene: r.detalleHigiene || [],
+        detalleUniforme: r.detalleUniforme || [],
+        observaciones: String(r.observaciones || "").slice(0, 500),
+        estado: "ACTIVA",
+        anuladoEn: "",
+        anuladoPor: "",
+        motivoAnulacion: "",
+        hashAnterior: "",
+        hashIntegridad: ""
+      }));
+
+      await recalcularCadenaRegistros(migrados);
+      guardarJSON(CLAVES.registros, migrados);
+      await registrarAuditoria("MIGRACION_DATOS", `Registros antiguos migrados=${migrados.length}`);
+    }
+
+    async function verificarIntegridadCompleta() {
+      if (!tieneCrypto()) return { ok: false, mensaje: "Web Crypto no disponible." };
+      const registros = obtenerRegistros();
+      const auditoria = obtenerAuditoria();
+
+      const registrosOk = await verificarCadenaRegistros(registros);
+      const auditoriaOk = await verificarCadenaAuditoria(auditoria);
+
+      return {
+        ok: registrosOk && auditoriaOk,
+        mensaje: registrosOk && auditoriaOk
+          ? `Integridad verificada: ${registros.length} evaluaciones y ${auditoria.length} eventos sin alteraciones detectadas.`
+          : `Advertencia: se detectó una inconsistencia en ${!registrosOk ? "las evaluaciones" : ""}${!registrosOk && !auditoriaOk ? " y " : ""}${!auditoriaOk ? "la bitácora" : ""}.`
+      };
+    }
+
+    async function actualizarEstadoIntegridad() {
+      const caja = document.getElementById("estadoIntegridad");
+      caja.className = "estado-integridad integridad-revisando";
+      caja.textContent = "Revisando cadenas de integridad...";
+
+      const resultado = await verificarIntegridadCompleta();
+      caja.className = `estado-integridad ${resultado.ok ? "integridad-ok" : "integridad-error"}`;
+      caja.textContent = resultado.mensaje;
+
+      document.getElementById("sesionIntegridad").textContent = resultado.ok ? "Verificada" : "Advertencia";
+    }
+
+    function actualizarOpcionesRolGestion() {
+      if (!esAdministrador()) return;
+
+      const nombre = document.getElementById("usuarioGestion").value;
+      const selectorRol = document.getElementById("rolGestion");
+      const opcionAdmin = [...selectorRol.options].find(op => op.value === "administrador");
+
+      if (opcionAdmin) {
+        opcionAdmin.disabled = nombre !== ADMIN_INICIAL;
+      }
+
+      if (nombre !== ADMIN_INICIAL && selectorRol.value === "administrador") {
+        selectorRol.value = "evaluador";
+      }
+    }
+
+    function cargarUsuarioGestion() {
+      if (!esAdministrador()) return;
+      const nombre = document.getElementById("usuarioGestion").value;
+      const config = obtenerConfiguracion();
+      const usuario = config?.usuarios?.find(u => u.nombre === nombre);
+      if (!usuario) return;
+      document.getElementById("rolGestion").value = usuario.rol;
+      actualizarOpcionesRolGestion();
+      document.getElementById("usuarioActivo").value = String(Boolean(usuario.activo));
+      document.getElementById("pinGestion").value = "";
+    }
+
+    function renderizarUsuarios() {
+      if (!esAdministrador()) return;
+      const config = obtenerConfiguracion();
+      const tbody = document.getElementById("tablaUsuarios");
+
+      tbody.innerHTML = config.usuarios.map(u => `
+        <tr>
+          <td><strong>${escaparHTML(u.nombre)}</strong></td>
+          <td>${escaparHTML(rolLegible(u.rol))}</td>
+          <td><span class="badge ${u.activo ? "badge-verde" : "badge-gris"}">${u.activo ? "Activa" : "Deshabilitada"}</span></td>
+          <td>${u.hashPin ? "Sí" : "No"}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderizarAuditoria() {
+      if (!puedeSupervisar()) return;
+      const auditoria = obtenerAuditoria()
+        .slice()
+        .reverse()
+        .slice(0, 200);
+
+      const tbody = document.getElementById("tablaAuditoria");
+      tbody.innerHTML = auditoria.map(a => `
+        <tr>
+          <td>${formatearFechaHora(a.fechaHora)}</td>
+          <td>${escaparHTML(a.usuario)}</td>
+          <td>${escaparHTML(rolLegible(a.rol))}</td>
+          <td><strong>${escaparHTML(a.accion)}</strong></td>
+          <td>${escaparHTML(a.detalle)}</td>
+          <td><code>${escaparHTML(String(a.hashIntegridad || "").slice(0, 18))}…</code></td>
+        </tr>
+      `).join("");
+    }
+
+    async function actualizarPanelSeguridad() {
+      if (!puedeSupervisar()) return;
+      await actualizarEstadoIntegridad();
+      renderizarUsuarios();
+      cargarUsuarioGestion();
+      renderizarAuditoria();
+    }
+
+    async function actualizarTodo() {
+      renderizarTabla();
+      actualizarResumen();
+      if (puedeSupervisar()) await actualizarPanelSeguridad();
+    }
+
+    function formatearFecha(fecha) {
+      if (!fecha) return "—";
+      const partes = String(fecha).split("-");
+      if (partes.length !== 3) return escaparHTML(fecha);
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+
+    function formatearFechaHora(valor) {
+      if (!valor) return "—";
+      const fecha = new Date(valor);
+      if (Number.isNaN(fecha.getTime())) return escaparHTML(valor);
+      return fecha.toLocaleString("es-BO", {
+        year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+      });
+    }
+
+    function escaparHTML(texto) {
+      return String(texto ?? "").replace(/[&<>"']/g, caracter => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      })[caracter]);
+    }
+
+    function escaparAtributo(texto) {
+      return escaparHTML(texto).replace(/`/g, "&#096;");
+    }
+
+    async function iniciar() {
+      crearParametros();
+      document.getElementById("fecha").value = obtenerFechaLocalHoy();
+      document.getElementById("fecha").max = obtenerFechaLocalHoy();
+      document.getElementById("fecha").addEventListener("change", actualizarControlColorUniforme);
+      document.getElementById("colorUniformeObservado").addEventListener("change", actualizarControlColorUniforme);
+      document.getElementById("archivoRespaldo").addEventListener("change", importarRespaldo);
+      document.getElementById("usuarioGestion").addEventListener("change", cargarUsuarioGestion);
+      document.getElementById("modalCambioPin").addEventListener("click", e => {
+        if (e.target.id === "modalCambioPin") cerrarModalCambioPin();
+      });
+      document.getElementById("loginPin").addEventListener("keydown", e => {
+        if (e.key === "Enter") iniciarSesion();
+      });
+      document.getElementById("setupPinConfirm").addEventListener("keydown", e => {
+        if (e.key === "Enter") configurarPrimeraVez();
+      });
+      document.getElementById("pinConfirmarCambio").addEventListener("keydown", e => {
+        if (e.key === "Enter") confirmarCambioPin();
+      });
+
+      ["pointerdown", "keydown", "input", "touchstart"].forEach(evento => {
+        document.addEventListener(evento, () => {
+          if (sesionActual) reiniciarActividad();
+        }, { passive: true });
+      });
+
+      setInterval(actualizarTemporizador, 1000);
+      actualizarControlColorUniforme();
+
+      sincronizarListaPersonal();
+      const config = obtenerConfiguracion();
+      if (!config) {
+        document.getElementById("setupPanel").hidden = false;
+        document.getElementById("loginPanel").hidden = true;
+      } else {
+        mostrarLogin();
+        const sesionGuardada = leerJSONSesion();
+        if (sesionGuardada && sesionGuardada.expiraEn > Date.now()) {
+          const usuario = config.usuarios.find(
+            u => u.nombre === sesionGuardada.usuario && u.activo && u.rol === sesionGuardada.rol
+          );
+          if (usuario) {
+            sesionActual = sesionGuardada;
+            await abrirAplicacion();
+          }
+        }
+      }
+    }
+
+    function leerJSONSesion() {
+      try {
+        return JSON.parse(sessionStorage.getItem(CLAVES.sesion) || "null");
+      } catch (error) {
+        return null;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", iniciar);
+  </script>
+</body>
+
+</html>

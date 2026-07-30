@@ -1,0 +1,254 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* HSL Color Palette - Sleek Modern Light */
+  --color-bg: 220 20% 97%;
+  --color-surface: 0 0% 100%;
+  --color-surface-hover: 220 14% 96%;
+  --color-primary: 221 83% 53%;
+  --color-primary-hover: 221 83% 45%;
+  --color-secondary: 215 14% 34%;
+  --color-success: 142 71% 45%;
+  --color-danger: 348 83% 47%;
+  --color-warning: 38 92% 50%;
+
+  --color-text-primary: 222 47% 11%;
+  --color-text-secondary: 215 16% 47%;
+
+  --color-table-header-bg: 220 14% 96%;
+  --color-table-border: 220 13% 91%;
+  --color-table-row-hover: 221 83% 53%;
+
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: 222 47% 11%;
+    --color-surface: 217 33% 17%;
+    --color-surface-hover: 216 32% 22%;
+    --color-primary: 217 91% 60%;
+    --color-primary-hover: 217 91% 55%;
+    --color-secondary: 215 20% 65%;
+    --color-text-primary: 210 40% 98%;
+    --color-text-secondary: 215 20% 65%;
+    --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+
+    --color-table-header-bg: 216 32% 22%;
+    --color-table-border: 217 33% 25%;
+    --color-table-row-hover: 217 91% 60%;
+  }
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: hsl(var(--color-bg));
+  color: hsl(var(--color-text-primary));
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Glassmorphism Panel
+   ============================================================ */
+.glass-panel {
+  background: hsla(var(--color-surface), 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsla(var(--color-secondary), 0.15);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  gap: 0.5rem;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-primary {
+  background-color: hsl(var(--color-primary));
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: hsl(var(--color-primary-hover));
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-danger {
+  background-color: hsl(var(--color-danger));
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 1px solid hsla(var(--color-secondary), 0.4);
+  color: hsl(var(--color-text-primary));
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: hsla(var(--color-secondary), 0.1);
+  border-color: hsl(var(--color-secondary));
+}
+
+/* ============================================================
+   Input / Select
+   ============================================================ */
+.input-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid hsla(var(--color-secondary), 0.3);
+  background-color: hsl(var(--color-surface));
+  color: hsl(var(--color-text-primary));
+  font-family: inherit;
+  font-size: 0.875rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: auto; /* preserva flecha nativa del select */
+}
+
+.input-field::placeholder {
+  color: hsl(var(--color-text-secondary));
+  opacity: 0.8;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: hsl(var(--color-primary));
+  box-shadow: 0 0 0 3px hsla(var(--color-primary), 0.2);
+}
+
+/* Soporte explícito para <select> en dark mode */
+@media (prefers-color-scheme: dark) {
+  .input-field {
+    background-color: hsl(var(--color-surface));
+    color: hsl(var(--color-text-primary));
+    color-scheme: dark;
+  }
+
+  .input-field option {
+    background-color: hsl(var(--color-surface));
+    color: hsl(var(--color-text-primary));
+  }
+}
+
+/* ============================================================
+   Data Table
+   ============================================================ */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.data-table thead tr {
+  background-color: hsl(var(--color-table-header-bg));
+  border-bottom: 2px solid hsl(var(--color-table-border));
+}
+
+.data-table th {
+  padding: 0.875rem 1.25rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: hsl(var(--color-text-secondary));
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid hsla(var(--color-table-border), 0.6);
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.data-table tbody tr:hover {
+  background-color: hsla(var(--color-table-row-hover), 0.05);
+}
+
+/* ============================================================
+   Micro animations
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* ============================================================
+   Layout
+   ============================================================ */
+.layout-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* ============================================================
+   Scrollbar (Webkit)
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsla(var(--color-secondary), 0.3);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsla(var(--color-secondary), 0.5);
+}
