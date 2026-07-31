@@ -84,15 +84,13 @@ export default function Trabajadores() {
 
   const handleDesactivar = async (id) => {
     if (procesando) return;
-    if (confirm('¿Está seguro de desactivar este trabajador?')) {
-      setProcesando(true);
-      try {
-        await desactivarTrabajador(id);
-      } catch (err) {
-        mostrarToast({ tipo: 'error', titulo: 'No se pudo desactivar', mensaje: err.response?.data?.error || 'No se pudo desactivar el trabajador. Inténtalo nuevamente.' });
-      } finally {
-        setProcesando(false);
-      }
+    setProcesando(true);
+    try {
+      await desactivarTrabajador(id);
+    } catch (err) {
+      mostrarToast({ tipo: 'error', titulo: 'No se pudo desactivar', mensaje: err.response?.data?.error || 'Error al desactivar.' });
+    } finally {
+      setProcesando(false);
     }
   };
 
@@ -100,12 +98,12 @@ export default function Trabajadores() {
     try {
       await activarTrabajador(id);
     } catch (err) {
-      mostrarToast({ tipo: 'error', titulo: 'No se pudo activar', mensaje: err.response?.data?.error || 'No se pudo activar el trabajador. Inténtalo nuevamente.' });
+      mostrarToast({ tipo: 'error', titulo: 'No se pudo activar', mensaje: err.response?.data?.error || 'Error al activar.' });
     }
   };
 
   const handleEliminar = async (id) => {
-    if (confirm('¿Está seguro de eliminar este trabajador? Esta acción no se puede deshacer.')) {
+    if (confirm('¿Eliminar este trabajador? No se podrá recuperar.')) {
       try {
         await eliminarTrabajador(id);
       } catch (err) {
@@ -225,9 +223,11 @@ export default function Trabajadores() {
                         <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
                           <button className="btn-ghost btn-small" onClick={() => handleEditar(t)} title="Editar">
                             <Edit size={14} />
+                            Editar
                           </button>
                           <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-warning))' }} onClick={() => handleDesactivar(t.id)} title="Desactivar" disabled={cargando || procesando}>
                             <X size={14} />
+                            Desactivar
                           </button>
                         </div>
                       </td>
@@ -265,9 +265,11 @@ export default function Trabajadores() {
                         <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
                           <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-success))' }} onClick={() => handleActivar(t.id)} title="Activar" disabled={cargando}>
                             <Check size={14} />
+                            Activar
                           </button>
                           <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-danger))' }} onClick={() => handleEliminar(t.id)} title="Eliminar" disabled={cargando}>
                             <Trash2 size={14} />
+                            Eliminar
                           </button>
                         </div>
                       </td>
