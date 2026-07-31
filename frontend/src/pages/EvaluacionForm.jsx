@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, CheckCircle, XCircle, MinusCircle, Info, X, ShieldCheck } from 'lucide-react';
+import { Save, CheckCircle, XCircle, MinusCircle, Info, X, ShieldCheck } from 'lucide-react';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useAuthStore } from '../store/authStore';
@@ -25,6 +25,7 @@ export default function EvaluacionForm() {
   const [evaluacionGuardada, setEvaluacionGuardada] = useState(null);
   const [paso, setPaso] = useState(1);
   const modalRef = useRef(null);
+  const formRef = useRef(null);
 
   useEffect(() => {
     fetchDependenciasFormulario();
@@ -232,10 +233,6 @@ export default function EvaluacionForm() {
 
   return (
     <div className="animate-fade-in page-shell" style={{ maxWidth: '920px', margin: '0 auto' }}>
-      <button className="btn btn-outline btn-small" onClick={() => navigate('/')}>
-        <ArrowLeft size={18} /> Volver al dashboard
-      </button>
-
       <header className="page-header">
         <div>
           <h1 className="page-title">Nueva evaluación BPH</h1>
@@ -249,7 +246,7 @@ export default function EvaluacionForm() {
         <div className="section-card-body">
           {error && <ErrorState error={error} />}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} ref={formRef}>
             {/* Datos Base — Solo en Paso 1 */}
             {paso === 1 && (
               <div className="form-grid-2" style={{ gap: '1rem', marginBottom: '1.5rem' }}>
@@ -454,17 +451,23 @@ export default function EvaluacionForm() {
             <div className="action-group" style={{ justifyContent: 'center', gap: '1rem' }}>
               <button className="btn btn-outline" onClick={() => {
                 setEvaluacionGuardada(null);
+                setPaso(2);
+                formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}>
+                Editar evaluación
+              </button>
+              <button className="btn btn-primary" onClick={() => {
+                setEvaluacionGuardada(null);
                 setRespuestas({});
                 setObservaciones('');
                 setTrabajadorId('');
                 setAreaId('');
+                setColorEsperado('');
                 setColorObservado('');
                 setPaso(1);
+                formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
               }}>
-                Volver a evaluar
-              </button>
-              <button className="btn btn-primary" onClick={() => navigate('/')}>
-                Volver al inicio
+                Realizar nueva evaluación
               </button>
             </div>
           </div>

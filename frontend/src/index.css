@@ -692,11 +692,14 @@ textarea.input-field {
 .modal-overlay {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
   background: rgba(15, 23, 42, 0.62);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
+  overflow: hidden;
   z-index: 9998;
 }
 .modal-content {
