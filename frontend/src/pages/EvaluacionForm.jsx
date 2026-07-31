@@ -11,7 +11,7 @@ export default function EvaluacionForm() {
   const navigate = useNavigate();
   const { usuario } = useAuthStore();
   const { areas, parametros, fetchDependenciasFormulario, crearEvaluacion, cargando, error } = useEvaluacionesStore();
-  const { fetchTrabajadores, obtenerTrabajadoresActivas } = useTrabajadoresStore();
+  const { fetchTrabajadores, obtenerTrabajadoresActivos } = useTrabajadoresStore();
 
   const mostrarToast = useUiStore((state) => state.mostrarToast);
 
@@ -33,14 +33,14 @@ export default function EvaluacionForm() {
 
   useEffect(() => {
     if (trabajadorId) {
-      const trabajador = obtenerTrabajadoresActivas().find(
+      const trabajador = obtenerTrabajadoresActivos().find(
         (t) => String(t.id) === String(trabajadorId)
       );
       if (trabajador) {
         setAreaId(trabajador.areaId ? String(trabajador.areaId) : '');
       }
     }
-  }, [trabajadorId, obtenerTrabajadoresActivas]);
+  }, [trabajadorId, obtenerTrabajadoresActivos]);
 
   useEffect(() => {
     if (!fecha) return;
@@ -137,7 +137,7 @@ export default function EvaluacionForm() {
 
     try {
       const result = await crearEvaluacion(datos);
-      const trabajador = obtenerTrabajadoresActivas().find(
+      const trabajador = obtenerTrabajadoresActivos().find(
         (t) => String(t.id) === String(trabajadorId)
       );
       const area = areas.find((a) => String(a.id) === String(areaId));
@@ -274,7 +274,7 @@ export default function EvaluacionForm() {
                   <label className="label">Trabajador</label>
                   <select required className="input-field" value={trabajadorId} onChange={e => setTrabajadorId(e.target.value)}>
                     <option value="">Selecciona un trabajador...</option>
-                    {obtenerTrabajadoresActivas().map(t => (
+                    {obtenerTrabajadoresActivos().map(t => (
                       <option key={t.id} value={t.id}>{t.nombre}</option>
                     ))}
                   </select>

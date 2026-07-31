@@ -40,7 +40,7 @@ const DEFAULT_FILTERS = {
 
 export default function Dashboard() {
   const { evaluaciones, total, cargando, error, fetchEvaluaciones } = useEvaluacionesStore();
-  const { areas, fetchTrabajadores, fetchAreas, obtenerTrabajadoresActivas } = useTrabajadoresStore();
+  const { areas, fetchTrabajadores, fetchAreas, obtenerTrabajadoresActivos } = useTrabajadoresStore();
   const mostrarToast = useUiStore((state) => state.mostrarToast);
   const navigate = useNavigate();
 
@@ -58,7 +58,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (filtros.trabajadorId) {
-      const trabajador = obtenerTrabajadoresActivas().find(
+      const trabajador = obtenerTrabajadoresActivos().find(
         (t) => String(t.id) === String(filtros.trabajadorId)
       );
       if (trabajador) {
@@ -68,7 +68,7 @@ export default function Dashboard() {
         }));
       }
     }
-  }, [filtros.trabajadorId, obtenerTrabajadoresActivas]);
+  }, [filtros.trabajadorId, obtenerTrabajadoresActivos]);
 
   useEffect(() => {
     fetchEvaluaciones({ pagina, porPagina, ...filtros });
@@ -221,7 +221,7 @@ export default function Dashboard() {
               <label className="label">Trabajador</label>
               <select className="input-field" value={filtros.trabajadorId} onChange={(e) => handleFilterChange('trabajadorId', e.target.value)}>
                 <option value="">Todos</option>
-                {obtenerTrabajadoresActivas().map((t) => (
+                {obtenerTrabajadoresActivos().map((t) => (
                   <option key={t.id} value={t.id}>{t.nombre}</option>
                 ))}
               </select>
