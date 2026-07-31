@@ -369,6 +369,8 @@ textarea.input-field {
   color: hsl(var(--color-text-secondary));
   padding: 0.25rem 0.5rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
 }
 .btn-ghost:hover { color: hsl(var(--color-text-primary)); }
 

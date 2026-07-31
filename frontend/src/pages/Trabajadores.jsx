@@ -220,10 +220,9 @@ export default function Trabajadores() {
                       <td style={{ fontWeight: 600 }}>{t.nombre}</td>
                       <td style={{ color: 'hsl(var(--color-text-secondary))' }}>{t.area?.nombre || 'Sin área'}</td>
                       <td style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
+                        <div style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
                           <button className="btn-ghost btn-small" onClick={() => handleEditar(t)} title="Editar">
                             <Edit size={14} />
-                            Editar
                           </button>
                           <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-warning))' }} onClick={() => handleDesactivar(t.id)} title="Desactivar" disabled={cargando || procesando}>
                             <X size={14} />
@@ -262,14 +261,13 @@ export default function Trabajadores() {
                       <td style={{ fontWeight: 600, opacity: 0.75 }}>{t.nombre}</td>
                       <td style={{ color: 'hsl(var(--color-text-secondary))' }}>{t.area?.nombre || 'Sin área'}</td>
                       <td style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
+                        <div style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
                           <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-success))' }} onClick={() => handleActivar(t.id)} title="Activar" disabled={cargando}>
                             <Check size={14} />
                             Activar
                           </button>
                           <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-danger))' }} onClick={() => handleEliminar(t.id)} title="Eliminar" disabled={cargando}>
                             <Trash2 size={14} />
-                            Eliminar
                           </button>
                         </div>
                       </td>
