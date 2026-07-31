@@ -23,6 +23,7 @@ export default function EvaluacionForm() {
   const [respuestas, setRespuestas] = useState({});
   const [fecha, _setFecha] = useState(new Date().toISOString().split('T')[0]);
   const [evaluacionGuardada, setEvaluacionGuardada] = useState(null);
+  const [paso, setPaso] = useState(1);
 
   useEffect(() => {
     fetchDependenciasFormulario();
@@ -77,9 +78,9 @@ export default function EvaluacionForm() {
   const higieneProgress = calcularProgreso(higieneParams);
   const uniformeProgress = calcularProgreso(uniformeParams);
 
-  const totalRespondidos = higieneProgress.total + uniformeProgress.total;
-  const totalProgreso = higieneProgress.cumple + uniformeProgress.cumple;
-  const progresoGeneral = totalRespondidos > 0 ? Math.round((totalProgreso / totalRespondidos) * 100) : 0;
+  const _totalRespondidos = higieneProgress.total + uniformeProgress.total;
+  const _totalProgreso = higieneProgress.cumple + uniformeProgress.cumple;
+  const _progresoGeneral = _totalRespondidos > 0 ? Math.round((_totalProgreso / _totalRespondidos) * 100) : 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -254,20 +255,32 @@ export default function EvaluacionForm() {
               </div>
             </div>
 
+            {paso === 1 && (
+              <>
             {higieneParams.length > 0 && (
               <SeccionParametros titulo="Parámetros de Higiene" params={higieneParams} progreso={higieneProgress} />
             )}
-            {uniformeParams.length > 0 && (
-              <SeccionParametros titulo="Parámetros de Uniforme" params={uniformeParams} progreso={uniformeProgress} />
-            )}
-
-            {higieneParams.length === 0 && uniformeParams.length === 0 && (
+            {uniformeParams.length === 0 && higieneParams.length === 0 && (
               <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>No hay parámetros configurados para evaluar.</p>
             )}
 
             <div style={{ marginTop: '0.5rem', padding: '0.6rem 0.9rem', background: 'hsla(var(--color-primary), 0.06)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>
               Haz clic en cada botón para marcar el estado de cada parámetro: <strong>Cumple</strong>, <strong>No cumple</strong> o <strong>No aplica</strong>.
             </div>
+
+            <div className="action-group" style={{ justifyContent: 'flex-end', marginTop: '1rem' }}>
+              <button type="button" className="btn btn-primary" onClick={() => setPaso(2)} disabled={higieneParams.length === 0}>
+                Siguiente
+              </button>
+            </div>
+          </>
+        )}
+
+        {paso === 2 && (
+          <>
+            {uniformeParams.length > 0 && (
+              <SeccionParametros titulo="Parámetros de Uniforme" params={uniformeParams} progreso={uniformeProgress} />
+            )}
 
             {/* Control de Color */}
             <section className="info-banner" style={{ padding: '1.25rem' }}>
@@ -315,28 +328,11 @@ export default function EvaluacionForm() {
               </div>
             </div>
 
-            {/* Resumen visual */}
-            <section className="section-card" style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <span style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Resumen de cumplimiento</span>
-                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Higiene: {higieneProgress.porcentaje}%</span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Uniforme: {uniformeProgress.porcentaje}%</span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>General: {progresoGeneral}%</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>General</span>
-                  <div style={{ width: 60, height: 8, background: 'hsla(var(--color-secondary), 0.12)', borderRadius: 999, overflow: 'hidden' }}>
-                    <div style={{ width: `${progresoGeneral}%`, height: '100%', background: 'hsl(var(--color-primary))', borderRadius: 999 }} />
-                  </div>
-                  <span style={{ fontSize: '0.85rem', fontWeight: 700, minWidth: '40px', textAlign: 'right' }}>{progresoGeneral}%</span>
-                </div>
-              </div>
-            </section>
-
+            {/* Botones de acción */}
             <div className="action-group" style={{ justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-outline" onClick={() => setPaso(1)}>
+                Volver
+              </button>
               <button type="button" className="btn btn-outline" onClick={() => navigate('/')}>
                 Cancelar
               </button>
@@ -345,7 +341,9 @@ export default function EvaluacionForm() {
                 {cargando ? 'Guardando...' : 'Guardar Evaluación'}
               </button>
             </div>
-          </form>
+          </>
+        )}
+      </form>
         </div>
 
         {evaluacionGuardada && (
