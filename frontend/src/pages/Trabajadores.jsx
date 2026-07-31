@@ -3,7 +3,6 @@ import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useUiStore } from '../store/uiStore';
 
 export default function Trabajadores() {
-
   const trabajadores = useTrabajadoresStore((state) => state.trabajadores);
   const areas = useTrabajadoresStore((state) => state.areas);
   const cargando = useTrabajadoresStore((state) => state.cargando);
@@ -15,8 +14,6 @@ export default function Trabajadores() {
   const desactivarTrabajador = useTrabajadoresStore((state) => state.desactivarTrabajador);
   const activarTrabajador = useTrabajadoresStore((state) => state.activarTrabajador);
   const eliminarTrabajador = useTrabajadoresStore((state) => state.eliminarTrabajador);
-
-
 
   const mostrarToast = useUiStore((state) => state.mostrarToast);
 
@@ -36,25 +33,25 @@ export default function Trabajadores() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const areaIdParsed = parseInt(formData.areaId);
-      
-      // Validar que se haya seleccionado un área
-      if (!formData.areaId || isNaN(areaIdParsed)) {
+      const areaIdParsed = parseInt(formData.areaId, 10);
+
+      if (!formData.areaId || Number.isNaN(areaIdParsed)) {
         mostrarToast({ tipo: 'error', titulo: 'Área requerida', mensaje: 'Debes seleccionar un área antes de guardar el trabajador.' });
         return;
       }
-      
+
       const datos = {
         nombre: formData.nombre,
-        areaId: areaIdParsed
+        areaId: areaIdParsed,
       };
-      
+
       if (editando) {
         await actualizarTrabajador(editando.id, datos);
         setEditando(null);
       } else {
         await crearTrabajador(datos);
       }
+
       setFormData({ nombre: '', areaId: '' });
       setMostrarFormulario(false);
     } catch (err) {
@@ -76,9 +73,8 @@ export default function Trabajadores() {
   };
 
   const handleDesactivar = async (id) => {
-    if (procesando) {
-      return;
-    }
+    if (procesando) return;
+
     if (confirm('¿Está seguro de desactivar este trabajador?')) {
       setProcesando(true);
       try {
@@ -113,202 +109,174 @@ export default function Trabajadores() {
     }
   };
 
-  const trabajadoresActivos = trabajadores.filter(t => t.activo);
-  const trabajadoresInactivos = trabajadores.filter(t => !t.activo);
-
-
+  const trabajadoresActivos = trabajadores.filter((t) => t.activo);
+  const trabajadoresInactivos = trabajadores.filter((t) => !t.activo);
 
   return (
-    <div className="glass-panel animate-fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', margin: 0 }}>Gestión de Trabajadores</h1>
-        <button 
-          className="btn btn-primary" 
-          onClick={() => setMostrarFormulario(true)}
-          disabled={cargando}
-        >
-          + Nuevo Trabajador
+    <div className="page-shell animate-fade-in">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Gestión de trabajadores</h1>
+          <p className="page-subtitle">Administra altas, ediciones, activaciones, desactivaciones y eliminaciones con una vista clara y ordenada.</p>
+        </div>
+        <button className="btn btn-primary" onClick={() => setMostrarFormulario(true)} disabled={cargando}>
+          + Nuevo trabajador
         </button>
       </div>
 
-      {error && (
-        <div style={{ 
-          backgroundColor: 'hsla(var(--color-danger), 0.1)', 
-          border: '1px solid hsla(var(--color-danger), 0.3)',
-          color: 'hsl(var(--color-danger))', 
-          padding: '0.75rem', 
-          borderRadius: 'var(--radius-md)', 
-          marginBottom: '1rem' 
-        }}>
-          {error}
-        </div>
-      )}
+      <div className="glass-panel section-card-body">
+        {error && (
+          <div style={{ backgroundColor: 'hsla(var(--color-danger), 0.1)', border: '1px solid hsla(var(--color-danger), 0.3)', color: 'hsl(var(--color-danger))', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
+            {error}
+          </div>
+        )}
 
-      {mostrarFormulario && (
-        <div style={{ 
-          backgroundColor: 'hsl(var(--color-bg))', 
-          padding: '1.5rem', 
-          borderRadius: 'var(--radius-md)', 
-          marginBottom: '1.5rem',
-          border: '1px solid hsl(var(--color-border))'
-        }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>
-            {editando ? 'Editar Trabajador' : 'Nuevo Trabajador'}
-          </h2>
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
-                Nombre del Trabajador
-              </label>
-              <input
-                className="input-field"
-                type="text"
-                value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
-                placeholder="Ej: JUAN PEREZ"
-                required
-                disabled={cargando}
-              />
-            </div>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
-                Área
-              </label>
-              <select
-                className="input-field"
-                value={formData.areaId}
-                onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}
-                required
-                disabled={cargando}
-              >
-                <option value="">Seleccionar área</option>
-                {areas.map((area) => (
-                  <option key={area.id} value={area.id}>
-                    {area.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button type="submit" className="btn btn-primary" disabled={cargando}>
-                {cargando ? 'Guardando...' : (editando ? 'Actualizar' : 'Crear')}
-              </button>
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
-                onClick={handleCancelar}
-                disabled={cargando}
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+        {mostrarFormulario && (
+          <div className="section-card" style={{ marginBottom: '1.5rem' }}>
+            <div className="section-card-body">
+              <h2 className="section-title">{editando ? 'Editar trabajador' : 'Nuevo trabajador'}</h2>
+              <p className="section-subtitle" style={{ marginBottom: '1.2rem' }}>
+                Completa los datos del trabajador para mantener la información actualizada.
+              </p>
 
-      <div style={{ marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Trabajadores Activos</h2>
-        {trabajadoresActivos.length === 0 ? (
-          <p style={{ color: 'hsl(var(--color-text-secondary))' }}>
-            No hay trabajadores activos
-          </p>
-        ) : (
-          <div style={{ 
-            display: 'grid', 
-            gap: '0.75rem',
-            maxHeight: '400px',
-            overflowY: 'auto'
-          }}>
-            {trabajadoresActivos.map((trabajador) => (
-              <div 
-                key={trabajador.id}
-                style={{ 
-                  padding: '1rem', 
-                  backgroundColor: 'hsl(var(--color-bg))', 
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid hsl(var(--color-border))',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <div>
-                  <strong style={{ display: 'block' }}>{trabajador.nombre}</strong>
-                  <span style={{ fontSize: '0.875rem', color: 'hsl(var(--color-text-secondary))' }}>
-                    {trabajador.area?.nombre || 'Sin área'}
-                  </span>
+              <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label className="label">Nombre del trabajador</label>
+                  <input
+                    className="input-field"
+                    type="text"
+                    value={formData.nombre}
+                    onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
+                    placeholder="Ej: JUAN PEREZ"
+                    required
+                    disabled={cargando}
+                  />
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button 
-                    className="btn btn-secondary btn-small"
-                    onClick={() => handleEditar(trabajador)}
+
+                <div style={{ marginBottom: '1rem' }}>
+                  <label className="label">Área</label>
+                  <select
+                    className="input-field"
+                    value={formData.areaId}
+                    onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}
+                    required
                     disabled={cargando}
                   >
-                    Editar
+                    <option value="">Seleccionar área</option>
+                    {areas.map((area) => (
+                      <option key={area.id} value={area.id}>
+                        {area.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="action-group">
+                  <button type="submit" className="btn btn-primary" disabled={cargando}>
+                    {cargando ? 'Guardando...' : editando ? 'Actualizar' : 'Crear'}
                   </button>
-                  <button 
-                    className="btn btn-danger btn-small"
-                    onClick={() => handleDesactivar(trabajador.id)}
-                    disabled={cargando || procesando}
-                  >
-                    Desactivar
+                  <button type="button" className="btn btn-outline" onClick={handleCancelar} disabled={cargando}>
+                    Cancelar
                   </button>
                 </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        <div className="section-card" style={{ marginBottom: '1.5rem' }}>
+          <div className="section-card-body">
+            <h2 className="section-title">Trabajadores activos</h2>
+            <p className="section-subtitle" style={{ marginBottom: '1rem' }}>
+              Personal habilitado actualmente para operar y ser evaluado.
+            </p>
+
+            {trabajadoresActivos.length === 0 ? (
+              <p style={{ color: 'hsl(var(--color-text-secondary))' }}>No hay trabajadores activos.</p>
+            ) : (
+              <div style={{ display: 'grid', gap: '0.75rem', maxHeight: '400px', overflowY: 'auto' }}>
+                {trabajadoresActivos.map((trabajador) => (
+                  <div
+                    key={trabajador.id}
+                    style={{
+                      padding: '1rem',
+                      backgroundColor: 'hsl(var(--color-surface-hover))',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid hsl(var(--color-table-border))',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div>
+                      <strong style={{ display: 'block', color: 'hsl(var(--color-text-primary))' }}>{trabajador.nombre}</strong>
+                      <span style={{ fontSize: '0.875rem', color: 'hsl(var(--color-text-secondary))' }}>
+                        {trabajador.area?.nombre || 'Sin área'}
+                      </span>
+                    </div>
+                    <div className="action-group">
+                      <button className="btn btn-outline btn-small" onClick={() => handleEditar(trabajador)} disabled={cargando}>
+                        Editar
+                      </button>
+                      <button className="btn btn-danger btn-small" onClick={() => handleDesactivar(trabajador.id)} disabled={cargando || procesando}>
+                        Desactivar
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+          </div>
+        </div>
+
+        {trabajadoresInactivos.length > 0 && (
+          <div className="section-card">
+            <div className="section-card-body">
+              <h2 className="section-title">Trabajadores inactivos</h2>
+              <p className="section-subtitle" style={{ marginBottom: '1rem' }}>
+                Personal desactivado. Desde aquí puedes reactivarlo o eliminarlo definitivamente.
+              </p>
+
+              <div style={{ display: 'grid', gap: '0.75rem', maxHeight: '300px', overflowY: 'auto' }}>
+                {trabajadoresInactivos.map((trabajador) => (
+                  <div
+                    key={trabajador.id}
+                    style={{
+                      padding: '1rem',
+                      backgroundColor: 'hsla(var(--color-primary), 0.04)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid hsl(var(--color-table-border))',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '1rem',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div>
+                      <strong style={{ display: 'block', color: 'hsl(var(--color-text-primary))', opacity: 0.75 }}>{trabajador.nombre}</strong>
+                      <span style={{ fontSize: '0.875rem', color: 'hsl(var(--color-text-secondary))' }}>
+                        {trabajador.area?.nombre || 'Sin área'}
+                      </span>
+                    </div>
+                    <div className="action-group">
+                      <button className="btn btn-outline btn-small" onClick={() => handleActivar(trabajador.id)} disabled={cargando}>
+                        Activar
+                      </button>
+                      <button className="btn btn-danger btn-small" onClick={() => handleEliminar(trabajador.id)} disabled={cargando}>
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
-
-      {trabajadoresInactivos.length > 0 && (
-        <div>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Trabajadores Inactivos</h2>
-          <div style={{ 
-            display: 'grid', 
-            gap: '0.75rem',
-            maxHeight: '300px',
-            overflowY: 'auto'
-          }}>
-            {trabajadoresInactivos.map((trabajador) => (
-              <div 
-                key={trabajador.id}
-                style={{ 
-                  padding: '1rem', 
-                  backgroundColor: 'hsla(var(--color-text-secondary), 0.05)', 
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid hsl(var(--color-border))',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <div>
-                  <strong style={{ display: 'block', opacity: 0.7 }}>{trabajador.nombre}</strong>
-                  <span style={{ fontSize: '0.875rem', color: 'hsl(var(--color-text-secondary))' }}>
-                    {trabajador.area?.nombre || 'Sin área'}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button 
-                    className="btn btn-secondary btn-small"
-                    onClick={() => handleActivar(trabajador.id)}
-                    disabled={cargando}
-                  >
-                    Activar
-                  </button>
-                  <button 
-                    className="btn btn-danger btn-small"
-                    onClick={() => handleEliminar(trabajador.id)}
-                    disabled={cargando}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

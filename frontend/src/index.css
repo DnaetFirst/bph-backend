@@ -66,7 +66,7 @@ body {
 }
 
 /* ============================================================
-   Glassmorphism Panel
+   Surfaces / Layout helpers
    ============================================================ */
 .glass-panel {
   background: linear-gradient(180deg, hsla(var(--color-surface), 0.96), hsla(var(--color-surface-hover), 0.92));
@@ -77,6 +77,79 @@ body {
   box-shadow: var(--shadow-glass);
 }
 
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: 1.85rem;
+  line-height: 1.1;
+  color: hsl(var(--color-text-primary));
+  margin-bottom: 0.35rem;
+}
+
+.page-subtitle {
+  color: hsl(var(--color-text-secondary));
+  max-width: 760px;
+  font-size: 0.95rem;
+}
+
+.section-card {
+  background: hsl(var(--color-surface));
+  border: 1px solid hsl(var(--color-table-border));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.section-card-body {
+  padding: 1.35rem;
+}
+
+.section-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: hsl(var(--color-text-primary));
+  margin-bottom: 0.25rem;
+}
+
+.section-subtitle {
+  font-size: 0.88rem;
+  color: hsl(var(--color-text-secondary));
+}
+
+.info-banner {
+  background: linear-gradient(180deg, hsla(var(--color-primary), 0.08), hsla(var(--color-primary), 0.04));
+  border: 1px solid hsla(var(--color-primary), 0.16);
+  border-radius: var(--radius-md);
+  color: hsl(var(--color-text-primary));
+}
+
+.empty-state,
+.error-state,
+.loading-state {
+  margin: auto;
+  text-align: center;
+  color: hsl(var(--color-text-secondary));
+  max-width: 460px;
+  padding: 3rem 2rem;
+}
+
+.action-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 /* ============================================================
    Buttons
    ============================================================ */
@@ -84,9 +157,9 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem 1rem;
+  padding: 0.62rem 1rem;
   border-radius: var(--radius-md);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.875rem;
   transition: all 0.2s ease;
   cursor: pointer;
@@ -119,8 +192,20 @@ body {
 }
 
 .btn-danger:hover:not(:disabled) {
-  opacity: 0.9;
+  opacity: 0.94;
   transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary {
+  background-color: hsl(var(--color-surface));
+  border: 1px solid hsl(var(--color-table-border));
+  color: hsl(var(--color-text-primary));
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: hsl(var(--color-surface-hover));
+  border-color: hsla(var(--color-primary), 0.22);
 }
 
 .btn-outline {
@@ -173,6 +258,19 @@ body {
     background-color: hsl(var(--color-surface));
     color: hsl(var(--color-text-primary));
   }
+}
+
+textarea.input-field {
+  resize: vertical;
+  min-height: 110px;
+}
+
+.label {
+  display: block;
+  font-size: 0.84rem;
+  margin-bottom: 0.45rem;
+  color: hsl(var(--color-text-secondary));
+  font-weight: 600;
 }
 
 /* ============================================================

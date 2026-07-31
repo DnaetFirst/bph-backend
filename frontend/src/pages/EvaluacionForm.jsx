@@ -119,13 +119,19 @@ export default function EvaluacionForm() {
   );
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px', margin: '0 auto' }}>
-      <button className="btn btn-outline" onClick={() => navigate('/')} style={{ alignSelf: 'flex-start', border: 'none', paddingLeft: 0 }}>
-        <ArrowLeft size={18} /> Volver al Dashboard
+    <div className="page-shell animate-fade-in" style={{ maxWidth: '920px', margin: '0 auto' }}>
+      <button className="btn btn-outline" onClick={() => navigate('/')} style={{ alignSelf: 'flex-start' }}>
+        <ArrowLeft size={18} /> Volver al dashboard
       </button>
       
-      <div className="glass-panel" style={{ padding: '2rem' }}>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Nueva Evaluación de BPH</h2>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Nueva evaluación BPH</h1>
+          <p className="page-subtitle">Registra una evaluación individual con criterios de higiene, uniforme y control visual de color.</p>
+        </div>
+      </div>
+
+      <div className="glass-panel section-card-body">
         
         {error && (
           <div style={{ backgroundColor: 'hsla(var(--color-danger), 0.1)', color: 'hsl(var(--color-danger))', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
@@ -137,7 +143,7 @@ export default function EvaluacionForm() {
           {/* Datos Base */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'hsl(var(--color-text-secondary))' }}>Fecha de Evaluación</label>
+              <label className="label">Fecha de evaluación</label>
               <input 
                 required 
                 type="date" 
@@ -148,7 +154,7 @@ export default function EvaluacionForm() {
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'hsl(var(--color-text-secondary))' }}>Trabajador</label>
+              <label className="label">Trabajador</label>
               <select required className="input-field" value={trabajadorId} onChange={e => setTrabajadorId(e.target.value)}>
                 <option value="">Selecciona un trabajador...</option>
                 {obtenerTrabajadoresActivos().map(t => (
@@ -157,14 +163,14 @@ export default function EvaluacionForm() {
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'hsl(var(--color-text-secondary))' }}>Área</label>
+              <label className="label">Área</label>
               <select required className="input-field" value={areaId} onChange={e => setAreaId(e.target.value)}>
                 <option value="">Selecciona un área...</option>
                 {areas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'hsl(var(--color-text-secondary))' }}>Evaluador</label>
+              <label className="label">Evaluador</label>
               <input className="input-field" value={usuario?.nombre || ''} disabled style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }} />
             </div>
           </div>
@@ -173,9 +179,9 @@ export default function EvaluacionForm() {
           <SeccionParametros titulo="Parámetros de Uniforme" params={uniformeParams} />
 
           {/* Colores */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem', padding: '1.5rem', background: 'hsla(var(--color-surface), 0.3)', borderRadius: 'var(--radius-lg)' }}>
+          <div className="info-banner" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem', padding: '1.5rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'hsl(var(--color-text-secondary))' }}>Color de uniforme esperado (según día)</label>
+              <label className="label">Color de uniforme esperado</label>
               <input className="input-field" value={colorEsperado} disabled style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }} />
               {colorEsperado && (
                 <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
@@ -184,7 +190,7 @@ export default function EvaluacionForm() {
               )}
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'hsl(var(--color-text-secondary))' }}>Color observado</label>
+              <label className="label">Color observado</label>
               <select className="input-field" value={colorObservado} onChange={e => setColorObservado(e.target.value)}>
                 <option value="">Selecciona el color observado...</option>
                 <option value="Rojo">Rojo</option>
@@ -196,7 +202,7 @@ export default function EvaluacionForm() {
 
           {/* Observaciones */}
           <div style={{ marginBottom: '2rem' }}>
-            <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '0.5rem', color: 'hsl(var(--color-text-secondary))' }}>Observaciones adicionales</label>
+            <label className="label">Observaciones adicionales</label>
             <textarea className="input-field" rows="3" value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Anotaciones sobre la evaluación..."></textarea>
           </div>
 
