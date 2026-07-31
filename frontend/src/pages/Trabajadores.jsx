@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useUiStore } from '../store/uiStore';
-import { Search, Edit, Check, Trash2, X } from 'lucide-react';
+import { Search, Edit, Check, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import ErrorState from '../components/ui/ErrorState';
 import EmptyState from '../components/ui/EmptyState';
 
@@ -25,11 +25,19 @@ export default function Trabajadores() {
   const [formData, setFormData] = useState({ nombre: '', areaId: '' });
   const [procesando, setProcesando] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [paginaActivos, setPaginaActivos] = useState(1);
+  const [paginaInactivos, setPaginaInactivos] = useState(1);
+  const porPagina = 5;
 
   useEffect(() => {
     fetchTrabajadores();
     fetchAreas();
   }, [fetchTrabajadores, fetchAreas]);
+
+  useEffect(() => {
+    setPaginaActivos(1);
+    setPaginaInactivos(1);
+  }, [searchTerm]);
 
   const trabajadoresActivos = useMemo(
     () => trabajadores.filter((t) => t.activo).filter(t =>
@@ -43,6 +51,15 @@ export default function Trabajadores() {
     ),
     [trabajadores, searchTerm]
   );
+
+  const totalActivos = trabajadoresActivos.length;
+  const totalInactivos = trabajadoresInactivos.length;
+  const inicioActivos = totalActivos > 0 ? Math.min((paginaActivos - 1) * porPagina + 1, totalActivos) : 0;
+  const finActivos = Math.min(paginaActivos * porPagina, totalActivos);
+  const inicioInactivos = totalInactivos > 0 ? Math.min((paginaInactivos - 1) * porPagina + 1, totalInactivos) : 0;
+  const finInactivos = Math.min(paginaInactivos * porPagina, totalInactivos);
+  const activosPaginados = totalActivos > 0 ? trabajadoresActivos.slice((paginaActivos - 1) * porPagina, paginaActivos * porPagina) : [];
+  const inactivosPaginados = totalInactivos > 0 ? trabajadoresInactivos.slice((paginaInactivos - 1) * porPagina, paginaInactivos * porPagina) : [];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -202,9 +219,10 @@ export default function Trabajadores() {
           <h2 className="section-title">Trabajadores activos</h2>
           <p className="section-subtitle">Personal habilitado actualmente para operar y ser evaluado.</p>
 
-          {trabajadoresActivos.length === 0 ? (
+                  {trabajadoresActivos.length === 0 ? (
             <EmptyState titulo="Sin trabajadores activos" mensaje="No hay trabajadores activos para mostrar." icono={Search} />
           ) : (
+            <>
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
                 <thead>
@@ -215,19 +233,25 @@ export default function Trabajadores() {
                   </tr>
                 </thead>
                 <tbody>
-                  {trabajadoresActivos.map((t) => (
+                  {activosPaginados.map((t) => (
                     <tr key={t.id}>
                       <td style={{ fontWeight: 600 }}>{t.nombre}</td>
                       <td style={{ color: 'hsl(var(--color-text-secondary))' }}>{t.area?.nombre || 'Sin área'}</td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
-                          <button className="btn-ghost btn-small" onClick={() => handleEditar(t)} title="Editar">
-                            <Edit size={14} />
-                          </button>
-                          <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-warning))' }} onClick={() => handleDesactivar(t.id)} title="Desactivar" disabled={cargando || procesando}>
-                            <X size={14} />
-                            Desactivar
-                          </button>
+                          <span className="tooltip">
+                            <button className="btn-ghost btn-small" onClick={() => handleEditar(t)} title="Editar">
+                              <Edit size={14} />
+                            </button>
+                            <span className="tooltip-text">Editar</span>
+                          </span>
+                          <span className="tooltip">
+                            <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-warning))' }} onClick={() => handleDesactivar(t.id)} title="Desactivar" disabled={cargando || procesando}>
+                              <X size={14} />
+                              Desactivar
+                            </button>
+                            <span className="tooltip-text">Desactivar trabajador</span>
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -235,6 +259,21 @@ export default function Trabajadores() {
                 </tbody>
               </table>
             </div>
+
+            {totalActivos > porPagina && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', padding: '1rem', borderTop: '1px solid hsla(var(--color-secondary), 0.15)' }}>
+                <button className="btn btn-outline btn-small" disabled={paginaActivos <= 1} onClick={() => setPaginaActivos((p) => p - 1)}>
+                  <ChevronLeft size={16} />
+                </button>
+                <span style={{ fontSize: '0.875rem', color: 'hsl(var(--color-text-secondary))' }}>
+                  Mostrando {inicioActivos}-{finActivos} de {totalActivos}
+                </span>
+                <button className="btn btn-outline btn-small" disabled={paginaActivos >= Math.ceil(totalActivos / porPagina)} onClick={() => setPaginaActivos((p) => p + 1)}>
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+            </>
           )}
         </div>
       </section>
@@ -256,19 +295,25 @@ export default function Trabajadores() {
                   </tr>
                 </thead>
                 <tbody>
-                  {trabajadoresInactivos.map((t) => (
+                  {inactivosPaginados.map((t) => (
                     <tr key={t.id}>
                       <td style={{ fontWeight: 600, opacity: 0.75 }}>{t.nombre}</td>
                       <td style={{ color: 'hsl(var(--color-text-secondary))' }}>{t.area?.nombre || 'Sin área'}</td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
-                          <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-success))' }} onClick={() => handleActivar(t.id)} title="Activar" disabled={cargando}>
-                            <Check size={14} />
-                            Activar
-                          </button>
-                          <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-danger))' }} onClick={() => handleEliminar(t.id)} title="Eliminar" disabled={cargando}>
-                            <Trash2 size={14} />
-                          </button>
+                          <span className="tooltip">
+                            <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-success))' }} onClick={() => handleActivar(t.id)} title="Activar" disabled={cargando}>
+                              <Check size={14} />
+                              Activar
+                            </button>
+                            <span className="tooltip-text">Activar trabajador</span>
+                          </span>
+                          <span className="tooltip">
+                            <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-danger))' }} onClick={() => handleEliminar(t.id)} title="Eliminar" disabled={cargando}>
+                              <Trash2 size={14} />
+                            </button>
+                            <span className="tooltip-text">Eliminar trabajador</span>
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -276,6 +321,20 @@ export default function Trabajadores() {
                 </tbody>
               </table>
             </div>
+
+            {totalInactivos > porPagina && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', padding: '1rem', borderTop: '1px solid hsla(var(--color-secondary), 0.15)' }}>
+                <button className="btn btn-outline btn-small" disabled={paginaInactivos <= 1} onClick={() => setPaginaInactivos((p) => p - 1)}>
+                  <ChevronLeft size={16} />
+                </button>
+                <span style={{ fontSize: '0.875rem', color: 'hsl(var(--color-text-secondary))' }}>
+                  Mostrando {inicioInactivos}-{finInactivos} de {totalInactivos}
+                </span>
+                <button className="btn btn-outline btn-small" disabled={paginaInactivos >= Math.ceil(totalInactivos / porPagina)} onClick={() => setPaginaInactivos((p) => p + 1)}>
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
           </div>
         </section>
       )}

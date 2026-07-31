@@ -313,7 +313,8 @@ textarea.input-field {
 }
 
 .data-table tbody tr:hover {
-  background-color: hsla(var(--color-table-row-hover), 0.05);
+  background-color: hsla(var(--color-primary), 0.06);
+  transform: backgroundColor 0.12s ease;
 }
 
 /* ============================================================
@@ -373,6 +374,36 @@ textarea.input-field {
   align-items: center;
 }
 .btn-ghost:hover { color: hsl(var(--color-text-primary)); }
+
+/* Tooltip */
+.tooltip {
+  position: relative;
+  cursor: pointer;
+}
+.tooltip .tooltip-text {
+  visibility: hidden;
+  width: max-content;
+  max-width: 160px;
+  background: hsl(var(--color-secondary));
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  position: absolute;
+  z-index: 999;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
 
 /* ============================================================
    Segmented control (form resultados)
