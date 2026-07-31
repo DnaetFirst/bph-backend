@@ -40,7 +40,7 @@ export default function Trabajadores() {
       
       // Validar que se haya seleccionado un área
       if (!formData.areaId || isNaN(areaIdParsed)) {
-        mostrarToast({ tipo: 'error', mensaje: 'Por favor, selecciona un área.' });
+        mostrarToast({ tipo: 'error', titulo: 'Área requerida', mensaje: 'Debes seleccionar un área antes de guardar el trabajador.' });
         return;
       }
       
@@ -59,7 +59,7 @@ export default function Trabajadores() {
       setMostrarFormulario(false);
     } catch (err) {
       console.error('Error:', err);
-      mostrarToast({ tipo: 'error', mensaje: err.response?.data?.error || 'Error al guardar trabajador.' });
+      mostrarToast({ tipo: 'error', titulo: 'No se pudo guardar', mensaje: err.response?.data?.error || 'No se pudo guardar el trabajador. Inténtalo nuevamente.' });
     }
   };
 
@@ -85,7 +85,7 @@ export default function Trabajadores() {
         await desactivarTrabajador(id);
       } catch (err) {
         console.error('Error al desactivar trabajador:', err);
-        mostrarToast({ tipo: 'error', mensaje: err.response?.data?.error || 'Error al desactivar trabajador.' });
+        mostrarToast({ tipo: 'error', titulo: 'No se pudo desactivar', mensaje: err.response?.data?.error || 'No se pudo desactivar el trabajador. Inténtalo nuevamente.' });
       } finally {
         setProcesando(false);
       }
@@ -97,7 +97,7 @@ export default function Trabajadores() {
       await activarTrabajador(id);
     } catch (err) {
       console.error('Error:', err);
-      mostrarToast({ tipo: 'error', mensaje: err.response?.data?.error || 'Error al activar trabajador.' });
+      mostrarToast({ tipo: 'error', titulo: 'No se pudo activar', mensaje: err.response?.data?.error || 'No se pudo activar el trabajador. Inténtalo nuevamente.' });
     }
   };
 
@@ -108,7 +108,7 @@ export default function Trabajadores() {
       } catch (err) {
         const errorMsg = err.response?.data?.error || 'Error al eliminar trabajador.';
         console.error('Error:', err);
-        mostrarToast({ tipo: 'error', mensaje: errorMsg });
+        mostrarToast({ tipo: 'error', titulo: 'No se pudo eliminar', mensaje: errorMsg });
       }
     }
   };

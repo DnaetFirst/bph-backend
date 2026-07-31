@@ -45,7 +45,7 @@ export const useAuthStore = create((set) => ({
         localStorage.setItem('auth_token', data.token);
       }
       set({ usuario: data.usuario, cargando: false, sesionExpirada: false });
-      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: `Bienvenido, ${data.usuario.nombre}.` });
+      useUiStore.getState().mostrarToast({ tipo: 'success', titulo: 'Sesión iniciada', mensaje: `Bienvenido, ${data.usuario.nombre}. Ya puedes continuar con tus operaciones.` });
       return data.usuario;
     } catch (err) {
       set({
@@ -62,7 +62,7 @@ export const useAuthStore = create((set) => ({
     } finally {
       localStorage.removeItem('auth_token');
       set({ usuario: null, cargando: false, error: null, sesionExpirada: false });
-      useUiStore.getState().mostrarToast({ tipo: 'info', mensaje: 'Sesión cerrada correctamente.' });
+      useUiStore.getState().mostrarToast({ tipo: 'info', titulo: 'Sesión cerrada', mensaje: 'Tu sesión se cerró correctamente.' });
     }
   }
 }));

@@ -47,7 +47,7 @@ export const useTrabajadoresStore = create((set, get) => ({
     try {
       await apiClient.post('/trabajadores', datos);
       await get().fetchTrabajadores();
-      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Trabajador creado correctamente.' });
+      useUiStore.getState().mostrarToast({ tipo: 'success', titulo: 'Trabajador creado', mensaje: 'El trabajador se registró correctamente y la lista ya fue actualizada.' });
     } catch (err) {
       if (err.response?.status !== 401) {
         set({ error: err.response?.data?.error || 'Error al crear trabajador' });
@@ -63,7 +63,7 @@ export const useTrabajadoresStore = create((set, get) => ({
     try {
       await apiClient.put(`/trabajadores/${id}`, datos);
       await get().fetchTrabajadores();
-      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Trabajador actualizado correctamente.' });
+      useUiStore.getState().mostrarToast({ tipo: 'success', titulo: 'Cambios guardados', mensaje: 'Los datos del trabajador se actualizaron correctamente.' });
     } catch (err) {
       if (err.response?.status !== 401) {
         set({ error: err.response?.data?.error || 'Error al actualizar trabajador' });
@@ -79,7 +79,7 @@ export const useTrabajadoresStore = create((set, get) => ({
     try {
       await apiClient.patch(`/trabajadores/${id}/desactivar`);
       await get().fetchTrabajadores();
-      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Trabajador desactivado correctamente.' });
+      useUiStore.getState().mostrarToast({ tipo: 'success', titulo: 'Trabajador desactivado', mensaje: 'El trabajador fue desactivado y ya aparece en la lista de inactivos.' });
     } catch (err) {
       console.error('Error al desactivar trabajador:', err);
       if (err.response?.status !== 401) {
@@ -96,7 +96,7 @@ export const useTrabajadoresStore = create((set, get) => ({
     try {
       await apiClient.patch(`/trabajadores/${id}/activar`);
       await get().fetchTrabajadores();
-      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Trabajador activado correctamente.' });
+      useUiStore.getState().mostrarToast({ tipo: 'success', titulo: 'Trabajador activado', mensaje: 'El trabajador volvió a estar activo y disponible para operar.' });
     } catch (err) {
       if (err.response?.status !== 401) {
         set({ error: err.response?.data?.error || 'Error al activar trabajador' });
@@ -112,7 +112,7 @@ export const useTrabajadoresStore = create((set, get) => ({
     try {
       await apiClient.delete(`/trabajadores/${id}`);
       await get().fetchTrabajadores();
-      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Trabajador eliminado correctamente.' });
+      useUiStore.getState().mostrarToast({ tipo: 'success', titulo: 'Trabajador eliminado', mensaje: 'El trabajador fue eliminado definitivamente del sistema.' });
     } catch (err) {
       if (err.response?.status !== 401) {
         set({ error: err.response?.data?.error || 'Error al eliminar trabajador' });

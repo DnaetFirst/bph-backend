@@ -55,7 +55,7 @@ export default function EvaluacionForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!trabajadorId || !areaId) {
-      mostrarToast({ tipo: 'error', mensaje: 'Debes completar los datos básicos.' });
+      mostrarToast({ tipo: 'error', titulo: 'Datos incompletos', mensaje: 'Completa los datos básicos de la evaluación antes de continuar.' });
       return;
     }
     
@@ -65,7 +65,7 @@ export default function EvaluacionForm() {
     }));
 
     if (detalles.length === 0) {
-      mostrarToast({ tipo: 'error', mensaje: 'Debes evaluar al menos un parámetro.' });
+      mostrarToast({ tipo: 'error', titulo: 'Evaluación incompleta', mensaje: 'Debes evaluar al menos un parámetro antes de guardar.' });
       return;
     }
 

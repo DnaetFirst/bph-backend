@@ -77,7 +77,7 @@ export const useEvaluacionesStore = create((set, get) => ({
     try {
       const { data } = await apiClient.post('/evaluaciones', datos);
       set({ cargando: false });
-      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Evaluación guardada correctamente.' });
+      useUiStore.getState().mostrarToast({ tipo: 'success', titulo: 'Evaluación guardada', mensaje: 'La evaluación se registró correctamente en el sistema.' });
       return data;
     } catch (err) {
       if (err.response?.status === 401) {
@@ -97,7 +97,7 @@ export const useEvaluacionesStore = create((set, get) => ({
     try {
       await apiClient.post(`/evaluaciones/${id}/anular`, { motivo });
       await get().fetchEvaluaciones();
-      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Evaluación anulada correctamente.' });
+      useUiStore.getState().mostrarToast({ tipo: 'success', titulo: 'Evaluación anulada', mensaje: 'La evaluación fue anulada correctamente y el listado ya se actualizó.' });
     } catch (err) {
       if (err.response?.status === 401) {
         set({ cargando: false });

@@ -257,9 +257,9 @@ export default function Dashboard() {
       link.remove();
       window.URL.revokeObjectURL(url);
       setMostrarFiltrosExportar(false);
-      mostrarToast({ tipo: 'success', mensaje: 'Excel exportado correctamente.' });
+      mostrarToast({ tipo: 'success', titulo: 'Exportación lista', mensaje: 'El archivo Excel se generó y descargó correctamente.' });
     } catch {
-      mostrarToast({ tipo: 'error', mensaje: 'Error al exportar Excel.' });
+      mostrarToast({ tipo: 'error', titulo: 'No se pudo exportar', mensaje: 'No se pudo generar el archivo Excel. Inténtalo nuevamente.' });
     }
   };
 
@@ -271,7 +271,7 @@ export default function Dashboard() {
       await anularEvaluacion(evaluacion.id, motivo);
       await fetchEvaluaciones({ pagina, porPagina, ...filtros });
     } catch (err) {
-      mostrarToast({ tipo: 'error', mensaje: err.response?.data?.error || 'Error al anular la evaluación.' });
+      mostrarToast({ tipo: 'error', titulo: 'No se pudo anular', mensaje: err.response?.data?.error || 'No se pudo anular la evaluación. Inténtalo nuevamente.' });
     }
   };
 

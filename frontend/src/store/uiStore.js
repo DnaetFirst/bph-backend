@@ -5,10 +5,10 @@ let nextToastId = 1;
 export const useUiStore = create((set) => ({
   toasts: [],
 
-  mostrarToast: ({ tipo = 'info', mensaje, duracion = 3000 }) => {
+  mostrarToast: ({ tipo = 'info', titulo, mensaje, duracion = 3500 }) => {
     const id = nextToastId++;
     set((state) => ({
-      toasts: [...state.toasts, { id, tipo, mensaje }],
+      toasts: [...state.toasts, { id, tipo, titulo, mensaje }],
     }));
 
     if (duracion > 0) {
