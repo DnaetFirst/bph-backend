@@ -14,7 +14,7 @@ import {
 const router = Router();
 
 router.use(authenticate);
-router.use(authorize('administrador'));
+router.use(authorize('administrador', 'supervisor'));
 
 // --- USUARIOS ---
 
@@ -148,6 +148,20 @@ router.get('/reporte/csv', async (req, res, next) => {
     res.end(csv);
   } catch (error) {
     console.error('Error generando reporte CSV:', error);
+    next(error);
+  }
+});
+
+// --- BITÁCORA ---
+
+router.get('/bitacora', async (req, res, next) => {
+  try {
+    const eventos = await prisma.bitacora.findMany({
+      orderBy: { creadoEn: 'desc' },
+      take: 100,
+    });
+    res.json({ eventos });
+  } catch (error) {
     next(error);
   }
 });

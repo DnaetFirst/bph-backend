@@ -21,12 +21,24 @@ export default function EvaluacionForm() {
   const [colorObservado, setColorObservado] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [respuestas, setRespuestas] = useState({});
-  const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [fecha, _setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [evaluacionGuardada, setEvaluacionGuardada] = useState(null);
 
   useEffect(() => {
     fetchDependenciasFormulario();
     fetchTrabajadores();
   }, [fetchDependenciasFormulario, fetchTrabajadores]);
+
+  useEffect(() => {
+    if (trabajadorId) {
+      const trabajador = obtenerTrabajadoresActivos().find(
+        (t) => String(t.id) === String(trabajadorId)
+      );
+      if (trabajador) {
+        setAreaId(trabajador.areaId ? String(trabajador.areaId) : '');
+      }
+    }
+  }, [trabajadorId, obtenerTrabajadoresActivos]);
 
   useEffect(() => {
     if (!fecha) return;
@@ -99,8 +111,8 @@ export default function EvaluacionForm() {
     };
 
     try {
-      await crearEvaluacion(datos);
-      navigate('/');
+      const result = await crearEvaluacion(datos);
+      setEvaluacionGuardada(result || datos);
     } catch {
       // Error manejado en store
     }
@@ -201,9 +213,15 @@ export default function EvaluacionForm() {
                   type="date"
                   className="input-field"
                   value={fecha}
-                  onChange={e => setFecha(e.target.value)}
+                  disabled
+                  readOnly
+                  style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }}
                   max={new Date().toISOString().split('T')[0]}
                 />
+                <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
+                  <Info size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />
+                  Fecha auto-generada al momento de crear la evaluación
+                </div>
               </div>
               <div>
                 <label className="label">Trabajador</label>
@@ -233,6 +251,14 @@ export default function EvaluacionForm() {
             {uniformeParams.length > 0 && (
               <SeccionParametros titulo="Parámetros de Uniforme" params={uniformeParams} progreso={uniformeProgress} />
             )}
+
+            {higieneParams.length === 0 && uniformeParams.length === 0 && (
+              <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>No hay parámetros configurados para evaluar.</p>
+            )}
+
+            <div style={{ marginTop: '0.5rem', padding: '0.6rem 0.9rem', background: 'hsla(var(--color-primary), 0.06)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>
+              Haz clic en cada botón para marcar el estado de cada parámetro: <strong>Cumple</strong>, <strong>No cumple</strong> o <strong>No aplica</strong>.
+            </div>
 
             {/* Control de Color */}
             <section className="info-banner" style={{ padding: '1.25rem' }}>
@@ -312,6 +338,45 @@ export default function EvaluacionForm() {
             </div>
           </form>
         </div>
+
+        {evaluacionGuardada && (
+          <div style={{ marginTop: '1.5rem' }}>
+            <div className="info-banner" style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <CheckCircle size={22} style={{ color: 'hsl(var(--color-success))' }} />
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'hsl(var(--color-success))' }}>
+                  Evaluación guardada correctamente
+                </h3>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.9rem' }}>
+                <div>
+                  <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Trabajador: </span>
+                  <strong>{evaluacionGuardada.trabajador?.nombre || '---'}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Área: </span>
+                  <strong>{evaluacionGuardada.area?.nombre || '---'}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Fecha: </span>
+                  <strong>{evaluacionGuardada.fecha ? new Date(evaluacionGuardada.fecha).toLocaleDateString('es-AR') : '---'}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Evaluador: </span>
+                  <strong>{evaluacionGuardada.evaluador?.nombre || usuario?.nombre}</strong>
+                </div>
+              </div>
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem' }}>
+                <button className="btn btn-outline btn-small" onClick={() => navigate('/')}>
+                  Volver al inicio
+                </button>
+                <button className="btn btn-outline btn-small" onClick={() => { setEvaluacionGuardada(null); setRespuestas({}); setObservaciones(''); }}>
+                  Nueva evaluación
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

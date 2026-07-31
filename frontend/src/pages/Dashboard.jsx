@@ -13,15 +13,10 @@ import {
   ShieldCheck,
   ShieldAlert,
   CalendarRange,
-  MoreVertical,
-  Check,
-  X,
   Eye,
-  Trash2,
 } from 'lucide-react';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
-import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
 import { apiClient } from '../api/client';
 import Badge from '../components/ui/Badge';
@@ -43,9 +38,8 @@ const DEFAULT_FILTERS = {
 };
 
 export default function Dashboard() {
-  const { evaluaciones, total, cargando, error, fetchEvaluaciones, anularEvaluacion } = useEvaluacionesStore();
+  const { evaluaciones, total, cargando, error, fetchEvaluaciones } = useEvaluacionesStore();
   const { areas, fetchTrabajadores, fetchAreas, obtenerTrabajadoresActivos } = useTrabajadoresStore();
-  const { usuario } = useAuthStore();
   const mostrarToast = useUiStore((state) => state.mostrarToast);
   const navigate = useNavigate();
 
@@ -53,12 +47,25 @@ export default function Dashboard() {
   const porPagina = 12;
   const [mostrarFiltrosExportar, setMostrarFiltrosExportar] = useState(false);
   const [filtros, setFiltros] = useState(DEFAULT_FILTERS);
-  const [menuAbiertoId, setMenuAbiertoId] = useState(null);
 
   useEffect(() => {
     fetchTrabajadores();
     fetchAreas();
   }, [fetchTrabajadores, fetchAreas]);
+
+  useEffect(() => {
+    if (filtros.trabajadorId) {
+      const trabajador = obtenerTrabajadoresActivos().find(
+        (t) => String(t.id) === String(filtros.trabajadorId)
+      );
+      if (trabajador) {
+        setFiltros((prev) => ({
+          ...prev,
+          areaId: trabajador.areaId ? String(trabajador.areaId) : '',
+        }));
+      }
+    }
+  }, [filtros.trabajadorId, obtenerTrabajadoresActivos]);
 
   useEffect(() => {
     fetchEvaluaciones({ pagina, porPagina, ...filtros });
@@ -177,21 +184,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleAnularEvaluacion = async (evaluacion) => {
-    setMenuAbiertoId(null);
-    const motivo = window.prompt(`Ingresa el motivo de anulación para la evaluación de ${evaluacion.trabajador?.nombre || 'este trabajador'}:`);
-    if (!motivo) return;
-
-    try {
-      await anularEvaluacion(evaluacion.id, motivo);
-      await fetchEvaluaciones({ pagina, porPagina, ...filtros });
-    } catch (err) {
-      mostrarToast({ tipo: 'error', titulo: 'No se pudo anular', mensaje: err.response?.data?.error || 'No se pudo anular la evaluación. Inténtalo nuevamente.' });
-    }
-  };
-
-  const puedeAnular = (usuario?.rol === 'supervisor' || usuario?.rol === 'administrador');
-
   return (
     <div className="animate-fade-in page-shell">
       <header className="page-header">
@@ -202,12 +194,10 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="action-group">
-          {puedeAnular && (
-            <button className="btn btn-outline" onClick={() => setMostrarFiltrosExportar((prev) => !prev)}>
-              <Download size={18} />
-              Exportar Excel
-            </button>
-          )}
+          <button className="btn btn-outline" onClick={() => setMostrarFiltrosExportar((prev) => !prev)}>
+            <Download size={18} />
+            Exportar Excel
+          </button>
           <button className="btn btn-primary" onClick={() => navigate('/evaluar')}>
             <PlusCircle size={18} />
             Nueva Evaluación
@@ -293,7 +283,7 @@ export default function Dashboard() {
       </section>
 
       {/* Banner de exportación */}
-      {mostrarFiltrosExportar && puedeAnular && (
+      {mostrarFiltrosExportar && (
         <section className="section-card">
           <div className="section-card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>
@@ -461,7 +451,7 @@ export default function Dashboard() {
                     <th>General</th>
                     <th>Color</th>
                     <th>Estado</th>
-                    {puedeAnular && <th>Acciones</th>}
+                    <th>Detalle</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -505,49 +495,15 @@ export default function Dashboard() {
                           {ev.estado === 'ACTIVA' ? 'Activa' : 'Anulada'}
                         </Badge>
                       </td>
-                      {puedeAnular && (
-                        <td style={{ textAlign: 'center' }}>
-                          <div style={{ position: 'relative', display: 'inline-block' }}>
-                            <button
-                              className="btn-ghost"
-                              onClick={() => setMenuAbiertoId(menuAbiertoId === ev.id ? null : ev.id)}
-                            >
-                              <MoreVertical size={16} />
-                            </button>
-                            {menuAbiertoId === ev.id && (
-                              <div style={{
-                                position: 'absolute',
-                                right: 0,
-                                top: '100%',
-                                background: 'hsl(var(--color-surface))',
-                                border: '1px solid hsl(var(--color-table-border))',
-                                borderRadius: 'var(--radius-md)',
-                                boxShadow: 'var(--shadow-lg)',
-                                padding: '0.5rem',
-                                minWidth: '140px',
-                                zIndex: 10,
-                              }}>
-                                <button
-                                  className="btn-ghost btn-small"
-                                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '100%', justifyContent: 'flex-start' }}
-                                  onClick={() => { setMenuAbiertoId(null); navigate(`/evaluacion/${ev.id}`); }}
-                                >
-                                  <Eye size={14} />
-                                  Ver detalle
-                                </button>
-                                <button
-                                  className="btn-ghost btn-small"
-                                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '100%', justifyContent: 'flex-start', color: 'hsl(var(--color-danger))' }}
-                                  onClick={() => handleAnularEvaluacion(ev)}
-                                >
-                                  <Trash2 size={14} />
-                                  Anular
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      )}
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          className="btn-ghost btn-small"
+                          onClick={() => navigate(`/evaluacion/${ev.id}`)}
+                          title="Ver detalle de evaluación"
+                        >
+                          <Eye size={14} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

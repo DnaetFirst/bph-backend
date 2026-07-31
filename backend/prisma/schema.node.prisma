@@ -124,3 +124,15 @@ model DetalleEvaluacion {
   parametro    Parametro  @relation(fields: [parametroId], references: [id])
   resultado    String     // "Cumple" | "No cumple" | "No aplica"
 }
+
+model Bitacora {
+  id        Int       @id @default(autoincrement())
+  accion    String
+  usuarioId Int
+  ip        String?
+  detalles  String?   @db.VarChar(500)
+  creadoEn  DateTime  @default(now())
+
+  @@index([creadoEn])
+  @@index([usuarioId])
+}

@@ -161,7 +161,7 @@ export default function Trabajadores() {
                     type="text"
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
-                    placeholder="Ej: JUAN PEREZ"
+                    placeholder="Ingresa el nombre..."
                     required
                     disabled={cargando}
                   />

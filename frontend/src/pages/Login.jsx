@@ -20,7 +20,7 @@ export default function Login() {
     try {
       await login(nombre, pin);
     } catch {
-      // El error global ya se guarda en useAuthStore
+      // Error global manejado en store
     }
   };
 
@@ -46,7 +46,7 @@ export default function Login() {
           <input
             className="input-field"
             type="text"
-            placeholder="Ej. EVA MORALES"
+            placeholder="Ingresa tu usuario..."
             value={nombre}
             onChange={(e) => setNombre(e.target.value.toUpperCase())}
             disabled={cargando}
@@ -58,7 +58,7 @@ export default function Login() {
           <input
             className="input-field"
             type="password"
-            placeholder="••••••"
+            placeholder="Ingresa tu PIN..."
             value={pin}
             onChange={(e) => setPin(e.target.value)}
             disabled={cargando}
