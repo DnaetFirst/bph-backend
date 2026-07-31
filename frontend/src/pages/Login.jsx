@@ -27,7 +27,7 @@ export default function Login() {
   return (
     <div className="glass-panel animate-fade-in" style={{ maxWidth: '440px', margin: '12vh auto', padding: '2.25rem' }}>
       <div style={{ display: 'grid', justifyItems: 'center', gap: '1rem', marginBottom: '1.6rem' }}>
-        <img src="/nexocorp-logo.svg" alt="Nexocorp" style={{ height: '52px', width: 'auto' }} />
+        <img src="/LogoNexocorp.png" alt="Nexocorp" style={{ height: '52px', width: 'auto' }} />
         <div style={{ textAlign: 'center' }}>
           <h2 style={{ fontSize: '1.55rem', marginBottom: '0.35rem', color: 'hsl(var(--color-text-primary))' }}>Iniciar sesión</h2>
           <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.92rem' }}>

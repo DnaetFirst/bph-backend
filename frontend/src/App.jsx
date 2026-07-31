@@ -23,7 +23,7 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-left">
-        <img src="/nexocorp-logo.svg" alt="Nexocorp" className="navbar-brand" />
+        <img src="/LogoNexocorp.png" alt="Nexocorp" className="navbar-brand" />
       </div>
       <div className="navbar-nav">
         {navItems.map((item) => (
