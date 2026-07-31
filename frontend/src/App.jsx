@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import {
   CheckCircle2, AlertCircle, Info, X, User, LogOut, Shield,
@@ -17,6 +17,17 @@ const Navbar = () => {
   const { usuario, logout } = useAuthStore();
   const location = useLocation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!usuario) return null;
 
@@ -54,7 +65,7 @@ const Navbar = () => {
         ))}
       </div>
       <div className="navbar-user">
-        <div className="dropdown">
+        <div className="dropdown" ref={dropdownRef}>
           <button
             type="button"
             className="dropdown-toggle"
@@ -68,7 +79,6 @@ const Navbar = () => {
             <div
               className="dropdown-menu"
               style={{ position: 'absolute', right: 0, top: '100%', marginTop: '0.5rem' }}
-              onMouseLeave={() => setDropdownOpen(false)}
             >
               <button onClick={() => { setDropdownOpen(false); logout(); }}>
                 <LogOut size={14} />
