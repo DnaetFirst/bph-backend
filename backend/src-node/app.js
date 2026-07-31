@@ -6,6 +6,7 @@ import { prisma } from './prisma.js';
 import { config, getAllowedOrigins } from './config.js';
 import authRoutes from './routes/auth.js';
 import trabajadoresRoutes from './routes/trabajadores.js';
+import evaluacionesRoutes from './routes/evaluaciones.js';
 
 const app = express();
 const allowedOrigins = getAllowedOrigins();
@@ -57,8 +58,22 @@ app.get('/api/v1/areas', async (req, res, next) => {
   }
 });
 
+app.get('/api/v1/parametros', async (req, res, next) => {
+  try {
+    const parametros = await prisma.parametro.findMany({
+      where: { activo: true },
+      select: { id: true, categoria: true, texto: true, orden: true },
+      orderBy: [{ categoria: 'asc' }, { orden: 'asc' }],
+    });
+    res.json(parametros);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/trabajadores', trabajadoresRoutes);
+app.use('/api/v1/evaluaciones', evaluacionesRoutes);
 
 app.use((error, req, res, next) => {
   console.error('[backend-node]', error);
