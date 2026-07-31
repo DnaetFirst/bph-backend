@@ -402,7 +402,7 @@ textarea.input-field {
   box-shadow: 0 6px 24px rgba(75, 76, 244, 0.05);
 }
 .navbar-left { display: flex; align-items: center; gap: 0.8rem; }
-.navbar-brand { height: 34px; width: auto; }
+.navbar-brand { height: 102px; width: auto; }
 .navbar-nav { display: flex; align-items: center; gap: 1.25rem; }
 .navbar-nav a {
   text-decoration: none;
