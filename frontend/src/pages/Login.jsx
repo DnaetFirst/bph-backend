@@ -19,17 +19,22 @@ export default function Login() {
     try {
       await login(nombre, pin);
       // El componente se desmontará automáticamente cuando cambie 'usuario' en App.jsx 
-    } catch (err) {
+    } catch {
       // El error global ya se guarda en useAuthStore, así que se mostrará arriba
     }
   };
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ maxWidth: '400px', margin: '15vh auto', padding: '2rem' }}>
-      <h2 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>Iniciar Sesión</h2>
-      <p style={{ color: 'hsl(var(--color-text-secondary))', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-        Ingresa tus credenciales para continuar
-      </p>
+    <div className="glass-panel animate-fade-in" style={{ maxWidth: '440px', margin: '12vh auto', padding: '2.25rem' }}>
+      <div style={{ display: 'grid', justifyItems: 'center', gap: '1rem', marginBottom: '1.6rem' }}>
+        <img src="/nexocorp-logo.svg" alt="Nexocorp" style={{ height: '52px', width: 'auto' }} />
+        <div style={{ textAlign: 'center' }}>
+          <h2 style={{ fontSize: '1.55rem', marginBottom: '0.35rem', color: 'hsl(var(--color-text-primary))' }}>Iniciar sesión</h2>
+          <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.92rem' }}>
+            Accede al sistema de control BPH con tu cuenta corporativa.
+          </p>
+        </div>
+      </div>
       
       {(error || localError) && (
         <div className="animate-fade-in" style={{ 

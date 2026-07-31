@@ -14,8 +14,10 @@ const Navbar = () => {
   if (!usuario) return null;
   
   return (
-    <nav style={{ padding: '1rem 2rem', background: 'hsla(var(--color-surface), 0.8)', backdropFilter: 'blur(10px)', borderBottom: '1px solid hsla(var(--color-secondary), 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <h2 style={{ fontSize: '1.2rem', color: 'hsl(var(--color-primary))' }}>Control BPH</h2>
+    <nav style={{ padding: '1rem 2rem', background: 'hsla(var(--color-surface), 0.88)', backdropFilter: 'blur(10px)', borderBottom: '1px solid hsla(var(--color-primary), 0.10)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 6px 24px rgba(75, 76, 244, 0.05)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+        <img src="/nexocorp-logo.svg" alt="Nexocorp" style={{ height: '34px', width: 'auto' }} />
+      </div>
       <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
         <Link to="/" style={{ textDecoration: 'none', color: 'hsl(var(--color-text))' }}>Dashboard</Link>
         <Link to="/evaluar" style={{ textDecoration: 'none', color: 'hsl(var(--color-text))' }}>Evaluar</Link>

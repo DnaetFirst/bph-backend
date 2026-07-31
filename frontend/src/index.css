@@ -1,50 +1,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* HSL Color Palette - Sleek Modern Light */
-  --color-bg: 220 20% 97%;
+  --color-bg: 210 33% 98%;
   --color-surface: 0 0% 100%;
-  --color-surface-hover: 220 14% 96%;
-  --color-primary: 221 83% 53%;
-  --color-primary-hover: 221 83% 45%;
-  --color-secondary: 215 14% 34%;
-  --color-success: 142 71% 45%;
-  --color-danger: 348 83% 47%;
-  --color-warning: 38 92% 50%;
+  --color-surface-hover: 214 43% 96%;
+  --color-primary: 239 89% 62%;
+  --color-primary-hover: 239 72% 56%;
+  --color-secondary: 215 17% 43%;
+  --color-success: 153 69% 42%;
+  --color-danger: 348 75% 61%;
+  --color-warning: 37 88% 59%;
 
-  --color-text-primary: 222 47% 11%;
-  --color-text-secondary: 215 16% 47%;
+  --color-text-primary: 220 24% 15%;
+  --color-text-secondary: 214 13% 42%;
 
-  --color-table-header-bg: 220 14% 96%;
-  --color-table-border: 220 13% 91%;
-  --color-table-row-hover: 221 83% 53%;
+  --color-table-header-bg: 214 43% 96%;
+  --color-table-border: 214 28% 88%;
+  --color-table-row-hover: 239 89% 62%;
 
   --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-lg: 18px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: 222 47% 11%;
-    --color-surface: 217 33% 17%;
-    --color-surface-hover: 216 32% 22%;
-    --color-primary: 217 91% 60%;
-    --color-primary-hover: 217 91% 55%;
-    --color-secondary: 215 20% 65%;
-    --color-text-primary: 210 40% 98%;
-    --color-text-secondary: 215 20% 65%;
-    --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-
-    --color-table-header-bg: 216 32% 22%;
-    --color-table-border: 217 33% 25%;
-    --color-table-row-hover: 217 91% 60%;
-  }
+  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 10px 30px rgba(31, 36, 48, 0.10);
+  --shadow-lg: 0 22px 48px rgba(31, 36, 48, 0.12);
+  --shadow-glass: 0 20px 44px rgba(75, 76, 244, 0.08);
 }
 
 * {
@@ -53,22 +34,45 @@
   padding: 0;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  background: hsl(var(--color-bg));
+  color-scheme: light;
+}
+
 body {
   font-family: 'Inter', system-ui, sans-serif;
-  background-color: hsl(var(--color-bg));
+  background:
+    radial-gradient(circle at top left, hsla(var(--color-primary), 0.10), transparent 24%),
+    radial-gradient(circle at top right, hsla(var(--color-primary), 0.06), transparent 22%),
+    linear-gradient(180deg, hsl(220 100% 99%) 0%, hsl(var(--color-bg)) 46%, hsl(216 44% 97%) 100%);
   color: hsl(var(--color-text-primary));
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, hsla(var(--color-primary), 0.10), transparent 24%),
+    radial-gradient(circle at top right, hsla(var(--color-primary), 0.06), transparent 22%),
+    linear-gradient(180deg, hsl(220 100% 99%) 0%, hsl(var(--color-bg)) 46%, hsl(216 44% 97%) 100%);
 }
 
 /* ============================================================
    Glassmorphism Panel
    ============================================================ */
 .glass-panel {
-  background: hsla(var(--color-surface), 0.7);
+  background: linear-gradient(180deg, hsla(var(--color-surface), 0.96), hsla(var(--color-surface-hover), 0.92));
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid hsla(var(--color-secondary), 0.15);
+  border: 1px solid hsla(var(--color-primary), 0.10);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-glass);
 }
@@ -120,14 +124,14 @@ body {
 }
 
 .btn-outline {
-  background-color: transparent;
-  border: 1px solid hsla(var(--color-secondary), 0.4);
+  background-color: hsla(var(--color-surface), 0.9);
+  border: 1px solid hsla(var(--color-primary), 0.16);
   color: hsl(var(--color-text-primary));
 }
 
 .btn-outline:hover:not(:disabled) {
-  background-color: hsla(var(--color-secondary), 0.1);
-  border-color: hsl(var(--color-secondary));
+  background-color: hsla(var(--color-primary), 0.06);
+  border-color: hsla(var(--color-primary), 0.32);
 }
 
 /* ============================================================
@@ -137,7 +141,7 @@ body {
   width: 100%;
   padding: 0.75rem 1rem;
   border-radius: var(--radius-md);
-  border: 1px solid hsla(var(--color-secondary), 0.3);
+  border: 1px solid hsl(var(--color-table-border));
   background-color: hsl(var(--color-surface));
   color: hsl(var(--color-text-primary));
   font-family: inherit;
@@ -158,11 +162,11 @@ body {
 }
 
 /* Soporte explícito para <select> en dark mode */
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   .input-field {
     background-color: hsl(var(--color-surface));
     color: hsl(var(--color-text-primary));
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   .input-field option {
@@ -246,9 +250,9 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsla(var(--color-secondary), 0.3);
+  background: hsla(var(--color-primary), 0.20);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsla(var(--color-secondary), 0.5);
+  background: hsla(var(--color-primary), 0.35);
 }
