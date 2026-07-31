@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as XLSX from 'xlsx';
 import { prisma } from '../prisma.js';
 import { authenticate } from '../middlewares/authenticate.js';
+import { authorize } from '../middlewares/authorize.js';
 import { EvaluacionService } from '../services/evaluacionService.js';
 import { crearEvaluacionSchema, anularEvaluacionSchema } from '../utils/schemas.js';
 
@@ -94,6 +95,17 @@ router.post('/', async (req, res, next) => {
 
     res.set('Cache-Control', 'no-store');
     res.status(201).json(evaluacion);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// IMPORTANTE: /integridad/verificar debe ir ANTES de /:id/anular para que el
+// param :id no capture "integridad" como valor — Express evalúa rutas en orden.
+router.get('/integridad/verificar', authorize('administrador'), async (req, res, next) => {
+  try {
+    const resultado = await service.verificarIntegridadCompleta();
+    res.json(resultado);
   } catch (error) {
     next(error);
   }

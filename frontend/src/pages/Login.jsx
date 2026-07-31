@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
+import ErrorState from '../components/ui/ErrorState';
 
 export default function Login() {
   const [nombre, setNombre] = useState('');
@@ -10,7 +11,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLocalError('');
-    
+
     if (!nombre.trim() || !pin.trim()) {
       setLocalError('Por favor, ingresa tu usuario y PIN.');
       return;
@@ -18,9 +19,8 @@ export default function Login() {
 
     try {
       await login(nombre, pin);
-      // El componente se desmontará automáticamente cuando cambie 'usuario' en App.jsx 
     } catch {
-      // El error global ya se guarda en useAuthStore, así que se mostrará arriba
+      // El error global ya se guarda en useAuthStore
     }
   };
 
@@ -35,27 +35,18 @@ export default function Login() {
           </p>
         </div>
       </div>
-      
+
       {(error || localError) && (
-        <div className="animate-fade-in" style={{ 
-          backgroundColor: 'hsla(var(--color-danger), 0.1)', 
-          border: '1px solid hsla(var(--color-danger), 0.3)',
-          color: 'hsl(var(--color-danger))', 
-          padding: '0.75rem', 
-          borderRadius: 'var(--radius-md)', 
-          marginBottom: '1.25rem', 
-          fontSize: '0.875rem' 
-        }}>
-          {error || localError}
-        </div>
+        <ErrorState error={error || localError} />
       )}
 
       <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} onSubmit={handleSubmit}>
         <div>
-          <input 
-            className="input-field" 
-            type="text" 
-            placeholder="Usuario (ej. EVA MORALES)" 
+          <label className="label">Usuario</label>
+          <input
+            className="input-field"
+            type="text"
+            placeholder="Ej. EVA MORALES"
             value={nombre}
             onChange={(e) => setNombre(e.target.value.toUpperCase())}
             disabled={cargando}
@@ -63,19 +54,20 @@ export default function Login() {
           />
         </div>
         <div>
-          <input 
-            className="input-field" 
-            type="password" 
-            placeholder="PIN" 
+          <label className="label">PIN</label>
+          <input
+            className="input-field"
+            type="password"
+            placeholder="••••••"
             value={pin}
             onChange={(e) => setPin(e.target.value)}
             disabled={cargando}
           />
         </div>
-        
-        <button 
-          className="btn btn-primary" 
-          style={{ marginTop: '0.5rem', padding: '0.75rem', fontSize: '1rem' }} 
+
+        <button
+          className="btn btn-primary"
+          style={{ marginTop: '0.25rem' }}
           disabled={cargando}
           type="submit"
         >

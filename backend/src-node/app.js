@@ -7,6 +7,7 @@ import { config, getAllowedOrigins } from './config.js';
 import authRoutes from './routes/auth.js';
 import trabajadoresRoutes from './routes/trabajadores.js';
 import evaluacionesRoutes from './routes/evaluaciones.js';
+import adminRoutes from './routes/admin.js';
 
 const app = express();
 const allowedOrigins = getAllowedOrigins();
@@ -74,6 +75,7 @@ app.get('/api/v1/parametros', async (req, res, next) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/trabajadores', trabajadoresRoutes);
 app.use('/api/v1/evaluaciones', evaluacionesRoutes);
+app.use('/api/v1/admin', adminRoutes);
 
 app.use((error, req, res, next) => {
   console.error('[backend-node]', error);

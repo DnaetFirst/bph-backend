@@ -1,6 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useUiStore } from '../store/uiStore';
+import { Search, Edit, Check, Trash2, X } from 'lucide-react';
+import ErrorState from '../components/ui/ErrorState';
+import EmptyState from '../components/ui/EmptyState';
 
 export default function Trabajadores() {
   const trabajadores = useTrabajadoresStore((state) => state.trabajadores);
@@ -19,16 +22,27 @@ export default function Trabajadores() {
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editando, setEditando] = useState(null);
-  const [formData, setFormData] = useState({
-    nombre: '',
-    areaId: '',
-  });
+  const [formData, setFormData] = useState({ nombre: '', areaId: '' });
   const [procesando, setProcesando] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchTrabajadores();
     fetchAreas();
   }, [fetchTrabajadores, fetchAreas]);
+
+  const trabajadoresActivos = useMemo(
+    () => trabajadores.filter((t) => t.activo).filter(t =>
+      t.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    ),
+    [trabajadores, searchTerm]
+  );
+  const trabajadoresInactivos = useMemo(
+    () => trabajadores.filter((t) => !t.activo).filter(t =>
+      t.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    ),
+    [trabajadores, searchTerm]
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,10 +54,7 @@ export default function Trabajadores() {
         return;
       }
 
-      const datos = {
-        nombre: formData.nombre,
-        areaId: areaIdParsed,
-      };
+      const datos = { nombre: formData.nombre, areaId: areaIdParsed };
 
       if (editando) {
         await actualizarTrabajador(editando.id, datos);
@@ -55,7 +66,6 @@ export default function Trabajadores() {
       setFormData({ nombre: '', areaId: '' });
       setMostrarFormulario(false);
     } catch (err) {
-      console.error('Error:', err);
       mostrarToast({ tipo: 'error', titulo: 'No se pudo guardar', mensaje: err.response?.data?.error || 'No se pudo guardar el trabajador. Inténtalo nuevamente.' });
     }
   };
@@ -74,13 +84,11 @@ export default function Trabajadores() {
 
   const handleDesactivar = async (id) => {
     if (procesando) return;
-
     if (confirm('¿Está seguro de desactivar este trabajador?')) {
       setProcesando(true);
       try {
         await desactivarTrabajador(id);
       } catch (err) {
-        console.error('Error al desactivar trabajador:', err);
         mostrarToast({ tipo: 'error', titulo: 'No se pudo desactivar', mensaje: err.response?.data?.error || 'No se pudo desactivar el trabajador. Inténtalo nuevamente.' });
       } finally {
         setProcesando(false);
@@ -92,7 +100,6 @@ export default function Trabajadores() {
     try {
       await activarTrabajador(id);
     } catch (err) {
-      console.error('Error:', err);
       mostrarToast({ tipo: 'error', titulo: 'No se pudo activar', mensaje: err.response?.data?.error || 'No se pudo activar el trabajador. Inténtalo nuevamente.' });
     }
   };
@@ -103,44 +110,51 @@ export default function Trabajadores() {
         await eliminarTrabajador(id);
       } catch (err) {
         const errorMsg = err.response?.data?.error || 'Error al eliminar trabajador.';
-        console.error('Error:', err);
         mostrarToast({ tipo: 'error', titulo: 'No se pudo eliminar', mensaje: errorMsg });
       }
     }
   };
 
-  const trabajadoresActivos = trabajadores.filter((t) => t.activo);
-  const trabajadoresInactivos = trabajadores.filter((t) => !t.activo);
-
   return (
     <div className="page-shell animate-fade-in">
-      <div className="page-header">
+      <header className="page-header">
         <div>
           <h1 className="page-title">Gestión de trabajadores</h1>
-          <p className="page-subtitle">Administra altas, ediciones, activaciones, desactivaciones y eliminaciones con una vista clara y ordenada.</p>
+          <p className="page-subtitle">
+            Administra altas, ediciones, activaciones, desactivaciones y eliminaciones con una vista clara y ordenada.
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setMostrarFormulario(true)} disabled={cargando}>
+        <button className="btn btn-primary" onClick={() => { setEditando(null); setFormData({ nombre: '', areaId: '' }); setMostrarFormulario(true); }} disabled={cargando}>
           + Nuevo trabajador
         </button>
+      </header>
+
+      {/* Search */}
+      <div style={{ position: 'relative', maxWidth: '320px' }}>
+        <Search size={18} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--color-text-secondary))' }} />
+        <input
+          type="text"
+          className="input-field"
+          placeholder="Buscar trabajador..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ paddingLeft: '2.5rem' }}
+        />
       </div>
 
-      <div className="glass-panel section-card-body">
-        {error && (
-          <div style={{ backgroundColor: 'hsla(var(--color-danger), 0.1)', border: '1px solid hsla(var(--color-danger), 0.3)', color: 'hsl(var(--color-danger))', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
-            {error}
-          </div>
-        )}
+      {error && <ErrorState error={error} onRetry={fetchTrabajadores} />}
 
-        {mostrarFormulario && (
-          <div className="section-card" style={{ marginBottom: '1.5rem' }}>
-            <div className="section-card-body">
-              <h2 className="section-title">{editando ? 'Editar trabajador' : 'Nuevo trabajador'}</h2>
-              <p className="section-subtitle" style={{ marginBottom: '1.2rem' }}>
-                Completa los datos del trabajador para mantener la información actualizada.
-              </p>
+      {mostrarFormulario && (
+        <section className="section-card">
+          <div className="section-card-body">
+            <h2 className="section-title">{editando ? 'Editar trabajador' : 'Nuevo trabajador'}</h2>
+            <p className="section-subtitle">
+              Completa los datos del trabajador para mantener la información actualizada.
+            </p>
 
-              <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: '1rem' }}>
+            <form onSubmit={handleSubmit}>
+              <div className="form-grid-2" style={{ gap: '1rem' }}>
+                <div>
                   <label className="label">Nombre del trabajador</label>
                   <input
                     className="input-field"
@@ -152,8 +166,7 @@ export default function Trabajadores() {
                     disabled={cargando}
                   />
                 </div>
-
-                <div style={{ marginBottom: '1rem' }}>
+                <div>
                   <label className="label">Área</label>
                   <select
                     className="input-field"
@@ -170,113 +183,102 @@ export default function Trabajadores() {
                     ))}
                   </select>
                 </div>
-
-                <div className="action-group">
-                  <button type="submit" className="btn btn-primary" disabled={cargando}>
-                    {cargando ? 'Guardando...' : editando ? 'Actualizar' : 'Crear'}
-                  </button>
-                  <button type="button" className="btn btn-outline" onClick={handleCancelar} disabled={cargando}>
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        <div className="section-card" style={{ marginBottom: '1.5rem' }}>
-          <div className="section-card-body">
-            <h2 className="section-title">Trabajadores activos</h2>
-            <p className="section-subtitle" style={{ marginBottom: '1rem' }}>
-              Personal habilitado actualmente para operar y ser evaluado.
-            </p>
-
-            {trabajadoresActivos.length === 0 ? (
-              <p style={{ color: 'hsl(var(--color-text-secondary))' }}>No hay trabajadores activos.</p>
-            ) : (
-              <div style={{ display: 'grid', gap: '0.75rem', maxHeight: '400px', overflowY: 'auto' }}>
-                {trabajadoresActivos.map((trabajador) => (
-                  <div
-                    key={trabajador.id}
-                    style={{
-                      padding: '1rem',
-                      backgroundColor: 'hsl(var(--color-surface-hover))',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid hsl(var(--color-table-border))',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '1rem',
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <div>
-                      <strong style={{ display: 'block', color: 'hsl(var(--color-text-primary))' }}>{trabajador.nombre}</strong>
-                      <span style={{ fontSize: '0.875rem', color: 'hsl(var(--color-text-secondary))' }}>
-                        {trabajador.area?.nombre || 'Sin área'}
-                      </span>
-                    </div>
-                    <div className="action-group">
-                      <button className="btn btn-outline btn-small" onClick={() => handleEditar(trabajador)} disabled={cargando}>
-                        Editar
-                      </button>
-                      <button className="btn btn-danger btn-small" onClick={() => handleDesactivar(trabajador.id)} disabled={cargando || procesando}>
-                        Desactivar
-                      </button>
-                    </div>
-                  </div>
-                ))}
               </div>
-            )}
+
+              <div className="action-group" style={{ marginTop: '1.25rem' }}>
+                <button type="submit" className="btn btn-primary" disabled={cargando}>
+                  {cargando ? 'Guardando...' : editando ? 'Actualizar' : 'Crear'}
+                </button>
+                <button type="button" className="btn btn-outline" onClick={handleCancelar} disabled={cargando}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
           </div>
+        </section>
+      )}
+
+      {/* Trabajadores activos */}
+      <section className="section-card">
+        <div className="section-card-body">
+          <h2 className="section-title">Trabajadores activos</h2>
+          <p className="section-subtitle">Personal habilitado actualmente para operar y ser evaluado.</p>
+
+          {trabajadoresActivos.length === 0 ? (
+            <EmptyState titulo="Sin trabajadores activos" mensaje="No hay trabajadores activos para mostrar." icono={Search} />
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Área</th>
+                    <th style={{ textAlign: 'center' }}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trabajadoresActivos.map((t) => (
+                    <tr key={t.id}>
+                      <td style={{ fontWeight: 600 }}>{t.nombre}</td>
+                      <td style={{ color: 'hsl(var(--color-text-secondary))' }}>{t.area?.nombre || 'Sin área'}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
+                          <button className="btn-ghost btn-small" onClick={() => handleEditar(t)} title="Editar">
+                            <Edit size={14} />
+                          </button>
+                          <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-warning))' }} onClick={() => handleDesactivar(t.id)} title="Desactivar" disabled={cargando || procesando}>
+                            <X size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
+      </section>
 
-        {trabajadoresInactivos.length > 0 && (
-          <div className="section-card">
-            <div className="section-card-body">
-              <h2 className="section-title">Trabajadores inactivos</h2>
-              <p className="section-subtitle" style={{ marginBottom: '1rem' }}>
-                Personal desactivado. Desde aquí puedes reactivarlo o eliminarlo definitivamente.
-              </p>
+      {/* Trabajadores inactivos */}
+      {trabajadoresInactivos.length > 0 && (
+        <section className="section-card">
+          <div className="section-card-body">
+            <h2 className="section-title">Trabajadores inactivos</h2>
+            <p className="section-subtitle">Personal desactivado. Desde aquí puedes reactivarlo o eliminarlo definitivamente.</p>
 
-              <div style={{ display: 'grid', gap: '0.75rem', maxHeight: '300px', overflowY: 'auto' }}>
-                {trabajadoresInactivos.map((trabajador) => (
-                  <div
-                    key={trabajador.id}
-                    style={{
-                      padding: '1rem',
-                      backgroundColor: 'hsla(var(--color-primary), 0.04)',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid hsl(var(--color-table-border))',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '1rem',
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <div>
-                      <strong style={{ display: 'block', color: 'hsl(var(--color-text-primary))', opacity: 0.75 }}>{trabajador.nombre}</strong>
-                      <span style={{ fontSize: '0.875rem', color: 'hsl(var(--color-text-secondary))' }}>
-                        {trabajador.area?.nombre || 'Sin área'}
-                      </span>
-                    </div>
-                    <div className="action-group">
-                      <button className="btn btn-outline btn-small" onClick={() => handleActivar(trabajador.id)} disabled={cargando}>
-                        Activar
-                      </button>
-                      <button className="btn btn-danger btn-small" onClick={() => handleEliminar(trabajador.id)} disabled={cargando}>
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Área</th>
+                    <th style={{ textAlign: 'center' }}>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trabajadoresInactivos.map((t) => (
+                    <tr key={t.id}>
+                      <td style={{ fontWeight: 600, opacity: 0.75 }}>{t.nombre}</td>
+                      <td style={{ color: 'hsl(var(--color-text-secondary))' }}>{t.area?.nombre || 'Sin área'}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
+                          <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-success))' }} onClick={() => handleActivar(t.id)} title="Activar" disabled={cargando}>
+                            <Check size={14} />
+                          </button>
+                          <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-danger))' }} onClick={() => handleEliminar(t.id)} title="Eliminar" disabled={cargando}>
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-        )}
-      </div>
-      </div>
+        </section>
+      )}
     </div>
   );
 }

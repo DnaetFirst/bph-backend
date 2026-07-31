@@ -1,7 +1,0 @@
-# Copiá este archivo a ".dev.vars" (sin ".example") para desarrollo local con
-# `wrangler dev`. NUNCA commitees el ".dev.vars" real — ya está en .gitignore.
-
-JWT_SECRET=reemplazar-por-un-string-aleatorio-largo-de-32-bytes-o-mas
-BACKUP_ENCRYPTION_KEY=reemplazar-por-una-clave-aes-256-en-base64
-CRON_TOKEN=reemplazar-por-un-token-de-servicio-aleatorio
-COOKIE_DOMAIN=

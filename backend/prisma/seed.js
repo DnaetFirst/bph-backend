@@ -5,7 +5,7 @@
 // ============================================================================
 
 import { PrismaClient } from '@prisma/client';
-import { derivarPin } from '../src/utils/crypto.js';
+import { derivarPin } from '../src-node/utils/crypto.js';
 import crypto from 'crypto';
 import 'dotenv/config';
 

@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/authStore.js';
 
 // URL del backend: se configura desde la variable de entorno VITE_API_URL.
 // En producción, crear un archivo .env.production o .env en el frontend con:
-//   VITE_API_URL=https://bph-backend.<tu-account>.workers.dev/api/v1
+//   VITE_API_URL=https://bph-backend-1.onrender.com/api/v1
 //
 // En desarrollo local el backend Node corre en localhost:3001.
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';

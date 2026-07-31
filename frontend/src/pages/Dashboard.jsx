@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useEvaluacionesStore } from '../store/evaluacionesStore';
-import { useTrabajadoresStore } from '../store/trabajadoresStore';
-import { useAuthStore } from '../store/authStore';
 import {
   PlusCircle,
   AlertTriangle,
@@ -10,26 +7,30 @@ import {
   ChevronRight,
   Download,
   Filter,
-  RefreshCcw,
+  RefreshCw,
   TrendingUp,
   TrendingDown,
   ShieldCheck,
   ShieldAlert,
   CalendarRange,
+  MoreVertical,
+  Check,
+  X,
+  Eye,
+  Trash2,
 } from 'lucide-react';
-import { apiClient } from '../api/client';
+import { useEvaluacionesStore } from '../store/evaluacionesStore';
+import { useTrabajadoresStore } from '../store/trabajadoresStore';
+import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
-
-const BADGE_STYLES = {
-  ACTIVA: { bg: 'hsla(142, 71%, 45%, 0.15)', color: 'hsl(142, 71%, 35%)', label: 'Activa' },
-  ANULADA: { bg: 'hsla(348, 83%, 47%, 0.15)', color: 'hsl(348, 83%, 45%)', label: 'Anulada' },
-};
-
-const CLASIFICACION_STYLES = {
-  Excelente: { color: 'hsl(142, 71%, 35%)', bg: 'hsla(142, 71%, 45%, 0.12)' },
-  Aceptable: { color: 'hsl(38, 92%, 40%)', bg: 'hsla(38, 92%, 50%, 0.12)' },
-  Deficiente: { color: 'hsl(348, 83%, 45%)', bg: 'hsla(348, 83%, 47%, 0.12)' },
-};
+import { apiClient } from '../api/client';
+import Badge from '../components/ui/Badge';
+import KpiCard from '../components/ui/KpiCard';
+import ProgressRow from '../components/ui/ProgressRow';
+import MiniBarChart from '../components/ui/MiniBarChart';
+import EmptyState from '../components/ui/EmptyState';
+import ErrorState from '../components/ui/ErrorState';
+import LoadingState from '../components/ui/LoadingState';
 
 const DEFAULT_FILTERS = {
   trabajadorId: '',
@@ -40,94 +41,6 @@ const DEFAULT_FILTERS = {
   fechaDesde: '',
   fechaHasta: '',
 };
-
-function EstadoBadge({ estado }) {
-  const style = BADGE_STYLES[estado] || BADGE_STYLES.ACTIVA;
-  return (
-    <span style={{
-      display: 'inline-block',
-      padding: '0.2rem 0.65rem',
-      borderRadius: '999px',
-      fontSize: '0.75rem',
-      fontWeight: 600,
-      backgroundColor: style.bg,
-      color: style.color,
-      letterSpacing: '0.02em',
-    }}>
-      {style.label}
-    </span>
-  );
-}
-
-function ClasificacionBadge({ clasificacion, porcentaje }) {
-  const style = CLASIFICACION_STYLES[clasificacion] || { color: 'hsl(var(--color-text-primary))', bg: 'hsla(var(--color-secondary), 0.08)' };
-  return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '0.4rem',
-      borderRadius: '999px',
-      padding: '0.3rem 0.65rem',
-      fontWeight: 600,
-      color: style.color,
-      backgroundColor: style.bg,
-      whiteSpace: 'nowrap',
-    }}>
-      <span>{porcentaje != null ? `${porcentaje}%` : '—'}</span>
-      {clasificacion ? <span>· {clasificacion}</span> : null}
-    </span>
-  );
-}
-
-function KpiCard({ icon: Icon, titulo, valor, subtitulo, color = 'hsl(var(--color-primary))' }) {
-  return (
-    <div className="glass-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))', fontWeight: 600 }}>{titulo}</span>
-        <div style={{ width: 36, height: 36, borderRadius: 10, display: 'grid', placeItems: 'center', background: 'hsla(var(--color-primary), 0.12)', color }}>
-          <Icon size={18} />
-        </div>
-      </div>
-      <div style={{ fontSize: '1.9rem', fontWeight: 700, lineHeight: 1.1 }}>{valor}</div>
-      <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>{subtitulo}</div>
-    </div>
-  );
-}
-
-function MiniBarChart({ data, color }) {
-  const max = Math.max(...data.map((item) => item.value), 1);
-
-  return (
-    <div style={{ display: 'grid', gap: '0.75rem' }}>
-      {data.map((item) => (
-        <div key={item.label} style={{ display: 'grid', gridTemplateColumns: '110px 1fr 46px', gap: '0.75rem', alignItems: 'center' }}>
-          <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {item.label}
-          </div>
-          <div style={{ height: 10, background: 'hsla(var(--color-secondary), 0.12)', borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{ width: `${(item.value / max) * 100}%`, height: '100%', background: color, borderRadius: 999 }} />
-          </div>
-          <div style={{ fontSize: '0.8rem', fontWeight: 600, textAlign: 'right' }}>{item.value}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ProgressRow({ label, value, color }) {
-  const safeValue = value ?? 0;
-  return (
-    <div style={{ display: 'grid', gap: '0.45rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-        <span style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>{label}</span>
-        <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{safeValue}%</span>
-      </div>
-      <div style={{ height: 10, background: 'hsla(var(--color-secondary), 0.12)', borderRadius: 999, overflow: 'hidden' }}>
-        <div style={{ width: `${Math.max(0, Math.min(100, safeValue))}%`, height: '100%', background: color, borderRadius: 999 }} />
-      </div>
-    </div>
-  );
-}
 
 export default function Dashboard() {
   const { evaluaciones, total, cargando, error, fetchEvaluaciones, anularEvaluacion } = useEvaluacionesStore();
@@ -140,6 +53,7 @@ export default function Dashboard() {
   const porPagina = 12;
   const [mostrarFiltrosExportar, setMostrarFiltrosExportar] = useState(false);
   const [filtros, setFiltros] = useState(DEFAULT_FILTERS);
+  const [menuAbiertoId, setMenuAbiertoId] = useState(null);
 
   useEffect(() => {
     fetchTrabajadores();
@@ -264,6 +178,7 @@ export default function Dashboard() {
   };
 
   const handleAnularEvaluacion = async (evaluacion) => {
+    setMenuAbiertoId(null);
     const motivo = window.prompt(`Ingresa el motivo de anulación para la evaluación de ${evaluacion.trabajador?.nombre || 'este trabajador'}:`);
     if (!motivo) return;
 
@@ -275,19 +190,19 @@ export default function Dashboard() {
     }
   };
 
+  const puedeAnular = (usuario?.rol === 'supervisor' || usuario?.rol === 'administrador');
+
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
+    <div className="animate-fade-in page-shell">
+      <header className="page-header">
         <div>
-          <h1 style={{ fontSize: '1.85rem', color: 'hsl(var(--color-primary))', marginBottom: '0.35rem' }}>
-            Dashboard de Evaluaciones BPH
-          </h1>
-          <p style={{ color: 'hsl(var(--color-text-secondary))', maxWidth: 760 }}>
+          <h1 className="page-title">Dashboard de Evaluaciones BPH</h1>
+          <p className="page-subtitle">
             Visualización profesional de evaluaciones individuales con foco en desempeño, clasificación, cumplimiento y seguimiento operativo.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          {(usuario?.rol === 'supervisor' || usuario?.rol === 'administrador') && (
+        <div className="action-group">
+          {puedeAnular && (
             <button className="btn btn-outline" onClick={() => setMostrarFiltrosExportar((prev) => !prev)}>
               <Download size={18} />
               Exportar Excel
@@ -298,220 +213,239 @@ export default function Dashboard() {
             Nueva Evaluación
           </button>
         </div>
-      </div>
+      </header>
 
-      <div className="glass-panel" style={{ padding: '1.25rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <Filter size={18} style={{ color: 'hsl(var(--color-primary))' }} />
-            <h2 style={{ fontSize: '1rem' }}>Filtros analíticos</h2>
-          </div>
-          <button className="btn btn-outline" onClick={limpiarFiltros}>
-            <RefreshCcw size={16} />
-            Limpiar filtros
-          </button>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.9rem' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: 'hsl(var(--color-text-secondary))' }}>Trabajador</label>
-            <select className="input-field" value={filtros.trabajadorId} onChange={(e) => handleFilterChange('trabajadorId', e.target.value)}>
-              <option value="">Todos</option>
-              {obtenerTrabajadoresActivos().map((t) => (
-                <option key={t.id} value={t.id}>{t.nombre}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: 'hsl(var(--color-text-secondary))' }}>Área</label>
-            <select className="input-field" value={filtros.areaId} onChange={(e) => handleFilterChange('areaId', e.target.value)}>
-              <option value="">Todas</option>
-              {areas.map((area) => (
-                <option key={area.id} value={area.id}>{area.nombre}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: 'hsl(var(--color-text-secondary))' }}>Evaluador</label>
-            <select className="input-field" value={filtros.evaluadorId} onChange={(e) => handleFilterChange('evaluadorId', e.target.value)}>
-              <option value="">Todos</option>
-              {[...new Map(evaluaciones.map((ev) => [ev.evaluador?.id, ev.evaluador]).filter(([id]) => id)).values()].map((evaluador) => (
-                <option key={evaluador.id} value={evaluador.id}>{evaluador.nombre}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: 'hsl(var(--color-text-secondary))' }}>Estado</label>
-            <select className="input-field" value={filtros.estado} onChange={(e) => handleFilterChange('estado', e.target.value)}>
-              <option value="">Todos</option>
-              <option value="ACTIVA">Activa</option>
-              <option value="ANULADA">Anulada</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: 'hsl(var(--color-text-secondary))' }}>Clasificación</label>
-            <select className="input-field" value={filtros.clasificacion} onChange={(e) => handleFilterChange('clasificacion', e.target.value)}>
-              <option value="">Todas</option>
-              <option value="Excelente">Excelente</option>
-              <option value="Aceptable">Aceptable</option>
-              <option value="Deficiente">Deficiente</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: 'hsl(var(--color-text-secondary))' }}>Fecha desde</label>
-            <input className="input-field" type="date" value={filtros.fechaDesde} onChange={(e) => handleFilterChange('fechaDesde', e.target.value)} />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: 'hsl(var(--color-text-secondary))' }}>Fecha hasta</label>
-            <input className="input-field" type="date" value={filtros.fechaHasta} onChange={(e) => handleFilterChange('fechaHasta', e.target.value)} />
-          </div>
-        </div>
-      </div>
-
-      {mostrarFiltrosExportar && (usuario?.rol === 'supervisor' || usuario?.rol === 'administrador') && (
-        <div className="glass-panel" style={{ padding: '1rem 1.25rem', display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>
-            La exportación respetará los filtros analíticos actualmente aplicados.
-          </div>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button className="btn btn-primary" onClick={handleExportarExcel}>
-              <Download size={16} /> Exportar ahora
-            </button>
-            <button className="btn btn-outline" onClick={() => setMostrarFiltrosExportar(false)}>
-              Cancelar
+      {/* Filtros */}
+      <section className="section-card">
+        <div className="section-card-body">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <Filter size={18} style={{ color: 'hsl(var(--color-primary))' }} />
+              <h2 className="section-title">Filtros analíticos</h2>
+            </div>
+            <button className="btn btn-outline btn-small" onClick={limpiarFiltros}>
+              <RefreshCw size={16} />
+              Limpiar filtros
             </button>
           </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+            <div>
+              <label className="label">Trabajador</label>
+              <select className="input-field" value={filtros.trabajadorId} onChange={(e) => handleFilterChange('trabajadorId', e.target.value)}>
+                <option value="">Todos</option>
+                {obtenerTrabajadoresActivos().map((t) => (
+                  <option key={t.id} value={t.id}>{t.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="label">Área</label>
+              <select className="input-field" value={filtros.areaId} onChange={(e) => handleFilterChange('areaId', e.target.value)}>
+                <option value="">Todas</option>
+                {areas.map((area) => (
+                  <option key={area.id} value={area.id}>{area.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="label">Evaluador</label>
+              <select className="input-field" value={filtros.evaluadorId} onChange={(e) => handleFilterChange('evaluadorId', e.target.value)}>
+                <option value="">Todos</option>
+                {[...new Map(evaluaciones.map((ev) => [ev.evaluador?.id, ev.evaluador]).filter(([id]) => id)).values()].map((evaluador) => (
+                  <option key={evaluador.id} value={evaluador.id}>{evaluador.nombre}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="label">Estado</label>
+              <select className="input-field" value={filtros.estado} onChange={(e) => handleFilterChange('estado', e.target.value)}>
+                <option value="">Todos</option>
+                <option value="ACTIVA">Activa</option>
+                <option value="ANULADA">Anulada</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="label">Clasificación</label>
+              <select className="input-field" value={filtros.clasificacion} onChange={(e) => handleFilterChange('clasificacion', e.target.value)}>
+                <option value="">Todas</option>
+                <option value="Excelente">Excelente</option>
+                <option value="Aceptable">Aceptable</option>
+                <option value="Deficiente">Deficiente</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="label">Fecha desde</label>
+              <input className="input-field" type="date" value={filtros.fechaDesde} onChange={(e) => handleFilterChange('fechaDesde', e.target.value)} />
+            </div>
+
+            <div>
+              <label className="label">Fecha hasta</label>
+              <input className="input-field" type="date" value={filtros.fechaHasta} onChange={(e) => handleFilterChange('fechaHasta', e.target.value)} />
+            </div>
+          </div>
         </div>
+      </section>
+
+      {/* Banner de exportación */}
+      {mostrarFiltrosExportar && puedeAnular && (
+        <section className="section-card">
+          <div className="section-card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>
+              La exportación respetará los filtros analíticos actualmente aplicados.
+            </p>
+            <div className="action-group">
+              <button className="btn btn-primary" onClick={handleExportarExcel}>
+                <Download size={16} /> Exportar ahora
+              </button>
+              <button className="btn btn-outline" onClick={() => setMostrarFiltrosExportar(false)}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </section>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-        <KpiCard icon={ShieldCheck} titulo="Evaluaciones activas" valor={resumen.totalItems} subtitulo={`${total} registros encontrados con filtros`} color="hsl(var(--color-primary))" />
-        <KpiCard icon={TrendingUp} titulo="Promedio general" valor={`${resumen.promedioGeneral}%`} subtitulo="Promedio del indicador BPH" color="hsl(var(--color-success))" />
-        <KpiCard icon={CalendarRange} titulo="Cumplimiento de color" valor={`${resumen.cumplimientoColorPorcentaje}%`} subtitulo="Coincidencia entre color esperado y observado" color="hsl(var(--color-warning))" />
-        <KpiCard icon={ShieldAlert} titulo="Deficientes" valor={resumen.deficientes} subtitulo="Evaluaciones con resultado crítico" color="hsl(var(--color-danger))" />
+      {/* KPIs */}
+      <section>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+          <KpiCard icon={ShieldCheck} titulo="Evaluaciones activas" valor={resumen.totalItems} subtitulo={`${total} registros encontrados con filtros`} color="hsl(var(--color-primary))" />
+          <KpiCard icon={TrendingUp} titulo="Promedio general" valor={`${resumen.promedioGeneral}%`} subtitulo="Promedio del indicador BPH" color="hsl(var(--color-success))" />
+          <KpiCard icon={CalendarRange} titulo="Cumplimiento de color" valor={`${resumen.cumplimientoColorPorcentaje}%`} subtitulo="Coincidencia entre color esperado y observado" color="hsl(var(--color-warning))" />
+          <KpiCard icon={ShieldAlert} titulo="Deficientes" valor={resumen.deficientes} subtitulo="Evaluaciones con resultado crítico" color="hsl(var(--color-danger))" />
+        </div>
+      </section>
+
+      {/* Charts row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '1rem' }}>
+        {/* Rendimiento reciente */}
+        <section className="section-card">
+          <div className="section-card-body">
+            <div>
+              <h3 className="section-title">Rendimiento reciente</h3>
+              <p className="section-subtitle">Últimas evaluaciones activas dentro del filtro actual</p>
+            </div>
+
+            {resumen.tendencia.length > 0 ? (
+              <div style={{ display: 'grid', gap: '0.75rem' }}>
+                {resumen.tendencia.map((item, index) => {
+                  const previous = index > 0 ? resumen.tendencia[index - 1].value : item.value;
+                  const trendUp = item.value >= previous;
+                  const barColor = trendUp
+                    ? 'linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))'
+                    : 'linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(348, 83%, 47%, 0.85))';
+                  return (
+                    <div key={`${item.label}-${index}`} style={{ display: 'grid', gridTemplateColumns: '70px 1fr 80px', gap: '0.75rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'hsl(var(--color-text-secondary))' }}>{item.label}</span>
+                      <div style={{ height: 12, borderRadius: 999, background: 'hsla(var(--color-secondary), 0.12)', overflow: 'hidden' }}>
+                        <div style={{ width: `${item.value}%`, height: '100%', background: barColor, borderRadius: 999 }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.35rem', fontWeight: 700, color: trendUp ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))' }}>
+                        {trendUp ? <TrendingUp size={15} /> : <TrendingDown size={15} />}
+                        {item.value}%
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>No hay datos suficientes para mostrar tendencia.</p>
+            )}
+          </div>
+        </section>
+
+        {/* Calidad promedio */}
+        <section className="section-card">
+          <div className="section-card-body">
+            <div>
+              <h3 className="section-title">Calidad promedio</h3>
+              <p className="section-subtitle">Desglose por dimensión evaluada</p>
+            </div>
+
+            <ProgressRow label="General" value={resumen.promedioGeneral} color="linear-gradient(90deg, hsla(221, 83%, 53%, 0.75), hsla(217, 91%, 60%, 0.95))" />
+            <ProgressRow label="Higiene" value={resumen.promedioHigiene} color="linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))" />
+            <ProgressRow label="Uniforme" value={resumen.promedioUniforme} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <div style={{ padding: '0.85rem', borderRadius: 12, background: 'hsla(142, 71%, 45%, 0.1)', textAlign: 'center' }}>
+                <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'hsl(var(--color-success))' }}>{resumen.excelentes}</div>
+                <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>Excelentes</div>
+              </div>
+              <div style={{ padding: '0.85rem', borderRadius: 12, background: 'hsla(38, 92%, 50%, 0.1)', textAlign: 'center' }}>
+                <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'hsl(var(--color-warning))' }}>{resumen.aceptables}</div>
+                <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>Aceptables</div>
+              </div>
+              <div style={{ padding: '0.85rem', borderRadius: 12, background: 'hsla(348, 83%, 47%, 0.1)', textAlign: 'center' }}>
+                <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'hsl(var(--color-danger))' }}>{resumen.deficientes}</div>
+                <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>Deficientes</div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '1rem' }}>
-        <div className="glass-panel" style={{ padding: '1.25rem', display: 'grid', gap: '1rem' }}>
+      {/* Gráficos: Volumen por área + Top desempeño */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1rem' }}>
+        <section className="section-card">
+          <div className="section-card-body">
+            <div>
+              <h3 className="section-title">Volumen por área</h3>
+              <p className="section-subtitle">Dónde se concentra la actividad evaluada</p>
+            </div>
+            {resumen.porArea.length > 0 ? (
+              <MiniBarChart data={resumen.porArea} color="hsl(var(--color-primary))" />
+            ) : (
+              <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>No hay datos para este filtro.</p>
+            )}
+          </div>
+        </section>
+
+        <section className="section-card">
+          <div className="section-card-body">
+            <div>
+              <h3 className="section-title">Top desempeño individual</h3>
+              <p className="section-subtitle">Promedio general por trabajador</p>
+            </div>
+            {resumen.topTrabajadores.length > 0 ? (
+              <MiniBarChart data={resumen.topTrabajadores} color="hsl(var(--color-success))" />
+            ) : (
+              <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>No hay datos para este filtro.</p>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* Tabla de evaluaciones */}
+      <section className="section-card" style={{ padding: 0, overflow: 'hidden', minHeight: '420px', display: 'flex', flexDirection: 'column' }}>
+        <div className="section-card-body" style={{ padding: '1rem 1.25rem', borderBottom: '1px solid hsla(var(--color-secondary), 0.15)', margin: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <div>
-              <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Rendimiento reciente</h3>
-              <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Últimas evaluaciones activas dentro del filtro actual</p>
+              <h3 className="section-title">Detalle de evaluaciones individuales</h3>
+              <p className="section-subtitle">Vista operativa para análisis puntual y seguimiento</p>
             </div>
-          </div>
-
-          {resumen.tendencia.length > 0 ? (
-            <div style={{ display: 'grid', gap: '0.75rem' }}>
-              {resumen.tendencia.map((item, index) => {
-                const previous = index > 0 ? resumen.tendencia[index - 1].value : item.value;
-                const trendUp = item.value >= previous;
-                return (
-                  <div key={`${item.label}-${index}`} style={{ display: 'grid', gridTemplateColumns: '70px 1fr 80px', gap: '0.75rem', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.82rem', color: 'hsl(var(--color-text-secondary))' }}>{item.label}</span>
-                    <div style={{ height: 12, borderRadius: 999, background: 'hsla(var(--color-secondary), 0.12)', overflow: 'hidden' }}>
-                      <div style={{ width: `${item.value}%`, height: '100%', background: trendUp ? 'linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(221, 83%, 53%, 0.9))' : 'linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(348, 83%, 47%, 0.85))' }} />
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.35rem', fontWeight: 700, color: trendUp ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))' }}>
-                      {trendUp ? <TrendingUp size={15} /> : <TrendingDown size={15} />}
-                      {item.value}%
-                    </div>
-                  </div>
-                );
-              })}
+            <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>
+              Mostrando {evaluaciones.length} de {total} resultados
             </div>
-          ) : (
-            <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>No hay datos suficientes para mostrar tendencia.</p>
-          )}
-        </div>
-
-        <div className="glass-panel" style={{ padding: '1.25rem', display: 'grid', gap: '1rem' }}>
-          <div>
-            <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Calidad promedio</h3>
-            <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Desglose por dimensión evaluada</p>
-          </div>
-          <ProgressRow label="General" value={resumen.promedioGeneral} color="linear-gradient(90deg, hsla(221, 83%, 53%, 0.75), hsla(217, 91%, 60%, 0.95))" />
-          <ProgressRow label="Higiene" value={resumen.promedioHigiene} color="linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))" />
-          <ProgressRow label="Uniforme" value={resumen.promedioUniforme} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '0.25rem' }}>
-            <div style={{ padding: '0.85rem', borderRadius: 12, background: 'hsla(142, 71%, 45%, 0.1)' }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'hsl(var(--color-success))' }}>{resumen.excelentes}</div>
-              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>Excelentes</div>
-            </div>
-            <div style={{ padding: '0.85rem', borderRadius: 12, background: 'hsla(38, 92%, 50%, 0.1)' }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'hsl(var(--color-warning))' }}>{resumen.aceptables}</div>
-              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>Aceptables</div>
-            </div>
-            <div style={{ padding: '0.85rem', borderRadius: 12, background: 'hsla(348, 83%, 47%, 0.1)' }}>
-              <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'hsl(var(--color-danger))' }}>{resumen.deficientes}</div>
-              <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>Deficientes</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '1rem' }}>
-        <div className="glass-panel" style={{ padding: '1.25rem', display: 'grid', gap: '1rem' }}>
-          <div>
-            <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Volumen por área</h3>
-            <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Dónde se concentra la actividad evaluada</p>
-          </div>
-          {resumen.porArea.length > 0 ? (
-            <MiniBarChart data={resumen.porArea} color="linear-gradient(90deg, hsla(221, 83%, 53%, 0.8), hsla(217, 91%, 60%, 0.95))" />
-          ) : (
-            <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>No hay datos para este filtro.</p>
-          )}
-        </div>
-
-        <div className="glass-panel" style={{ padding: '1.25rem', display: 'grid', gap: '1rem' }}>
-          <div>
-            <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Top desempeño individual</h3>
-            <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Promedio general por trabajador</p>
-          </div>
-          {resumen.topTrabajadores.length > 0 ? (
-            <MiniBarChart data={resumen.topTrabajadores} color="linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))" />
-          ) : (
-            <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>No hay datos para este filtro.</p>
-          )}
-        </div>
-      </div>
-
-      <div className="glass-panel" style={{ padding: 0, overflow: 'hidden', minHeight: '420px', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid hsla(var(--color-secondary), 0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <div>
-            <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Detalle de evaluaciones individuales</h3>
-            <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Vista operativa para análisis puntual y seguimiento</p>
-          </div>
-          <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>
-            Mostrando {evaluaciones.length} de {total} resultados
           </div>
         </div>
 
         {error ? (
-          <div style={{ margin: 'auto', textAlign: 'center', color: 'hsl(var(--color-text-secondary))', maxWidth: '420px', padding: '3rem 2rem' }}>
-            <AlertTriangle size={48} style={{ color: 'hsl(var(--color-warning))', marginBottom: '1rem' }} />
-            <p style={{ color: 'hsl(var(--color-danger))', marginBottom: '0.5rem', fontWeight: 600 }}>{error}</p>
-            <p style={{ fontSize: '0.875rem' }}>Verificá que el backend esté desplegado y la configuración de Neon/Cloudflare sea correcta.</p>
-            <button className="btn btn-outline" style={{ marginTop: '1.25rem' }} onClick={() => fetchEvaluaciones({ pagina, porPagina, ...filtros })}>
-              Reintentar
-            </button>
-          </div>
+          <ErrorState error={error} onRetry={() => fetchEvaluaciones({ pagina, porPagina, ...filtros })} />
         ) : cargando ? (
-          <div style={{ margin: 'auto', padding: '3rem', color: 'hsl(var(--color-text-secondary))' }}>Cargando dashboard...</div>
+          <LoadingState mensaje="Cargando dashboard..." />
         ) : evaluaciones.length === 0 ? (
-          <div style={{ margin: 'auto', textAlign: 'center', color: 'hsl(var(--color-text-secondary))', padding: '3rem 2rem' }}>
-            <AlertTriangle size={44} style={{ opacity: 0.35, marginBottom: '1rem' }} />
-            <p style={{ marginBottom: '0.5rem' }}>No hay evaluaciones para los filtros seleccionados.</p>
-            <button className="btn btn-primary" style={{ marginTop: '1rem' }} onClick={() => navigate('/evaluar')}>
-              <PlusCircle size={16} />
-              Crear evaluación
-            </button>
-          </div>
+          <EmptyState
+            titulo="No hay evaluaciones"
+            mensaje="No hay evaluaciones para los filtros seleccionados."
+            icono={AlertTriangle}
+            actionLabel="Crear evaluación"
+            onAction={() => navigate('/evaluar')}
+          />
         ) : (
           <>
             <div style={{ overflowX: 'auto', flex: 1 }}>
@@ -527,6 +461,7 @@ export default function Dashboard() {
                     <th>General</th>
                     <th>Color</th>
                     <th>Estado</th>
+                    {puedeAnular && <th>Acciones</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -540,25 +475,79 @@ export default function Dashboard() {
                       <td style={{ color: 'hsl(var(--color-text-secondary))' }}>{ev.evaluador?.nombre || '—'}</td>
                       <td>{ev.higienePorcentaje != null ? `${ev.higienePorcentaje}%` : '—'}</td>
                       <td>{ev.uniformePorcentaje != null ? `${ev.uniformePorcentaje}%` : '—'}</td>
-                      <td><ClasificacionBadge clasificacion={ev.clasificacion} porcentaje={ev.generalPorcentaje} /></td>
                       <td>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          padding: '0.28rem 0.6rem',
-                          borderRadius: 999,
-                          background: ev.cumplimientoColor === 'Cumple' ? 'hsla(142, 71%, 45%, 0.12)' : 'hsla(348, 83%, 47%, 0.12)',
-                          color: ev.cumplimientoColor === 'Cumple' ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))',
-                          fontSize: '0.78rem',
-                          fontWeight: 600,
-                          whiteSpace: 'nowrap',
-                        }}>
-                          {ev.colorObservado || '—'}
-                          {ev.cumplimientoColor ? `· ${ev.cumplimientoColor}` : ''}
-                        </span>
+                        <Badge
+                          variant={
+                            ev.clasificacion === 'Excelente' ? 'success'
+                              : ev.clasificacion === 'Aceptable' ? 'warning'
+                                : ev.clasificacion === 'Deficiente' ? 'danger'
+                                  : 'neutral'
+                          }
+                        >
+                          {ev.generalPorcentaje != null ? `${ev.generalPorcentaje}% · ${ev.clasificacion || ''}` : '—'}
+                        </Badge>
                       </td>
-                      <td><EstadoBadge estado={ev.estado} /></td>
+                      <td>
+                        {ev.cumplimientoColor === 'Cumple' ? (
+                          <Badge variant="success" icon={Check}>
+                            {ev.colorObservado || '—'}
+                          </Badge>
+                        ) : ev.cumplimientoColor === 'No cumple' ? (
+                          <Badge variant="danger" icon={X}>
+                            {ev.colorObservado || '—'}
+                          </Badge>
+                        ) : (
+                          <span style={{ color: 'hsl(var(--color-text-secondary))' }}>{ev.colorObservado || '—'}</span>
+                        )}
+                      </td>
+                      <td>
+                        <Badge variant={ev.estado === 'ACTIVA' ? 'success' : 'danger'}>
+                          {ev.estado === 'ACTIVA' ? 'Activa' : 'Anulada'}
+                        </Badge>
+                      </td>
+                      {puedeAnular && (
+                        <td style={{ textAlign: 'center' }}>
+                          <div style={{ position: 'relative', display: 'inline-block' }}>
+                            <button
+                              className="btn-ghost"
+                              onClick={() => setMenuAbiertoId(menuAbiertoId === ev.id ? null : ev.id)}
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                            {menuAbiertoId === ev.id && (
+                              <div style={{
+                                position: 'absolute',
+                                right: 0,
+                                top: '100%',
+                                background: 'hsl(var(--color-surface))',
+                                border: '1px solid hsl(var(--color-table-border))',
+                                borderRadius: 'var(--radius-md)',
+                                boxShadow: 'var(--shadow-lg)',
+                                padding: '0.5rem',
+                                minWidth: '140px',
+                                zIndex: 10,
+                              }}>
+                                <button
+                                  className="btn-ghost btn-small"
+                                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '100%', justifyContent: 'flex-start' }}
+                                  onClick={() => { setMenuAbiertoId(null); navigate(`/evaluacion/${ev.id}`); }}
+                                >
+                                  <Eye size={14} />
+                                  Ver detalle
+                                </button>
+                                <button
+                                  className="btn-ghost btn-small"
+                                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '100%', justifyContent: 'flex-start', color: 'hsl(var(--color-danger))' }}
+                                  onClick={() => handleAnularEvaluacion(ev)}
+                                >
+                                  <Trash2 size={14} />
+                                  Anular
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -567,20 +556,20 @@ export default function Dashboard() {
 
             {totalPaginas > 1 && (
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', padding: '1rem', borderTop: '1px solid hsla(var(--color-secondary), 0.15)' }}>
-                <button className="btn btn-outline" style={{ padding: '0.4rem 0.75rem' }} disabled={pagina <= 1} onClick={() => setPagina((p) => p - 1)}>
+                <button className="btn btn-outline btn-small" disabled={pagina <= 1} onClick={() => setPagina((p) => p - 1)}>
                   <ChevronLeft size={16} />
                 </button>
                 <span style={{ fontSize: '0.875rem', color: 'hsl(var(--color-text-secondary))' }}>
                   Página {pagina} de {totalPaginas}
                 </span>
-                <button className="btn btn-outline" style={{ padding: '0.4rem 0.75rem' }} disabled={pagina >= totalPaginas} onClick={() => setPagina((p) => p + 1)}>
+                <button className="btn btn-outline btn-small" disabled={pagina >= totalPaginas} onClick={() => setPagina((p) => p + 1)}>
                   <ChevronRight size={16} />
                 </button>
               </div>
             )}
           </>
         )}
-      </div>
+      </section>
     </div>
   );
 }

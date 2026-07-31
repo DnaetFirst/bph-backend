@@ -1,15 +1,10 @@
 // ============================================================================
 // reporteService — exportación de historial a CSV.
 //
-// NOTA sobre Excel: el plan original proponía "exceljs" para generar .xlsx.
-// exceljs depende de streams y buffers de Node de forma bastante completa;
-// bajo nodejs_compat puede funcionar, pero no está garantizado ni es el
-// camino recomendado por Cloudflare para Workers. Para no arriesgar esa
-// pieza, este esqueleto genera CSV (que Excel abre sin problema) desde el
-// Worker. Si más adelante necesitás un .xlsx con formato real (colores,
-// múltiples hojas, etc.), lo más simple es generarlo en el FRONTEND con
-// SheetJS (xlsx) a partir de los datos que ya te devuelve la API — ahí no
-// hay ninguna limitación de runtime porque corre en el navegador.
+// NOTA sobre Excel: el reporte CSV se genera en el backend para
+// compatibilidad con Excel en Windows (BOM UTF-8). Para .xlsx con
+// formato real (colores, múltiples hojas), el frontend ya exporta
+// directamente con SheetJS (xlsx) a partir de los datos de la API.
 // ============================================================================
 
 function escaparCelda(valor) {

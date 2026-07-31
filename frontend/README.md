@@ -1,16 +1,66 @@
-# React + Vite
+# Control BPH — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + Vite + Zustand SPA para el sistema de control de inspección BPH.
 
-Currently, two official plugins are available:
+## Desarrollo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Abre `http://localhost:5173`. El frontend se conecta al backend local en `http://localhost:3001/api/v1` (configurado en `.env.local`).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Build
 
-## Expanding the Oxlint configuration
+```bash
+npm run build
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+Genera archivos estáticos en `dist/`, desplegables a Cloudflare Pages.
+
+## Configuración
+
+| Variable | Dev (`.env.local`) | Producción (`.env.production`) |
+|---|---|---|
+| `VITE_API_URL` | `http://localhost:3001/api/v1` | `https://bph-backend-1.onrender.com/api/v1` |
+
+## Estructura
+
+```
+frontend/src/
+├── api/
+│   └── client.js          # cliente Axios con interceptor JWT
+├── components/ui/
+│   ├── Badge.jsx
+│   ├── KpiCard.jsx
+│   ├── ProgressRow.jsx
+│   ├── MiniBarChart.jsx
+│   ├── EmptyState.jsx
+│   ├── ErrorState.jsx
+│   ├── LoadingState.jsx
+│   ├── PageHeader.jsx
+│   └── ProgressRing.jsx
+├── pages/
+│   ├── Login.jsx
+│   ├── Dashboard.jsx
+│   ├── EvaluacionForm.jsx
+│   └── Trabajadores.jsx
+├── store/
+│   ├── authStore.js       # JWT auth + usuario
+│   ├── uiStore.js         # toasts + estado UI
+│   ├── trabajadoresStore.js
+│   └── evaluacionesStore.js
+├── App.jsx                # rutas + navbar
+├── index.css              # design system (HSL vars, componentes)
+└── main.jsx
+```
+
+## Deploy en Cloudflare Pages
+
+```bash
+npm run build
+npx wrangler deploy
+```
+
+O vincinalo a un repositorio en Cloudflare Pages — el build command es `npm run build` y el directorio de salida es `dist/`.

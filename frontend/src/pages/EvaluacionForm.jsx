@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Save, CheckCircle, XCircle, MinusCircle, Info } from 'lucide-react';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
-import { ArrowLeft, Save, CheckCircle, XCircle, MinusCircle } from 'lucide-react';
+import ErrorState from '../components/ui/ErrorState';
 
 export default function EvaluacionForm() {
   const navigate = useNavigate();
@@ -27,21 +28,20 @@ export default function EvaluacionForm() {
     fetchTrabajadores();
   }, [fetchDependenciasFormulario, fetchTrabajadores]);
 
-  // Calcular color esperado según día de la semana
   useEffect(() => {
     if (!fecha) return;
     const fechaObj = new Date(fecha + 'T12:00:00');
-    const diaSemana = fechaObj.getDay(); // 0 = Domingo, 1 = Lunes, etc.
-    
+    const diaSemana = fechaObj.getDay();
+
     const coloresPorDia = {
-      1: 'Rojo',    // Lunes
-      2: 'Amarillo', // Martes
-      3: 'Verde',   // Miércoles
-      4: 'Rojo',    // Jueves
-      5: 'Amarillo', // Viernes
-      6: 'Verde'    // Sábado
+      1: 'Rojo',
+      2: 'Amarillo',
+      3: 'Verde',
+      4: 'Rojo',
+      5: 'Amarillo',
+      6: 'Verde',
     };
-    
+
     setColorEsperado(coloresPorDia[diaSemana] || '');
   }, [fecha]);
 
@@ -52,13 +52,30 @@ export default function EvaluacionForm() {
     }));
   };
 
+  const higieneParams = parametros.filter(p => p.categoria === 'higiene');
+  const uniformeParams = parametros.filter(p => p.categoria === 'uniforme');
+
+  const calcularProgreso = (params) => {
+    const total = params.length;
+    const cumple = params.filter((p) => respuestas[p.id] === 'Cumple').length;
+    const porcentaje = total > 0 ? Math.round((cumple / total) * 100) : 0;
+    return { cumple, total, porcentaje };
+  };
+
+  const higieneProgress = calcularProgreso(higieneParams);
+  const uniformeProgress = calcularProgreso(uniformeParams);
+
+  const totalRespondidos = higieneProgress.total + uniformeProgress.total;
+  const totalProgreso = higieneProgress.cumple + uniformeProgress.cumple;
+  const progresoGeneral = totalRespondidos > 0 ? Math.round((totalProgreso / totalRespondidos) * 100) : 0;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!trabajadorId || !areaId) {
       mostrarToast({ tipo: 'error', titulo: 'Datos incompletos', mensaje: 'Completa los datos básicos de la evaluación antes de continuar.' });
       return;
     }
-    
+
     const detalles = Object.entries(respuestas).map(([parametroId, resultado]) => ({
       parametroId: parseInt(parametroId),
       resultado
@@ -89,132 +106,213 @@ export default function EvaluacionForm() {
     }
   };
 
-  const higieneParams = parametros.filter(p => p.categoria === 'higiene');
-  const uniformeParams = parametros.filter(p => p.categoria === 'uniforme');
-
-  const SeccionParametros = ({ titulo, params }) => (
-    <div style={{ marginBottom: '2rem' }}>
-      <h3 style={{ borderBottom: '1px solid hsla(var(--color-secondary), 0.2)', paddingBottom: '0.5rem', marginBottom: '1rem', color: 'hsl(var(--color-primary))' }}>
-        {titulo}
-      </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {params.map(p => (
-          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'hsla(var(--color-surface), 0.5)', borderRadius: 'var(--radius-md)' }}>
-            <span style={{ flex: 1, paddingRight: '1rem' }}>{p.texto}</span>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button type="button" onClick={() => handleResultadoChange(p.id, 'Cumple')} className={`btn ${respuestas[p.id] === 'Cumple' ? 'btn-primary' : 'btn-outline'}`} style={{ padding: '0.5rem' }}>
-                <CheckCircle size={18} />
-              </button>
-              <button type="button" onClick={() => handleResultadoChange(p.id, 'No cumple')} className={`btn ${respuestas[p.id] === 'No cumple' ? 'btn-danger' : 'btn-outline'}`} style={{ padding: '0.5rem' }}>
-                <XCircle size={18} />
-              </button>
-              <button type="button" onClick={() => handleResultadoChange(p.id, 'No aplica')} className={`btn ${respuestas[p.id] === 'No aplica' ? 'btn-outline' : 'btn-outline'}`} style={{ padding: '0.5rem', opacity: respuestas[p.id] === 'No aplica' ? 1 : 0.5 }}>
-                <MinusCircle size={18} />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="page-shell animate-fade-in" style={{ maxWidth: '920px', margin: '0 auto' }}>
-      <button className="btn btn-outline" onClick={() => navigate('/')} style={{ alignSelf: 'flex-start' }}>
-        <ArrowLeft size={18} /> Volver al dashboard
-      </button>
-      
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Nueva evaluación BPH</h1>
-          <p className="page-subtitle">Registra una evaluación individual con criterios de higiene, uniforme y control visual de color.</p>
+  const SeccionParametros = ({ titulo, params, progreso }) => (
+    <section className="section-card">
+      <div className="section-card-body">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 className="section-title">{titulo}</h3>
+          <span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>
+            {progreso.cumple}/{progreso.total} cumplen · {progreso.porcentaje}%
+          </span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          {params.map(p => {
+            const valorActual = respuestas[p.id] || null;
+            return (
+              <div key={p.id} style={{ padding: '0.85rem', background: 'hsla(var(--color-surface), 0.5)', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500, color: 'hsl(var(--color-text-primary))' }}>
+                  {p.texto}
+                </div>
+                <div className="segmented">
+                  <button
+                    type="button"
+                    className={`segmented-btn ${valorActual === 'Cumple' ? 'active' : 'inactive'}`}
+                    style={{
+                      background: valorActual === 'Cumple' ? 'hsla(153, 69%, 42%, 0.15)' : undefined,
+                      color: valorActual === 'Cumple' ? 'hsl(153, 69%, 35%)' : undefined,
+                      fontWeight: valorActual === 'Cumple' ? 700 : 400,
+                    }}
+                    onClick={() => handleResultadoChange(p.id, 'Cumple')}
+                  >
+                    <CheckCircle size={14} /> Cumple
+                  </button>
+                  <button
+                    type="button"
+                    className={`segmented-btn ${valorActual === 'No cumple' ? 'active' : 'inactive'}`}
+                    style={{
+                      background: valorActual === 'No cumple' ? 'hsla(348, 75%, 61%, 0.15)' : undefined,
+                      color: valorActual === 'No cumple' ? 'hsl(348, 75%, 45%)' : undefined,
+                      fontWeight: valorActual === 'No cumple' ? 700 : 400,
+                    }}
+                    onClick={() => handleResultadoChange(p.id, 'No cumple')}
+                  >
+                    <XCircle size={14} /> No cumple
+                  </button>
+                  <button
+                    type="button"
+                    className={`segmented-btn ${valorActual === 'No aplica' ? 'active' : 'inactive'}`}
+                    style={{
+                      background: valorActual === 'No aplica' ? 'hsla(221, 83%, 53%, 0.15)' : undefined,
+                      color: valorActual === 'No aplica' ? 'hsl(221, 83%, 40%)' : undefined,
+                      fontWeight: valorActual === 'No aplica' ? 700 : 400,
+                    }}
+                    onClick={() => handleResultadoChange(p.id, 'No aplica')}
+                  >
+                    <MinusCircle size={14} /> No aplica
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
+    </section>
+  );
 
-      <div className="glass-panel section-card-body">
-        
-        {error && (
-          <div style={{ backgroundColor: 'hsla(var(--color-danger), 0.1)', color: 'hsl(var(--color-danger))', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
-            {error}
-          </div>
-        )}
+  const observacionesMaxLen = 500;
+  const progresoObservaciones = observaciones ? Math.round((observaciones.length / observacionesMaxLen) * 100) : 0;
 
-        <form onSubmit={handleSubmit}>
-          {/* Datos Base */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
-            <div>
-              <label className="label">Fecha de evaluación</label>
-              <input 
-                required 
-                type="date" 
-                className="input-field" 
-                value={fecha} 
-                onChange={e => setFecha(e.target.value)}
-                max={new Date().toISOString().split('T')[0]}
-              />
-            </div>
-            <div>
-              <label className="label">Trabajador</label>
-              <select required className="input-field" value={trabajadorId} onChange={e => setTrabajadorId(e.target.value)}>
-                <option value="">Selecciona un trabajador...</option>
-                {obtenerTrabajadoresActivos().map(t => (
-                  <option key={t.id} value={t.id}>{t.nombre}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Área</label>
-              <select required className="input-field" value={areaId} onChange={e => setAreaId(e.target.value)}>
-                <option value="">Selecciona un área...</option>
-                {areas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="label">Evaluador</label>
-              <input className="input-field" value={usuario?.nombre || ''} disabled style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }} />
-            </div>
-          </div>
+  return (
+    <div className="animate-fade-in page-shell" style={{ maxWidth: '920px', margin: '0 auto' }}>
+      <button className="btn btn-outline btn-small" onClick={() => navigate('/')}>
+        <ArrowLeft size={18} /> Volver al dashboard
+      </button>
 
-          <SeccionParametros titulo="Parámetros de Higiene" params={higieneParams} />
-          <SeccionParametros titulo="Parámetros de Uniforme" params={uniformeParams} />
+      <header className="page-header">
+        <div>
+          <h1 className="page-title">Nueva evaluación BPH</h1>
+          <p className="page-subtitle">
+            Registra una evaluación individual con criterios de higiene, uniforme y control visual de color.
+          </p>
+        </div>
+      </header>
 
-          {/* Colores */}
-          <div className="info-banner" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem', padding: '1.5rem' }}>
-            <div>
-              <label className="label">Color de uniforme esperado</label>
-              <input className="input-field" value={colorEsperado} disabled style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }} />
-              {colorEsperado && (
-                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'hsl(var(--color-text-secondary))' }}>
-                  Calculado automáticamente según el día de la semana
+      <section className="section-card">
+        <div className="section-card-body">
+          {error && <ErrorState error={error} />}
+
+          <form onSubmit={handleSubmit}>
+            {/* Datos Base */}
+            <div className="form-grid-2" style={{ gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                <label className="label">Fecha de evaluación</label>
+                <input
+                  required
+                  type="date"
+                  className="input-field"
+                  value={fecha}
+                  onChange={e => setFecha(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div>
+                <label className="label">Trabajador</label>
+                <select required className="input-field" value={trabajadorId} onChange={e => setTrabajadorId(e.target.value)}>
+                  <option value="">Selecciona un trabajador...</option>
+                  {obtenerTrabajadoresActivos().map(t => (
+                    <option key={t.id} value={t.id}>{t.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Área</label>
+                <select required className="input-field" value={areaId} onChange={e => setAreaId(e.target.value)}>
+                  <option value="">Selecciona un área...</option>
+                  {areas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="label">Evaluador</label>
+                <input className="input-field" value={usuario?.nombre || ''} disabled style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }} />
+              </div>
+            </div>
+
+            {higieneParams.length > 0 && (
+              <SeccionParametros titulo="Parámetros de Higiene" params={higieneParams} progreso={higieneProgress} />
+            )}
+            {uniformeParams.length > 0 && (
+              <SeccionParametros titulo="Parámetros de Uniforme" params={uniformeParams} progreso={uniformeProgress} />
+            )}
+
+            {/* Control de Color */}
+            <section className="info-banner" style={{ padding: '1.25rem' }}>
+              <div className="form-grid-2" style={{ gap: '1rem' }}>
+                <div>
+                  <label className="label">Color de uniforme esperado</label>
+                  <input
+                    className="input-field"
+                    value={colorEsperado}
+                    disabled
+                    style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }}
+                  />
+                  {colorEsperado && (
+                    <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
+                      <Info size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />
+                      Calculado automáticamente según el día de la semana
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <div>
-              <label className="label">Color observado</label>
-              <select className="input-field" value={colorObservado} onChange={e => setColorObservado(e.target.value)}>
-                <option value="">Selecciona el color observado...</option>
-                <option value="Rojo">Rojo</option>
-                <option value="Amarillo">Amarillo</option>
-                <option value="Verde">Verde</option>
-              </select>
-            </div>
-          </div>
+                <div>
+                  <label className="label">Color observado</label>
+                  <select className="input-field" value={colorObservado} onChange={e => setColorObservado(e.target.value)}>
+                    <option value="">Selecciona el color observado...</option>
+                    <option value="Rojo">Rojo</option>
+                    <option value="Amarillo">Amarillo</option>
+                    <option value="Verde">Verde</option>
+                  </select>
+                </div>
+              </div>
+            </section>
 
-          {/* Observaciones */}
-          <div style={{ marginBottom: '2rem' }}>
-            <label className="label">Observaciones adicionales</label>
-            <textarea className="input-field" rows="3" value={observaciones} onChange={e => setObservaciones(e.target.value)} placeholder="Anotaciones sobre la evaluación..."></textarea>
-          </div>
+            {/* Observaciones */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label className="label">Observaciones adicionales</label>
+              <textarea
+                className="input-field"
+                rows="3"
+                maxLength={observacionesMaxLen}
+                value={observaciones}
+                onChange={e => setObservaciones(e.target.value)}
+                placeholder="Anotaciones sobre la evaluación..."
+              />
+              <div className="char-counter" style={{ color: progresoObservaciones >= 100 ? 'hsl(var(--color-danger))' : progresoObservaciones >= 75 ? 'hsl(var(--color-warning))' : 'hsl(var(--color-text-secondary))' }}>
+                {observaciones.length}/{observacionesMaxLen} caracteres
+              </div>
+            </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-            <button type="button" className="btn btn-outline" onClick={() => navigate('/')}>Cancelar</button>
-            <button type="submit" className="btn btn-primary" disabled={cargando}>
-              <Save size={18} />
-              {cargando ? 'Guardando...' : 'Guardar Evaluación'}
-            </button>
-          </div>
-        </form>
-      </div>
+            {/* Resumen visual */}
+            <section className="section-card" style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Resumen de cumplimiento</span>
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Higiene: {higieneProgress.porcentaje}%</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Uniforme: {uniformeProgress.porcentaje}%</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>General: {progresoGeneral}%</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>General</span>
+                  <div style={{ width: 60, height: 8, background: 'hsla(var(--color-secondary), 0.12)', borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{ width: `${progresoGeneral}%`, height: '100%', background: 'hsl(var(--color-primary))', borderRadius: 999 }} />
+                  </div>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, minWidth: '40px', textAlign: 'right' }}>{progresoGeneral}%</span>
+                </div>
+              </div>
+            </section>
+
+            <div className="action-group" style={{ justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-outline" onClick={() => navigate('/')}>
+                Cancelar
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={cargando}>
+                <Save size={18} />
+                {cargando ? 'Guardando...' : 'Guardar Evaluación'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
     </div>
   );
 }
