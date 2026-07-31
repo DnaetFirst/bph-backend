@@ -64,10 +64,6 @@ export default function Trabajadores() {
 
   const totalActivos = trabajadoresActivos.length;
   const totalInactivos = trabajadoresInactivos.length;
-  const inicioActivos = totalActivos > 0 ? Math.min((paginaActivos - 1) * porPagina + 1, totalActivos) : 0;
-  const finActivos = Math.min(paginaActivos * porPagina, totalActivos);
-  const inicioInactivos = totalInactivos > 0 ? Math.min((paginaInactivos - 1) * porPagina + 1, totalInactivos) : 0;
-  const finInactivos = Math.min(paginaInactivos * porPagina, totalInactivos);
   const activosPaginados = totalActivos > 0 ? trabajadoresActivos.slice((paginaActivos - 1) * porPagina, paginaActivos * porPagina) : [];
   const inactivosPaginados = totalInactivos > 0 ? trabajadoresInactivos.slice((paginaInactivos - 1) * porPagina, paginaInactivos * porPagina) : [];
 
@@ -301,7 +297,7 @@ export default function Trabajadores() {
                   <ChevronLeft size={16} />
                 </button>
                 <span className="pagination-info">
-                  Mostrando {inicioActivos}-{finActivos} de {totalActivos}
+                  Pág. {paginaActivos} de {Math.ceil(totalActivos / porPagina)}
                 </span>
                 <button className="btn btn-outline btn-small" disabled={paginaActivos >= Math.ceil(totalActivos / porPagina)} onClick={() => setPaginaActivos((p) => p + 1)}>
                   <ChevronRight size={16} />
@@ -348,7 +344,7 @@ export default function Trabajadores() {
                   <ChevronLeft size={16} />
                 </button>
                 <span className="pagination-info">
-                  Mostrando {inicioInactivos}-{finInactivos} de {totalInactivos}
+                  Pág. {paginaInactivos} de {Math.ceil(totalInactivos / porPagina)}
                 </span>
                 <button className="btn btn-outline btn-small" disabled={procesando || paginaInactivos >= Math.ceil(totalInactivos / porPagina)} onClick={() => setPaginaInactivos((p) => p + 1)}>
                   <ChevronRight size={16} />
