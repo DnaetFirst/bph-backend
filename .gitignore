@@ -40,3 +40,9 @@ prisma/migrations/**/migration.sql
 # Wrangler
 .wrangler/
 .dev.vars
+
+# Generated Prisma clients
+backend/generated/
+
+# Local test helpers / cookies
+prod_cookies.txt

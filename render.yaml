@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: bph-backend-node
+    env: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install && npm run build:node
+    startCommand: npm run start:node
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: JWT_EXPIRATION_SECONDS
+        value: 28800
+      - key: LOGIN_MAX_INTENTOS
+        value: 5
+      - key: LOGIN_BLOQUEO_SEGUNDOS
+        value: 30
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
