@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { apiClient } from '../api/client';
-import { shallow } from 'zustand/shallow';
+import { useUiStore } from './uiStore';
 
 export const useTrabajadoresStore = create((set, get) => ({
   trabajadores: [],
@@ -9,32 +9,25 @@ export const useTrabajadoresStore = create((set, get) => ({
   error: null,
 
   fetchTrabajadores: async () => {
-    console.log('[DEBUG STORE] fetchTrabajadores iniciado');
     set({ cargando: true, error: null });
     try {
-      // Obtener todos los trabajadores (activos e inactivos)
-      // Agregamos timestamp para evitar caché de Cloudflare Workers
-      const timestamp = Date.now();
-      const url = `/trabajadores?activos=false&_t=${timestamp}`;
-      console.log('[DEBUG STORE] URL con timestamp:', url);
-      const { data } = await apiClient.get(url);
-      console.log('[DEBUG STORE] fetchTrabajadores recibió datos:', data.trabajadores);
-      console.log('[DEBUG STORE] Total trabajadores:', data.trabajadores.length);
-      console.log('[DEBUG STORE] Trabajadores activos:', data.trabajadores.filter(t => t.activo).length);
-      console.log('[DEBUG STORE] Trabajadores inactivos:', data.trabajadores.filter(t => !t.activo).length);
-      console.log('[DEBUG STORE] Referencia del array recibido:', data.trabajadores === get().trabajadores);
-      console.log('[DEBUG STORE] Actualizando estado de trabajadores');
-      set({ trabajadores: data.trabajadores, cargando: false });
-      console.log('[DEBUG STORE] Estado actualizado, verificando...');
-      const estadoActual = get().trabajadores;
-      console.log('[DEBUG STORE] Estado después de actualizar:', estadoActual.length, 'trabajadores');
-      console.log('[DEBUG STORE] Activos en estado:', estadoActual.filter(t => t.activo).length);
-      console.log('[DEBUG STORE] Inactivos en estado:', estadoActual.filter(t => !t.activo).length);
-      console.log('[DEBUG STORE] Referencia del array actualizado:', estadoActual === data.trabajadores);
+      const { data } = await apiClient.get('/trabajadores', {
+        params: { activos: false, t: Date.now() },
+        headers: {
+          'Cache-Control': 'no-store, no-cache, max-age=0',
+          Pragma: 'no-cache',
+        },
+      });
+      set({ trabajadores: data.trabajadores, error: null, cargando: false });
     } catch (err) {
-      console.error('[DEBUG STORE] Error en fetchTrabajadores:', err);
+      console.error('Error al cargar trabajadores:', err);
+      if (err.response?.status === 401) {
+        set({ cargando: false, trabajadores: [], error: null });
+        throw err;
+      }
       set({ 
         error: err.response?.data?.error || 'Error al cargar trabajadores', 
+        trabajadores: [],
         cargando: false 
       });
     }
@@ -43,7 +36,7 @@ export const useTrabajadoresStore = create((set, get) => ({
   fetchAreas: async () => {
     try {
       const { data } = await apiClient.get('/areas');
-      set({ areas: data });
+      set({ areas: data, error: null });
     } catch (err) {
       console.error('Error al cargar áreas:', err);
     }
@@ -53,12 +46,12 @@ export const useTrabajadoresStore = create((set, get) => ({
     set({ cargando: true, error: null });
     try {
       await apiClient.post('/trabajadores', datos);
-      // Refrescar la lista completa desde el servidor para asegurar sincronización
       await get().fetchTrabajadores();
+      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Trabajador creado correctamente.' });
     } catch (err) {
-      set({ 
-        error: err.response?.data?.error || 'Error al crear trabajador'
-      });
+      if (err.response?.status !== 401) {
+        set({ error: err.response?.data?.error || 'Error al crear trabajador' });
+      }
       throw err;
     } finally {
       set({ cargando: false });
@@ -69,12 +62,12 @@ export const useTrabajadoresStore = create((set, get) => ({
     set({ cargando: true, error: null });
     try {
       await apiClient.put(`/trabajadores/${id}`, datos);
-      // Refrescar la lista completa desde el servidor para asegurar sincronización
       await get().fetchTrabajadores();
+      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Trabajador actualizado correctamente.' });
     } catch (err) {
-      set({ 
-        error: err.response?.data?.error || 'Error al actualizar trabajador'
-      });
+      if (err.response?.status !== 401) {
+        set({ error: err.response?.data?.error || 'Error al actualizar trabajador' });
+      }
       throw err;
     } finally {
       set({ cargando: false });
@@ -82,26 +75,18 @@ export const useTrabajadoresStore = create((set, get) => ({
   },
 
   desactivarTrabajador: async (id) => {
-    console.log('[DEBUG STORE] Iniciando desactivarTrabajador, id:', id);
     set({ cargando: true, error: null });
     try {
-      console.log('[DEBUG STORE] Enviando PATCH a /trabajadores/${id}/desactivar');
-      const patchResponse = await apiClient.patch(`/trabajadores/${id}/desactivar`);
-      console.log('[DEBUG STORE] PATCH exitoso, respuesta:', patchResponse.data);
-      
-      console.log('[DEBUG STORE] Iniciando fetchTrabajadores para refrescar');
+      await apiClient.patch(`/trabajadores/${id}/desactivar`);
       await get().fetchTrabajadores();
-      console.log('[DEBUG STORE] fetchTrabajadores completado');
+      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Trabajador desactivado correctamente.' });
     } catch (err) {
-      console.error('[DEBUG STORE] Error en desactivarTrabajador:', err);
-      console.error('[DEBUG STORE] Error response:', err.response);
-      console.error('[DEBUG STORE] Error message:', err.message);
-      set({ 
-        error: err.response?.data?.error || 'Error al desactivar trabajador'
-      });
+      console.error('Error al desactivar trabajador:', err);
+      if (err.response?.status !== 401) {
+        set({ error: err.response?.data?.error || 'Error al desactivar trabajador' });
+      }
       throw err;
     } finally {
-      console.log('[DEBUG STORE] Finally block, reseteando cargando');
       set({ cargando: false });
     }
   },
@@ -110,12 +95,12 @@ export const useTrabajadoresStore = create((set, get) => ({
     set({ cargando: true, error: null });
     try {
       await apiClient.patch(`/trabajadores/${id}/activar`);
-      // Refrescar la lista completa desde el servidor para asegurar sincronización
       await get().fetchTrabajadores();
+      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Trabajador activado correctamente.' });
     } catch (err) {
-      set({ 
-        error: err.response?.data?.error || 'Error al activar trabajador'
-      });
+      if (err.response?.status !== 401) {
+        set({ error: err.response?.data?.error || 'Error al activar trabajador' });
+      }
       throw err;
     } finally {
       set({ cargando: false });
@@ -126,12 +111,12 @@ export const useTrabajadoresStore = create((set, get) => ({
     set({ cargando: true, error: null });
     try {
       await apiClient.delete(`/trabajadores/${id}`);
-      // Refrescar la lista completa desde el servidor para asegurar sincronización
       await get().fetchTrabajadores();
+      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Trabajador eliminado correctamente.' });
     } catch (err) {
-      set({ 
-        error: err.response?.data?.error || 'Error al eliminar trabajador'
-      });
+      if (err.response?.status !== 401) {
+        set({ error: err.response?.data?.error || 'Error al eliminar trabajador' });
+      }
       throw err;
     } finally {
       set({ cargando: false });

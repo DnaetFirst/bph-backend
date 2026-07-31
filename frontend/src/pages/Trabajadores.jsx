@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
+import { useUiStore } from '../store/uiStore';
 
 export default function Trabajadores() {
-  console.log('[DEBUG COMPONENT] Trabajadores renderizado');
-  
+
   const trabajadores = useTrabajadoresStore((state) => state.trabajadores);
   const areas = useTrabajadoresStore((state) => state.areas);
   const cargando = useTrabajadoresStore((state) => state.cargando);
@@ -16,9 +16,9 @@ export default function Trabajadores() {
   const activarTrabajador = useTrabajadoresStore((state) => state.activarTrabajador);
   const eliminarTrabajador = useTrabajadoresStore((state) => state.eliminarTrabajador);
 
-  console.log('[DEBUG COMPONENT] Estado trabajadores:', trabajadores.length, 'trabajadores');
-  console.log('[DEBUG COMPONENT] Activos:', trabajadores.filter(t => t.activo).length);
-  console.log('[DEBUG COMPONENT] Inactivos:', trabajadores.filter(t => !t.activo).length);
+
+
+  const mostrarToast = useUiStore((state) => state.mostrarToast);
 
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editando, setEditando] = useState(null);
@@ -27,12 +27,11 @@ export default function Trabajadores() {
     areaId: '',
   });
   const [procesando, setProcesando] = useState(false);
-  const [forceUpdate, setForceUpdate] = useState(0);
 
   useEffect(() => {
     fetchTrabajadores();
     fetchAreas();
-  }, []);
+  }, [fetchTrabajadores, fetchAreas]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,7 +40,7 @@ export default function Trabajadores() {
       
       // Validar que se haya seleccionado un área
       if (!formData.areaId || isNaN(areaIdParsed)) {
-        alert('Por favor, selecciona un área');
+        mostrarToast({ tipo: 'error', mensaje: 'Por favor, selecciona un área.' });
         return;
       }
       
@@ -60,7 +59,7 @@ export default function Trabajadores() {
       setMostrarFormulario(false);
     } catch (err) {
       console.error('Error:', err);
-      alert(err.response?.data?.error || 'Error al guardar trabajador');
+      mostrarToast({ tipo: 'error', mensaje: err.response?.data?.error || 'Error al guardar trabajador.' });
     }
   };
 
@@ -77,25 +76,17 @@ export default function Trabajadores() {
   };
 
   const handleDesactivar = async (id) => {
-    console.log('[DEBUG COMPONENT] handleDesactivar llamado, id:', id);
-    console.log('[DEBUG COMPONENT] Estado procesando:', procesando);
     if (procesando) {
-      console.log('[DEBUG COMPONENT] Ya procesando, ignorando clic');
       return;
     }
     if (confirm('¿Está seguro de desactivar este trabajador?')) {
-      console.log('[DEBUG COMPONENT] Usuario confirmó, estableciendo procesando = true');
       setProcesando(true);
       try {
-        console.log('[DEBUG COMPONENT] Llamando a desactivarTrabajador del store');
         await desactivarTrabajador(id);
-        console.log('[DEBUG COMPONENT] desactivarTrabajador completado exitosamente');
-        // Forzar re-render del componente
-        setForceUpdate(prev => prev + 1);
       } catch (err) {
-        console.error('[DEBUG COMPONENT] Error en handleDesactivar:', err);
+        console.error('Error al desactivar trabajador:', err);
+        mostrarToast({ tipo: 'error', mensaje: err.response?.data?.error || 'Error al desactivar trabajador.' });
       } finally {
-        console.log('[DEBUG COMPONENT] Estableciendo procesando = false');
         setProcesando(false);
       }
     }
@@ -104,10 +95,9 @@ export default function Trabajadores() {
   const handleActivar = async (id) => {
     try {
       await activarTrabajador(id);
-      // Forzar re-render del componente
-      setForceUpdate(prev => prev + 1);
     } catch (err) {
       console.error('Error:', err);
+      mostrarToast({ tipo: 'error', mensaje: err.response?.data?.error || 'Error al activar trabajador.' });
     }
   };
 
@@ -115,12 +105,10 @@ export default function Trabajadores() {
     if (confirm('¿Está seguro de eliminar este trabajador? Esta acción no se puede deshacer.')) {
       try {
         await eliminarTrabajador(id);
-        // Refrescar trabajadores después de eliminar
-        fetchTrabajadores();
       } catch (err) {
-        const errorMsg = err.response?.data?.error || 'Error al eliminar trabajador';
+        const errorMsg = err.response?.data?.error || 'Error al eliminar trabajador.';
         console.error('Error:', err);
-        alert(errorMsg);
+        mostrarToast({ tipo: 'error', mensaje: errorMsg });
       }
     }
   };
@@ -128,10 +116,7 @@ export default function Trabajadores() {
   const trabajadoresActivos = trabajadores.filter(t => t.activo);
   const trabajadoresInactivos = trabajadores.filter(t => !t.activo);
 
-  console.log('[DEBUG COMPONENT] Filtrado - Activos:', trabajadoresActivos.length);
-  console.log('[DEBUG COMPONENT] Filtrado - Inactivos:', trabajadoresInactivos.length);
-  console.log('[DEBUG COMPONENT] Filtrado - Nombres activos:', trabajadoresActivos.map(t => t.nombre));
-  console.log('[DEBUG COMPONENT] Filtrado - Nombres inactivos:', trabajadoresInactivos.map(t => t.nombre));
+
 
   return (
     <div className="glass-panel animate-fade-in">

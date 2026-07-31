@@ -30,10 +30,13 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    const isSilentAuthCheck = error.config?.headers?.['X-Silent-Auth-Check'] === 'true';
+
     if (error.response?.status === 401) {
       const authState = useAuthStore.getState();
-      authState.limpiarSesion();
+      authState.limpiarSesion(!isSilentAuthCheck);
     }
+
     return Promise.reject(error);
   }
 );
