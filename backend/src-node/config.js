@@ -16,7 +16,7 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL,
   jwtSecret: process.env.JWT_SECRET.trim(),
   jwtExpirationSeconds: Number.parseInt(process.env.JWT_EXPIRATION_SECONDS || '28800', 10),
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173,https://frontend.bph-backend-esqueleto.workers.dev,https://frontend-auto.bph-backend-esqueleto.workers.dev',
   loginMaxIntentos: Number.parseInt(process.env.LOGIN_MAX_INTENTOS || '5', 10),
   loginBloqueoSegundos: Number.parseInt(process.env.LOGIN_BLOQUEO_SEGUNDOS || '300', 10),
 };
