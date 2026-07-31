@@ -112,7 +112,16 @@ export default function EvaluacionForm() {
 
     try {
       const result = await crearEvaluacion(datos);
-      setEvaluacionGuardada(result || datos);
+      const trabajador = obtenerTrabajadoresActivos().find(
+        (t) => String(t.id) === String(trabajadorId)
+      );
+      const area = areas.find((a) => String(a.id) === String(areaId));
+      setEvaluacionGuardada({
+        ...result,
+        trabajador: { nombre: trabajador?.nombre || '' },
+        area: { nombre: area?.nombre || '' },
+        evaluador: { nombre: usuario?.nombre || '' },
+      });
     } catch {
       // Error manejado en store
     }
