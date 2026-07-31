@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { apiClient } from '../api/client.js';
+import { useUiStore } from './uiStore.js';
 
 export const useAuthStore = create((set) => ({
   usuario: null,
@@ -44,6 +45,7 @@ export const useAuthStore = create((set) => ({
         localStorage.setItem('auth_token', data.token);
       }
       set({ usuario: data.usuario, cargando: false, sesionExpirada: false });
+      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: `Bienvenido, ${data.usuario.nombre}.` });
       return data.usuario;
     } catch (err) {
       set({
@@ -60,6 +62,7 @@ export const useAuthStore = create((set) => ({
     } finally {
       localStorage.removeItem('auth_token');
       set({ usuario: null, cargando: false, error: null, sesionExpirada: false });
+      useUiStore.getState().mostrarToast({ tipo: 'info', mensaje: 'Sesión cerrada correctamente.' });
     }
   }
 }));

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { apiClient } from '../api/client.js';
+import { useUiStore } from './uiStore.js';
 
 // Parámetros de fallback para cuando la API no está disponible
 const PARAMETROS_FALLBACK = [
@@ -34,13 +35,21 @@ export const useEvaluacionesStore = create((set, get) => ({
   fetchEvaluaciones: async (filtros = { pagina: 1, porPagina: 20 }) => {
     set({ cargando: true, error: null });
     try {
-      const { data } = await apiClient.get('/evaluaciones', { params: filtros });
+      const params = Object.fromEntries(
+        Object.entries(filtros).filter(([, value]) => value !== '' && value !== null && value !== undefined)
+      );
+      const { data } = await apiClient.get('/evaluaciones', { params });
       set({ evaluaciones: data.items || [], total: data.total || 0, cargando: false });
     } catch (err) {
+      if (err.response?.status === 401) {
+        set({ cargando: false, evaluaciones: [], total: 0 });
+        throw err;
+      }
       set({
         error: err.response?.data?.error || 'No se pudieron cargar las evaluaciones.',
         cargando: false,
-        evaluaciones: []
+        evaluaciones: [],
+        total: 0,
       });
     }
   },
@@ -68,8 +77,13 @@ export const useEvaluacionesStore = create((set, get) => ({
     try {
       const { data } = await apiClient.post('/evaluaciones', datos);
       set({ cargando: false });
+      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Evaluación guardada correctamente.' });
       return data;
     } catch (err) {
+      if (err.response?.status === 401) {
+        set({ cargando: false });
+        throw err;
+      }
       const msg = err.response?.data?.error || err.response?.data?.detalles
         ? `Datos inválidos: ${JSON.stringify(err.response?.data?.detalles?.fieldErrors || {})}`
         : 'Error al guardar la evaluación';
@@ -82,9 +96,13 @@ export const useEvaluacionesStore = create((set, get) => ({
     set({ cargando: true, error: null });
     try {
       await apiClient.post(`/evaluaciones/${id}/anular`, { motivo });
-      // Recargar la lista para reflejar el cambio de estado
       await get().fetchEvaluaciones();
+      useUiStore.getState().mostrarToast({ tipo: 'success', mensaje: 'Evaluación anulada correctamente.' });
     } catch (err) {
+      if (err.response?.status === 401) {
+        set({ cargando: false });
+        throw err;
+      }
       set({
         error: err.response?.data?.error || 'Error al anular la evaluación',
         cargando: false

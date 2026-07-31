@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useAuthStore } from '../store/authStore';
+import { useUiStore } from '../store/uiStore';
 import { ArrowLeft, Save, CheckCircle, XCircle, MinusCircle } from 'lucide-react';
 
 export default function EvaluacionForm() {
   const navigate = useNavigate();
   const { usuario } = useAuthStore();
   const { areas, parametros, fetchDependenciasFormulario, crearEvaluacion, cargando, error } = useEvaluacionesStore();
-  const { trabajadores, fetchTrabajadores, obtenerTrabajadoresActivos } = useTrabajadoresStore();
+  const { fetchTrabajadores, obtenerTrabajadoresActivos } = useTrabajadoresStore();
+
+  const mostrarToast = useUiStore((state) => state.mostrarToast);
 
   const [trabajadorId, setTrabajadorId] = useState('');
   const [areaId, setAreaId] = useState('');
@@ -51,14 +54,20 @@ export default function EvaluacionForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!trabajadorId || !areaId) return alert('Debes completar los datos básicos');
+    if (!trabajadorId || !areaId) {
+      mostrarToast({ tipo: 'error', mensaje: 'Debes completar los datos básicos.' });
+      return;
+    }
     
     const detalles = Object.entries(respuestas).map(([parametroId, resultado]) => ({
       parametroId: parseInt(parametroId),
       resultado
     }));
 
-    if (detalles.length === 0) return alert('Debes evaluar al menos un parámetro');
+    if (detalles.length === 0) {
+      mostrarToast({ tipo: 'error', mensaje: 'Debes evaluar al menos un parámetro.' });
+      return;
+    }
 
     const datos = {
       fecha: fecha,
@@ -75,7 +84,7 @@ export default function EvaluacionForm() {
     try {
       await crearEvaluacion(datos);
       navigate('/');
-    } catch (err) {
+    } catch {
       // Error manejado en store
     }
   };
