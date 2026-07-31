@@ -14,6 +14,8 @@ import {
   ShieldAlert,
   CalendarRange,
   Eye,
+  Check,
+  X,
 } from 'lucide-react';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
