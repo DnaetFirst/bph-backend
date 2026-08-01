@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Save, CheckCircle, XCircle, MinusCircle, Info, X, ShieldCheck } from 'lucide-react';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
@@ -242,6 +243,97 @@ export default function EvaluacionForm() {
     </div>
   );
 
+  const ModalContenido = (
+    <div className="modal-overlay" onClick={() => navigate('/')}>
+      <div className="modal-content" ref={modalRef} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'hsl(var(--color-text-primary))' }}>
+            Resumen de evaluación
+          </h2>
+          <button
+            className="btn-ghost btn-small"
+            onClick={() => navigate('/')}
+            title="Cerrar"
+            style={{ color: 'hsl(var(--color-text-secondary))' }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
+          <div>
+            <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Trabajador: </span>
+            <strong>{evaluacionGuardada.trabajador?.nombre || '---'}</strong>
+          </div>
+          <div>
+            <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Área: </span>
+            <strong>{evaluacionGuardada.area?.nombre || '---'}</strong>
+          </div>
+          <div>
+            <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Fecha: </span>
+            <strong>{evaluacionGuardada.fecha ? new Date(evaluacionGuardada.fecha).toLocaleDateString('es-AR') : '---'}</strong>
+          </div>
+          <div>
+            <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Evaluador: </span>
+            <strong>{evaluacionGuardada.evaluador?.nombre || usuario?.nombre}</strong>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.75rem', color: 'hsl(var(--color-text-primary))' }}>
+            Cumplimiento por dimensión
+          </h3>
+          <BarraProgreso label="Higiene" value={higieneProgress.porcentaje} color="linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))" />
+          <BarraProgreso label="Uniforme" value={uniformeProgress.porcentaje} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />
+          <BarraProgreso label="General" value={progresoGeneral} color="linear-gradient(90deg, hsla(221, 83%, 53%, 0.75), hsla(217, 91%, 60%, 0.95))" />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <ShieldCheck size={24} style={{ color: clasificacionColor }} />
+            <span style={{ fontSize: '1rem', fontWeight: 700, color: clasificacionColor }}>
+              Clasificación: {clasificacion}
+            </span>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Cumplimiento de color</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'flex-end' }}>
+              {colorEsperado === colorObservado ? (
+                <ShieldCheck size={16} style={{ color: 'hsl(var(--color-success))' }} />
+              ) : (
+                <XCircle size={16} style={{ color: 'hsl(var(--color-danger))' }} />
+              )}
+              <strong>{colorEsperado === colorObservado ? 'Cumple' : 'No cumple'}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div className="action-group" style={{ justifyContent: 'center', gap: '1rem' }}>
+          <button className="btn btn-outline" onClick={() => {
+            setEvaluacionGuardada(null);
+            setPaso(2);
+            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}>
+            Editar evaluación
+          </button>
+          <button className="btn btn-primary" onClick={() => {
+            setEvaluacionGuardada(null);
+            setRespuestas({});
+            setObservaciones('');
+            setTrabajadorId('');
+            setAreaId('');
+            setColorEsperado('');
+            setColorObservado('');
+            setPaso(1);
+            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}>
+            Realizar nueva evaluación
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="animate-fade-in page-shell" style={{ maxWidth: '920px', margin: '0 auto' }}>
       <header className="page-header">
@@ -393,97 +485,7 @@ export default function EvaluacionForm() {
         </div>
       </section>
 
-      {/* Modal de resumen tras guardar */}
-      {evaluacionGuardada && (
-        <div className="modal-overlay" onClick={() => navigate('/')}>
-          <div className="modal-content" ref={modalRef} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'hsl(var(--color-text-primary))' }}>
-                Resumen de evaluación
-              </h2>
-              <button
-                className="btn-ghost btn-small"
-                onClick={() => navigate('/')}
-                title="Cerrar"
-                style={{ color: 'hsl(var(--color-text-secondary))' }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
-              <div>
-                <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Trabajador: </span>
-                <strong>{evaluacionGuardada.trabajador?.nombre || '---'}</strong>
-              </div>
-              <div>
-                <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Área: </span>
-                <strong>{evaluacionGuardada.area?.nombre || '---'}</strong>
-              </div>
-              <div>
-                <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Fecha: </span>
-                <strong>{evaluacionGuardada.fecha ? new Date(evaluacionGuardada.fecha).toLocaleDateString('es-AR') : '---'}</strong>
-              </div>
-              <div>
-                <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Evaluador: </span>
-                <strong>{evaluacionGuardada.evaluador?.nombre || usuario?.nombre}</strong>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.75rem', color: 'hsl(var(--color-text-primary))' }}>
-                Cumplimiento por dimensión
-              </h3>
-              <BarraProgreso label="Higiene" value={higieneProgress.porcentaje} color="linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))" />
-              <BarraProgreso label="Uniforme" value={uniformeProgress.porcentaje} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />
-              <BarraProgreso label="General" value={progresoGeneral} color="linear-gradient(90deg, hsla(221, 83%, 53%, 0.75), hsla(217, 91%, 60%, 0.95))" />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <ShieldCheck size={24} style={{ color: clasificacionColor }} />
-                <span style={{ fontSize: '1rem', fontWeight: 700, color: clasificacionColor }}>
-                  Clasificación: {clasificacion}
-                </span>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Cumplimiento de color</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'flex-end' }}>
-                  {colorEsperado === colorObservado ? (
-                    <ShieldCheck size={16} style={{ color: 'hsl(var(--color-success))' }} />
-                  ) : (
-                    <XCircle size={16} style={{ color: 'hsl(var(--color-danger))' }} />
-                  )}
-                  <strong>{colorEsperado === colorObservado ? 'Cumple' : 'No cumple'}</strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="action-group" style={{ justifyContent: 'center', gap: '1rem' }}>
-              <button className="btn btn-outline" onClick={() => {
-                setEvaluacionGuardada(null);
-                setPaso(2);
-                formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}>
-                Editar evaluación
-              </button>
-              <button className="btn btn-primary" onClick={() => {
-                setEvaluacionGuardada(null);
-                setRespuestas({});
-                setObservaciones('');
-                setTrabajadorId('');
-                setAreaId('');
-                setColorEsperado('');
-                setColorObservado('');
-                setPaso(1);
-                formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}>
-                Realizar nueva evaluación
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {evaluacionGuardada && createPortal(ModalContenido, document.body)}
     </div>
   );
 }
