@@ -5,6 +5,7 @@ import { authenticate } from '../middlewares/authenticate.js';
 import { authorize } from '../middlewares/authorize.js';
 import { EvaluacionService } from '../services/evaluacionService.js';
 import { crearEvaluacionSchema, anularEvaluacionSchema } from '../utils/schemas.js';
+import { registrarBitacora } from '../utils/bitacora.js';
 
 const router = Router();
 const service = new EvaluacionService(prisma);
@@ -95,6 +96,12 @@ router.post('/', async (req, res, next) => {
 
     res.set('Cache-Control', 'no-store');
     res.status(201).json(evaluacion);
+    await registrarBitacora({
+      accion: 'Crear evaluación',
+      usuarioId: req.usuario.id,
+      ip: req.ip,
+      detalles: `Trabajador: ${evaluacion.trabajador?.nombre || ''}, General: ${evaluacion.generalPorcentaje || 0}%`,
+    });
   } catch (error) {
     next(error);
   }
@@ -137,6 +144,12 @@ router.post('/:id/anular', async (req, res, next) => {
 
     res.set('Cache-Control', 'no-store');
     res.json(evaluacion);
+    await registrarBitacora({
+      accion: 'Anular evaluación',
+      usuarioId: req.usuario.id,
+      ip: req.ip,
+      detalles: `ID: ${req.params.id}, Motivo: ${parsed.data.motivo || ''}`,
+    });
   } catch (error) {
     next(error);
   }

@@ -159,8 +159,22 @@ router.get('/bitacora', async (req, res, next) => {
     const eventos = await prisma.bitacora.findMany({
       orderBy: { creadoEn: 'desc' },
       take: 100,
+      include: {
+        usuario: {
+          select: { nombre: true, rol: true },
+        },
+      },
     });
-    res.json({ eventos });
+    const eventosFormateados = eventos.map((e) => ({
+      id: e.id,
+      accion: e.accion,
+      usuario: e.usuario?.nombre || '—',
+      rol: e.usuario?.rol || '—',
+      ip: e.ip || '—',
+      detalles: e.detalles || '',
+      fecha: e.creadoEn,
+    }));
+    res.json({ eventos: eventosFormateados });
   } catch (error) {
     next(error);
   }

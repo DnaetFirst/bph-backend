@@ -4,6 +4,7 @@ import { config } from '../config.js';
 import { AuthService, ErrorAuth } from '../services/authService.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import { loginSchema, cambiarPinSchema } from '../utils/schemas.js';
+import { registrarBitacora } from '../utils/bitacora.js';
 
 const router = Router();
 
@@ -16,6 +17,14 @@ router.post('/login', async (req, res, next) => {
 
     const authService = new AuthService(prisma, config);
     const resultado = await authService.login(parsed.data.nombre, parsed.data.pin);
+
+    await registrarBitacora({
+      accion: 'Login exitoso',
+      usuarioId: resultado.usuario.id,
+      ip: req.ip,
+      detalles: `Usuario: ${resultado.usuario.nombre}, Rol: ${resultado.usuario.rol}`,
+    });
+
     res.json(resultado);
   } catch (error) {
     if (error instanceof ErrorAuth) {
