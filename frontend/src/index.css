@@ -729,6 +729,19 @@ textarea.input-field {
 .kpi-valor { font-size: 1.9rem; }
 .charts-row { display: grid; grid-template-columns: 2fr 1.2fr; gap: 1rem; }
 
+.card-opcion { padding: 1.5rem; }
+.card-opcion-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: hsl(var(--color-text-primary));
+}
+.card-opcion-subtitle {
+  font-size: 0.85rem;
+  color: hsl(var(--color-text-secondary));
+  margin: 0;
+}
+
 /* Hamburger toggle (mobile only) */
 .navbar-toggle {
   display: none;
@@ -783,6 +796,10 @@ textarea.input-field {
 
   .kpi-valor { font-size: 1.4rem; }
   .charts-row { grid-template-columns: 1fr; }
+
+  .card-opcion { padding: 1.1rem; }
+  .card-opcion-title { font-size: 1rem; }
+  .card-opcion-subtitle { font-size: 0.8rem; }
 
   .hide-mobile { display: none !important; }
 }

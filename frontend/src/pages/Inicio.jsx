@@ -5,11 +5,11 @@ import { useAuthStore } from "../store/authStore";
 const CardOpcion = ({ icon: Icon, titulo, subtitulo, onClick }) => (
   <div
     onClick={onClick}
+    className="card-opcion"
     style={{
       background: "hsl(var(--color-surface))",
       border: "1px solid hsl(var(--color-table-border))",
       borderRadius: "var(--radius-lg)",
-      padding: "1.5rem",
       cursor: "pointer",
       transition: "all 0.15s ease",
       boxShadow: "var(--shadow-sm)",
@@ -31,12 +31,8 @@ const CardOpcion = ({ icon: Icon, titulo, subtitulo, onClick }) => (
     <div style={{ width: 48, height: 48, borderRadius: 12, background: "hsla(var(--color-primary), 0.12)", display: "grid", placeItems: "center" }}>
       <Icon size={24} style={{ color: "hsl(var(--color-primary))" }} />
     </div>
-    <h3 style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0, color: "hsl(var(--color-text-primary))" }}>
-      {titulo}
-    </h3>
-    <p style={{ fontSize: "0.85rem", color: "hsl(var(--color-text-secondary))", margin: 0, flex: 1 }}>
-      {subtitulo}
-    </p>
+    <h3 className="card-opcion-title">{titulo}</h3>
+    <p className="card-opcion-subtitle" style={{ flex: 1 }}>{subtitulo}</p>
   </div>
 );
 
@@ -51,7 +47,7 @@ export default function Inicio() {
   return (
     <div className="animate-fade-in page-shell">
       <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-        <h1 className="page-title" style={{ fontSize: "1.75rem" }}>
+        <h1 className="page-title">
           Bienvenido, {usuario?.nombre}
         </h1>
         <p className="page-subtitle">
