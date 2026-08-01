@@ -6,7 +6,7 @@
   "scripts": {
     "dev:node": "node src-node/server.js",
     "start:node": "node src-node/server.js",
-    "build:node": "prisma generate --schema prisma/schema.node.prisma",
+    "build:node": "prisma generate --schema prisma/schema.node.prisma && prisma migrate deploy --schema prisma/schema.node.prisma",
     "prisma:generate:node": "prisma generate --schema prisma/schema.node.prisma",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",

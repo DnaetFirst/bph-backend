@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, User, RefreshCw, Search } from 'lucide-react';
+import { Calendar, User, RefreshCw, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiClient } from '../api/client';
 import ErrorState from '../components/ui/ErrorState';
 import LoadingState from '../components/ui/LoadingState';
@@ -12,31 +12,50 @@ const eventosSample = [
 
 export default function Bitacora() {
   const [eventos, setEventos] = useState([]);
+  const [total, setTotal] = useState(0);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchDebounced, setSearchDebounced] = useState('');
+  const [pagina, setPagina] = useState(1);
+  const porPagina = 20;
 
   useEffect(() => {
-    fetchBitacora();
-  }, []);
+    const handler = setTimeout(() => setSearchDebounced(searchTerm), 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
-  const fetchBitacora = async () => {
+  useEffect(() => {
+    setPagina(1);
+  }, [searchDebounced]);
+
+  const fetchBitacora = async (params = {}) => {
+    const { pagina: pag = 1, search = searchDebounced } = params;
     setCargando(true);
     setError(null);
     try {
-      const { data } = await apiClient.get('/admin/bitacora');
-      setEventos(data.eventos || data || eventosSample);
+      const queryParams = new URLSearchParams();
+      queryParams.append('pagina', pag);
+      queryParams.append('porPagina', porPagina);
+      if (search) queryParams.append('q', search);
+
+      const { data } = await apiClient.get(`/admin/bitacora?${queryParams.toString()}`);
+      setEventos(data.eventos || []);
+      setTotal(data.total || 0);
     } catch {
       setEventos(eventosSample);
+      setTotal(eventosSample.length);
     } finally {
       setCargando(false);
     }
   };
 
-  const filtered = eventos.filter((e) =>
-    e.accion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.usuario?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    fetchBitacora({ pagina, search: searchDebounced });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pagina, searchDebounced]);
+
+  const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
 
   return (
     <div className="animate-fade-in page-shell">
@@ -69,41 +88,57 @@ export default function Bitacora() {
 
       {cargando ? (
         <LoadingState mensaje="Cargando bitácora..." />
-      ) : filtered.length === 0 ? (
+      ) : eventos.length === 0 ? (
         <div className="empty-state">
           <p style={{ color: 'hsl(var(--color-text-secondary))' }}>No hay eventos para mostrar.</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Acción</th>
-                <th>Usuario</th>
-                <th>Rol</th>
-                <th>IP</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((evento) => (
-                <tr key={evento.id}>
-                  <td style={{ whiteSpace: 'nowrap', color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
-                    <Calendar size={14} style={{ display: 'inline', marginRight: '0.3rem' }} />
-                    {new Date(evento.fecha).toLocaleString('es-AR')}
-                  </td>
-                  <td style={{ fontWeight: 500 }}>{evento.accion}</td>
-                  <td>
-                    <User size={13} style={{ display: 'inline', marginRight: '0.3rem' }} />
-                    {evento.usuario}
-                  </td>
-                  <td>{evento.rol}</td>
-                  <td style={{ color: 'hsl(var(--color-text-secondary))' }}>{evento.ip}</td>
+        <>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Acción</th>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>IP</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {eventos.map((evento) => (
+                  <tr key={evento.id}>
+                    <td className="td-nombre" style={{ whiteSpace: 'nowrap', color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
+                      <Calendar size={14} style={{ display: 'inline', marginRight: '0.3rem' }} />
+                      {new Date(evento.fecha).toLocaleString('es-AR')}
+                    </td>
+                    <td style={{ fontWeight: 500 }}>{evento.accion}</td>
+                    <td>
+                      <User size={13} style={{ display: 'inline', marginRight: '0.3rem' }} />
+                      {evento.usuario}
+                    </td>
+                    <td>{evento.rol}</td>
+                    <td style={{ color: 'hsl(var(--color-text-secondary))' }}>{evento.ip}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPaginas > 1 && (
+            <div className="pagination-footer">
+              <button className="btn btn-outline btn-small" disabled={pagina <= 1} onClick={() => setPagina((p) => p - 1)}>
+                <ChevronLeft size={16} />
+              </button>
+              <span className="pagination-info">
+                Pág. {pagina} de {totalPaginas}
+              </span>
+              <button className="btn btn-outline btn-small" disabled={pagina >= totalPaginas} onClick={() => setPagina((p) => p + 1)}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

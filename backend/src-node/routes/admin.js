@@ -156,15 +156,33 @@ router.get('/reporte/csv', async (req, res, next) => {
 
 router.get('/bitacora', async (req, res, next) => {
   try {
-    const eventos = await prisma.bitacora.findMany({
-      orderBy: { creadoEn: 'desc' },
-      take: 100,
-      include: {
-        usuario: {
-          select: { nombre: true, rol: true },
+    const pagina = Math.max(1, Number(req.query.pagina) || 1);
+    const porPagina = Math.min(100, Math.max(1, Number(req.query.porPagina) || 20));
+    const search = req.query.q?.trim() || '';
+
+    const where = {};
+    if (search) {
+      where.OR = [
+        { accion: { contains: search, mode: 'insensitive' } },
+        { usuario: { nombre: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [eventos, total] = await Promise.all([
+      prisma.bitacora.findMany({
+        where,
+        orderBy: { creadoEn: 'desc' },
+        skip: (pagina - 1) * porPagina,
+        take: porPagina,
+        include: {
+          usuario: {
+            select: { nombre: true, rol: true },
+          },
         },
-      },
-    });
+      }),
+      prisma.bitacora.count({ where }),
+    ]);
+
     const eventosFormateados = eventos.map((e) => ({
       id: e.id,
       accion: e.accion,
@@ -174,7 +192,9 @@ router.get('/bitacora', async (req, res, next) => {
       detalles: e.detalles || '',
       fecha: e.creadoEn,
     }));
-    res.json({ eventos: eventosFormateados });
+
+    res.set('Cache-Control', 'no-store');
+    res.json({ eventos: eventosFormateados, total, pagina, porPagina });
   } catch (error) {
     next(error);
   }
