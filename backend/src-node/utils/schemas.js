@@ -6,13 +6,16 @@ export const loginSchema = z.object({
 });
 
 export const cambiarPinSchema = z.object({
-  pinActual: z.string().min(4).max(20),
+  pinActual: z.string().min(6).max(20),
   pinNuevo: z.string().min(6).max(20),
 });
 
-export const recuperarPinSchema = z.object({
-  nombre: z.string().min(2).max(100),
+export const forgotPinSchema = z.object({
   email: z.string().email(),
+});
+
+export const resetPinSchema = z.object({
+  token: z.string().min(1),
   pinNuevo: z.string().min(6).max(20),
 });
 
@@ -43,10 +46,13 @@ export const anularEvaluacionSchema = z.object({
 
 export const crearUsuarioSchema = z.object({
   nombre: z.string().min(2).max(100),
+  email: z.string().email(),
   rol: z.enum(['evaluador', 'supervisor', 'administrador']),
 });
 
 export const actualizarUsuarioSchema = z.object({
+  nombre: z.string().min(2).max(100).optional(),
+  email: z.string().email().optional(),
   rol: z.enum(['evaluador', 'supervisor', 'administrador']).optional(),
   activo: z.boolean().optional(),
 });

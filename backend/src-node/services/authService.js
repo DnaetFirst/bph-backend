@@ -25,13 +25,13 @@ export class AuthService {
     return Buffer.from(normalized + padding, 'base64').toString('utf8');
   }
 
-  async crearToken(payload) {
+  async crearToken(payload, expiresInSeconds = null) {
     const header = { alg: 'HS256', typ: 'JWT' };
     const now = Math.floor(Date.now() / 1000);
     const fullPayload = {
       ...payload,
       iat: now,
-      exp: now + this.config.jwtExpirationSeconds,
+      exp: now + (expiresInSeconds || this.config.jwtExpirationSeconds),
     };
 
     const encodedHeader = this.base64UrlEncode(JSON.stringify(header));
@@ -159,5 +159,51 @@ export class AuthService {
       where: { id: usuarioId },
       data: { hashPin: hashNuevo, requiereCambioPin: false },
     });
+  }
+
+  async crearTokenResetPin(usuario) {
+    return this.crearToken(
+      {
+        id: usuario.id,
+        nombre: usuario.nombre,
+        rol: usuario.rol,
+        tipo: 'reset_pin',
+      },
+      900
+    );
+  }
+
+  async verificarTokenResetPin(token) {
+    const payload = await this.verificarToken(token);
+    if (payload.tipo !== 'reset_pin') {
+      throw new ErrorAuth('Token inválido o expirado', 401);
+    }
+    return payload;
+  }
+
+  async restablecerPinConToken(token, pinNuevo) {
+    const payload = await this.verificarTokenResetPin(token);
+
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: payload.id },
+      select: { id: true, nombre: true, activo: true },
+    });
+
+    if (!usuario || !usuario.activo) {
+      throw new ErrorAuth('Usuario no encontrado o inactivo', 404);
+    }
+
+    const hashNuevo = await derivarPin(pinNuevo);
+    await this.prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        hashPin: hashNuevo,
+        requiereCambioPin: true,
+        intentosFallidos: 0,
+        bloqueadoHasta: null,
+      },
+    });
+
+    return usuario;
   }
 }

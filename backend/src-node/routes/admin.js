@@ -22,9 +22,9 @@ router.use(authorize('administrador', 'supervisor'));
 
 router.get('/usuarios', async (req, res, next) => {
   try {
-    const usuarios = await prisma.usuario.findMany({
-      select: { id: true, nombre: true, rol: true, activo: true, creadoEn: true, bloqueadoHasta: true },
-    });
+       const usuarios = await prisma.usuario.findMany({
+         select: { id: true, nombre: true, email: true, rol: true, activo: true, creadoEn: true, bloqueadoHasta: true },
+       });
     res.json(usuarios);
   } catch (error) {
     next(error);
@@ -33,11 +33,17 @@ router.get('/usuarios', async (req, res, next) => {
 
 router.post('/usuarios', validar(crearUsuarioSchema), async (req, res, next) => {
   try {
-    const { nombre, rol } = req.body;
+    const { nombre, email, rol } = req.body;
     const existente = await prisma.usuario.findUnique({ where: { nombre } });
 
     if (existente) {
       return res.status(400).json({ error: 'El nombre de usuario ya existe' });
+    }
+
+    const existenteEmail = await prisma.usuario.findUnique({ where: { email } });
+
+    if (existenteEmail) {
+      return res.status(400).json({ error: 'El email ya está registrado' });
     }
 
     const pinPorDefecto = '000000';
@@ -46,11 +52,19 @@ router.post('/usuarios', validar(crearUsuarioSchema), async (req, res, next) => 
     const usuario = await prisma.usuario.create({
       data: {
         nombre,
+        email,
         rol,
         hashPin,
         requiereCambioPin: true,
       },
-      select: { id: true, nombre: true, rol: true, activo: true },
+      select: { id: true, nombre: true, email: true, rol: true, activo: true },
+    });
+
+    await registrarBitacora({
+      accion: 'Creación de usuario',
+      usuarioId: req.usuario.id,
+      ip: req.ip,
+      detalles: `Usuario creado: ${nombre} (${rol}), email: ${email}`,
     });
 
     res.status(201).json(usuario);
@@ -62,12 +76,42 @@ router.post('/usuarios', validar(crearUsuarioSchema), async (req, res, next) => 
 router.put('/usuarios/:id', validar(actualizarUsuarioSchema), async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { nombre, email, rol, activo } = req.body;
+
+    const usuarioAntes = await prisma.usuario.findUnique({
+      where: { id: Number(id) },
+      select: { nombre: true, email: true, rol: true, activo: true },
+    });
+
+    let bitacoraDetalles = '';
+
+    if (nombre && nombre !== usuarioAntes.nombre) {
+      bitacoraDetalles += `Nombre: ${usuarioAntes.nombre} → ${nombre}. `;
+    }
+    if (email && email !== usuarioAntes.email) {
+      bitacoraDetalles += `Email: ${usuarioAntes.email} → ${email}. `;
+    }
+    if (rol && rol !== usuarioAntes.rol) {
+      bitacoraDetalles += `Rol: ${usuarioAntes.rol} → ${rol}. `;
+    }
+    if (activo !== undefined && activo !== usuarioAntes.activo) {
+      bitacoraDetalles += `Estado: ${usuarioAntes.activo ? 'Activo' : 'Inactivo'} → ${activo ? 'Activo' : 'Inactivo'}. `;
+    }
 
     const usuario = await prisma.usuario.update({
       where: { id: Number(id) },
       data: req.body,
-      select: { id: true, nombre: true, rol: true, activo: true },
+      select: { id: true, nombre: true, email: true, rol: true, activo: true },
     });
+
+    if (bitacoraDetalles) {
+      await registrarBitacora({
+        accion: 'Actualización de usuario',
+        usuarioId: req.usuario.id,
+        ip: req.ip,
+        detalles: `Usuario ID ${id} (${usuario.nombre}): ${bitacoraDetalles} `.trim(),
+      });
+    }
 
     res.json(usuario);
   } catch (error) {

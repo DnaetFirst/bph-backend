@@ -22,15 +22,16 @@ datasource db {
 }
 
 model Usuario {
-  id               Int       @id @default(autoincrement())
-  nombre           String    @unique
-  rol              String    // "evaluador" | "supervisor" | "administrador"
-  activo           Boolean   @default(true)
-  hashPin          String
-  requiereCambioPin Boolean  @default(false) // true tras migración desde localStorage
-  intentosFallidos Int       @default(0)
-  bloqueadoHasta   DateTime?
-  creadoEn         DateTime  @default(now())
+  id                Int       @id @default(autoincrement())
+  nombre            String    @unique
+  email             String    @unique
+  rol               String
+  activo            Boolean   @default(true)
+  hashPin           String
+  requiereCambioPin Boolean   @default(false)
+  intentosFallidos  Int       @default(0)
+  bloqueadoHasta    DateTime?
+  creadoEn          DateTime  @default(now())
 
   evaluacionesCreadas   Evaluacion[] @relation("creador")
   evaluacionesRealizadas Evaluacion[] @relation("evaluador")

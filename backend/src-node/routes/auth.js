@@ -3,11 +3,16 @@ import { prisma } from '../prisma.js';
 import { config } from '../config.js';
 import { AuthService, ErrorAuth } from '../services/authService.js';
 import { authenticate } from '../middlewares/authenticate.js';
-import { derivarPin } from '../utils/crypto.js';
-import { loginSchema, cambiarPinSchema, recuperarPinSchema } from '../utils/schemas.js';
+import { loginSchema, cambiarPinSchema, forgotPinSchema, resetPinSchema } from '../utils/schemas.js';
 import { registrarBitacora } from '../utils/bitacora.js';
+import { enviarEmailResetPin } from '../utils/emailService.js';
 
 const router = Router();
+
+const RESET_URL = (token) => {
+  const base = config.frontendUrl.split(',')[0].trim();
+  return `${base}/reset-pin?token=${token}`;
+};
 
 router.post('/login', async (req, res, next) => {
   try {
@@ -61,47 +66,74 @@ router.post('/cambiar-pin', authenticate, async (req, res, next) => {
   }
 });
 
-router.post('/recuperar-pin', async (req, res, next) => {
+router.post('/forgot-pin', async (req, res, next) => {
   try {
-    const parsed = recuperarPinSchema.safeParse(req.body);
+    const parsed = forgotPinSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: 'Datos inválidos', detalles: parsed.error.flatten() });
     }
 
-    const { nombre, pinNuevo } = parsed.data;
+    const { email } = parsed.data;
     const usuario = await prisma.usuario.findUnique({
-      where: { nombre },
+      where: { email },
       select: { id: true, nombre: true, rol: true, activo: true },
     });
 
+    await registrarBitacora({
+      accion: 'Solicitud de recuperación de PIN',
+      usuarioId: usuario?.id || 0,
+      ip: req.ip,
+      detalles: `Email: ${email}, Usuario encontrado: ${!!usuario}`,
+    });
+
     if (!usuario || !usuario.activo) {
-      return res.status(404).json({ error: 'Usuario no encontrado o inactivo' });
+      return res.json({ ok: true, mensaje: 'Si el email está registrado, recibirás un enlace de recuperación.' });
     }
 
     if (usuario.rol === 'administrador') {
-      return res.status(403).json({ error: 'Los administradores deben contactar a otro administrador para restablecer el PIN' });
+      return res.json({ ok: true, mensaje: 'Si el email está registrado, recibirás un enlace de recuperación.' });
     }
 
-    const hashPin = await derivarPin(pinNuevo);
-    await prisma.usuario.update({
-      where: { id: usuario.id },
-      data: {
-        hashPin,
-        requiereCambioPin: true,
-        intentosFallidos: 0,
-        bloqueadoHasta: null,
-      },
-    });
+    try {
+      const authService = new AuthService(prisma, config);
+      const token = await authService.crearTokenResetPin(usuario);
+      const resetUrl = RESET_URL(token);
+
+      await enviarEmailResetPin(email, usuario.nombre, resetUrl);
+    } catch (emailError) {
+      console.error('[auth] Error enviando email de recuperación:', emailError.message);
+    }
+
+    res.json({ ok: true, mensaje: 'Si el email está registrado, recibirás un enlace de recuperación.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/reset-pin', async (req, res, next) => {
+  try {
+    const parsed = resetPinSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Datos inválidos', detalles: parsed.error.flatten() });
+    }
+
+    const { token, pinNuevo } = parsed.data;
+    const authService = new AuthService(prisma, config);
+
+    const usuario = await authService.restablecerPinConToken(token, pinNuevo);
 
     await registrarBitacora({
-      accion: 'Recuperación de PIN',
+      accion: 'Restablecimiento de PIN completado',
       usuarioId: usuario.id,
       ip: req.ip,
-      detalles: `PIN restablecido por recuperación auto-servicio`,
+      detalles: 'PIN restablecido vía email con token válido',
     });
 
-    res.json({ ok: true, mensaje: 'PIN restablecido. Inicia sesión con el nuevo PIN.' });
+    res.json({ ok: true, mensaje: 'PIN restablecido correctamente. Ya puedes iniciar sesión.' });
   } catch (error) {
+    if (error instanceof ErrorAuth) {
+      return res.status(error.status).json({ error: error.message });
+    }
     next(error);
   }
 });

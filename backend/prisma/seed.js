@@ -108,12 +108,39 @@ async function main() {
 
   await prisma.usuario.upsert({
     where: { nombre: 'EVA MORALES' },
-    update: {},
+    update: {
+      email: 'eva.morales@nexocorp.com',
+    },
     create: {
       nombre: 'EVA MORALES',
+      email: 'eva.morales@nexocorp.com',
       rol: 'administrador',
       hashPin,
-      requiereCambioPin: true, // fuerza cambio en el primer login
+      requiereCambioPin: true,
+    },
+  });
+
+  await prisma.usuario.upsert({
+    where: { nombre: 'LEANDRO VALDEZ' },
+    update: { email: 'leandro.valdez@nexocorp.com' },
+    create: {
+      nombre: 'LEANDRO VALDEZ',
+      email: 'leandro.valdez@nexocorp.com',
+      rol: 'supervisor',
+      hashPin: await derivarPin('123456'),
+      requiereCambioPin: false,
+    },
+  });
+
+  await prisma.usuario.upsert({
+    where: { nombre: 'CARLOS MENDOZA' },
+    update: { email: 'carlos.mendoza@nexocorp.com' },
+    create: {
+      nombre: 'CARLOS MENDOZA',
+      email: 'carlos.mendoza@nexocorp.com',
+      rol: 'evaluador',
+      hashPin: await derivarPin('123456'),
+      requiereCambioPin: false,
     },
   });
 

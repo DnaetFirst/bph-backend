@@ -7,6 +7,8 @@ import {
 import { useAuthStore } from './store/authStore';
 import { useUiStore } from './store/uiStore';
 import Login from './pages/Login';
+import ForgotPin from './pages/ForgotPin';
+import ResetPin from './pages/ResetPin';
 import Inicio from './pages/Inicio';
 import Dashboard from './pages/Dashboard';
 import EvaluacionForm from './pages/EvaluacionForm';
@@ -191,6 +193,8 @@ const AppRoutes = () => {
       <main className="layout-container animate-fade-in">
         <Routes>
           <Route path="/login" element={!usuario ? <Login /> : <Navigate to="/" replace />} />
+          <Route path="/login/recuperar" element={!usuario ? <ForgotPin /> : <Navigate to="/" replace />} />
+          <Route path="/reset-pin" element={!usuario ? <ResetPin /> : <Navigate to="/" replace />} />
           <Route path="/" element={<ProtectedRoute usuario={usuario}><Inicio /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute usuario={usuario}><Dashboard /></ProtectedRoute>} />
           <Route path="/evaluar" element={<ProtectedRoute usuario={usuario}><EvaluacionForm /></ProtectedRoute>} />

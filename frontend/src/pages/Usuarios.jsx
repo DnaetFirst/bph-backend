@@ -28,7 +28,7 @@ export default function Usuarios() {
 
   const [mostrarFormUsuario, setMostrarFormUsuario] = useState(false);
   const [editandoUsuario, setEditandoUsuario] = useState(null);
-  const [formDataUsuario, setFormDataUsuario] = useState({ nombre: '', rol: 'evaluador' });
+  const [formDataUsuario, setFormDataUsuario] = useState({ nombre: '', email: '', rol: 'evaluador' });
 
   const [mostrarFormArea, setMostrarFormArea] = useState(false);
   const [editandoArea, setEditandoArea] = useState(null);
@@ -93,6 +93,7 @@ export default function Usuarios() {
     const lower = searchDebounced.toLowerCase();
     return usuarios.filter((u) =>
       u.nombre.toLowerCase().includes(lower) ||
+      (u.email || '').toLowerCase().includes(lower) ||
       u.rol.toLowerCase().includes(lower)
     );
   }, [usuarios, searchDebounced]);
@@ -123,7 +124,7 @@ export default function Usuarios() {
       await apiClient.post('/admin/usuarios', formDataUsuario);
       await fetchUsuarios();
       mostrarToast({ tipo: 'success', titulo: 'Usuario creado', mensaje: `Usuario "${formDataUsuario.nombre}" creado. PIN por defecto: 000000` });
-      setFormDataUsuario({ nombre: '', rol: 'evaluador' });
+      setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador' });
       setMostrarFormUsuario(false);
     } catch (err) {
       mostrarToast({ tipo: 'error', titulo: 'No se pudo crear', mensaje: err.response?.data?.error || 'Error al crear usuario' });
@@ -138,12 +139,13 @@ export default function Usuarios() {
     try {
       await apiClient.put(`/admin/usuarios/${editandoUsuario.id}`, {
         nombre: formDataUsuario.nombre,
+        email: formDataUsuario.email,
         rol: formDataUsuario.rol,
       });
       await fetchUsuarios();
       mostrarToast({ tipo: 'success', titulo: 'Usuario actualizado', mensaje: `Usuario "${formDataUsuario.nombre}" actualizado.` });
       setEditandoUsuario(null);
-      setFormDataUsuario({ nombre: '', rol: 'evaluador' });
+      setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador' });
       setMostrarFormUsuario(false);
     } catch (err) {
       mostrarToast({ tipo: 'error', titulo: 'No se pudo actualizar', mensaje: err.response?.data?.error || 'Error al actualizar usuario' });
@@ -226,19 +228,19 @@ export default function Usuarios() {
 
   const openEditarUsuario = (u) => {
     setEditandoUsuario(u);
-    setFormDataUsuario({ nombre: u.nombre, rol: u.rol });
+    setFormDataUsuario({ nombre: u.nombre, email: u.email || '', rol: u.rol });
     setMostrarFormUsuario(true);
   };
 
   const openCrearUsuario = () => {
     setEditandoUsuario(null);
-    setFormDataUsuario({ nombre: '', rol: 'evaluador' });
+    setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador' });
     setMostrarFormUsuario(true);
   };
 
   const cancelarUsuario = () => {
     setEditandoUsuario(null);
-    setFormDataUsuario({ nombre: '', rol: 'evaluador' });
+    setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador' });
     setMostrarFormUsuario(false);
   };
 
@@ -328,6 +330,18 @@ export default function Usuarios() {
                     value={formDataUsuario.nombre}
                     onChange={(e) => setFormDataUsuario({ ...formDataUsuario, nombre: e.target.value.toUpperCase() })}
                     placeholder="Ingresa el nombre..."
+                    required
+                    disabled={procesando}
+                  />
+                </div>
+                <div>
+                  <label className="label">Correo electrónico</label>
+                  <input
+                    className="input-field"
+                    type="email"
+                    value={formDataUsuario.email}
+                    onChange={(e) => setFormDataUsuario({ ...formDataUsuario, email: e.target.value.toLowerCase() })}
+                    placeholder="usuario@ejemplo.com"
                     required
                     disabled={procesando}
                   />
@@ -437,7 +451,8 @@ export default function Usuarios() {
                     <thead>
                       <tr>
                         <th className="th-nombre">Usuario</th>
-                        <th className="th-area">Rol</th>
+                        <th className="th-area">Email</th>
+                        <th>Rol</th>
                         <th className="hide-mobile">Creado</th>
                         <th>Estado</th>
                         <th className="th-actions">Acciones</th>
@@ -447,6 +462,7 @@ export default function Usuarios() {
                       {activosPaginados.map((u) => (
                         <tr key={u.id}>
                           <td className="td-nombre" style={{ fontWeight: 600 }}>{u.nombre}</td>
+                          <td className="td-area" style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>{u.email}</td>
                           <td className="td-area">
                             <Badge variant={u.rol === 'administrador' ? 'info' : u.rol === 'supervisor' ? 'warning' : 'neutral'}>
                               {u.rol}
@@ -483,6 +499,7 @@ export default function Usuarios() {
                       {inactivosPaginados.map((u) => (
                         <tr key={u.id}>
                           <td className="td-nombre" style={{ fontWeight: 600, opacity: 0.75 }}>{u.nombre}</td>
+                          <td className="td-area" style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>{u.email}</td>
                           <td className="td-area">
                             <Badge variant={u.rol === 'administrador' ? 'info' : u.rol === 'supervisor' ? 'warning' : 'neutral'}>
                               {u.rol}
