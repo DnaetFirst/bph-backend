@@ -61,15 +61,26 @@ export default function EvaluacionForm() {
   }, [fecha]);
 
   useEffect(() => {
-    if (evaluacionGuardada && modalRef.current) {
-      const handleClickOutside = (e) => {
-        if (modalRef.current && !modalRef.current.contains(e.target)) {
-          navigate('/');
-        }
-      };
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
+    if (!evaluacionGuardada) return;
+
+    const handleClickOutside = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        navigate('/');
+      }
+    };
+
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') {
+        navigate('/');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
   }, [evaluacionGuardada, navigate]);
 
   const handleResultadoChange = (parametroId, resultado) => {
