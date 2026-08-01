@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import {
   CheckCircle2, AlertCircle, Info, X, User, LogOut, Shield,
-  LayoutDashboard, ClipboardList, Users, History,
+  LayoutDashboard, ClipboardList, Users, History, Menu,
 } from 'lucide-react';
 import { useAuthStore } from './store/authStore';
 import { useUiStore } from './store/uiStore';
@@ -17,6 +17,7 @@ const Navbar = () => {
   const { usuario, logout } = useAuthStore();
   const location = useLocation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -51,13 +52,23 @@ const Navbar = () => {
     <nav className="navbar" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
       <div className="navbar-left">
         <img src="/LogoNexocorp.png" alt="Nexocorp" className="navbar-brand" />
+        <button
+          type="button"
+          className="navbar-toggle"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-label="Menú de navegación"
+          aria-expanded={menuOpen}
+        >
+          <Menu size={22} />
+        </button>
       </div>
-      <div className="navbar-nav">
+      <div className={`navbar-nav-panel ${menuOpen ? 'open' : ''}`}>
         {navItems.map((item) => (
           <Link
             key={item.to}
             to={item.to}
             className={location.pathname === item.to ? 'active' : ''}
+            onClick={() => setMenuOpen(false)}
           >
             {item.icon && <item.icon size={16} style={{ marginRight: '0.35rem' }} />}
             {item.label}

@@ -721,3 +721,68 @@ textarea.input-field {
   color: hsl(var(--color-text-secondary));
   padding: 0.2rem;
 }
+
+/* ============================================================
+   Utility classes (responsive)
+   ============================================================ */
+.hide-mobile { display: none !important; }
+.kpi-valor { font-size: 1.9rem; }
+.charts-row { display: grid; grid-template-columns: 2fr 1.2fr; gap: 1rem; }
+
+/* Hamburger toggle (mobile only) */
+.navbar-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  color: hsl(var(--color-text-primary));
+}
+.navbar-nav-panel {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+/* ============================================================
+   Responsive overrides (mobile ≤ 767px)
+   ============================================================ */
+@media (max-width: 767px) {
+  .layout-container { padding: 1rem 0.75rem; }
+  .section-card-body { padding: 1rem; }
+  .page-title { font-size: 1.4rem; }
+  .page-header { gap: 0.75rem; }
+
+  .navbar { padding: 0.75rem 1rem; }
+  .navbar-nav { gap: 0.6rem; }
+  .navbar-nav a { font-size: 0.85rem; padding: 0.3rem 0.15rem; }
+
+  .navbar-toggle { display: flex; }
+  .navbar-nav-panel {
+    flex-direction: column;
+    width: 100%;
+    padding: 0.75rem 0;
+    gap: 0.5rem;
+    display: none;
+  }
+  .navbar-nav-panel.open { display: flex; }
+
+  .form-grid-2 { grid-template-columns: 1fr; }
+
+  .data-table th { padding: 0.5rem 0.6rem; font-size: 0.7rem; }
+  .data-table td { padding: 0.5rem 0.6rem; font-size: 0.8rem; }
+  .btn-group-actions { flex-direction: column; gap: 0.35rem; }
+
+  .pagination-footer { gap: 0.4rem; padding: 0.75rem; }
+  .pagination-info { font-size: 0.75rem; }
+
+  .modal-content { padding: 1rem; }
+  .char-counter { font-size: 0.7rem; }
+  .toast { padding: 0.7rem; }
+  .toasts-container { max-width: none; width: auto; right: 0.5rem; top: 0.5rem; }
+
+  .kpi-valor { font-size: 1.4rem; }
+  .charts-row { grid-template-columns: 1fr; }
+
+  .hide-mobile { display: none !important; }
+}

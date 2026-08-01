@@ -72,7 +72,7 @@ export default function Bitacora() {
         </button>
       </header>
 
-      <div style={{ position: 'relative', maxWidth: '320px', marginBottom: '1rem' }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: '320px', marginBottom: '1rem' }}>
         <Search size={16} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--color-text-secondary))' }} />
         <input
           type="text"

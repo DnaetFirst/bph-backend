@@ -309,7 +309,7 @@ export default function Dashboard() {
       </section>
 
       {/* Charts row: Rendimiento reciente + Calidad promedio */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '1rem' }}>
+      <div className="charts-row">
         {/* Rendimiento reciente */}
         <section className="section-card">
           <div className="section-card-body">
@@ -446,8 +446,8 @@ export default function Dashboard() {
                     <tr>
                       <th className="th-nombre">Fecha</th>
                       <th className="th-area">Trabajador</th>
-                      <th>Área</th>
-                      <th>Evaluador</th>
+                   <th className="th-area hide-mobile">Área</th>
+                   <th className="hide-mobile">Evaluador</th>
                       <th>Higiene</th>
                       <th>Uniforme</th>
                       <th>General</th>
@@ -463,8 +463,8 @@ export default function Dashboard() {
                           {ev.fecha ? new Date(ev.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
                         </td>
                         <td className="td-area" style={{ fontWeight: 600 }}>{ev.trabajador?.nombre || '—'}</td>
-                        <td style={{ color: 'hsl(var(--color-text-secondary))' }}>{ev.area?.nombre || '—'}</td>
-                        <td style={{ color: 'hsl(var(--color-text-secondary))' }}>{ev.evaluador?.nombre || '—'}</td>
+                         <td className="td-area hide-mobile" style={{ color: 'hsl(var(--color-text-secondary))' }}>{ev.area?.nombre || '—'}</td>
+                         <td className="hide-mobile" style={{ color: 'hsl(var(--color-text-secondary))' }}>{ev.evaluador?.nombre || '—'}</td>
                         <td>{ev.higienePorcentaje != null ? `${ev.higienePorcentaje}%` : '—'}</td>
                         <td>{ev.uniformePorcentaje != null ? `${ev.uniformePorcentaje}%` : '—'}</td>
                         <td>

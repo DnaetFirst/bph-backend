@@ -7,7 +7,7 @@ export default function KpiCard({ icon: Icon, titulo, valor, subtitulo, color = 
           <Icon size={18} />
         </div>
       </div>
-      <div style={{ fontSize: '1.9rem', fontWeight: 700, lineHeight: 1.1, color: 'hsl(var(--color-text-primary))' }}>{valor}</div>
+      <div className="kpi-valor" style={{ fontWeight: 700, lineHeight: 1.1, color: 'hsl(var(--color-text-primary))' }}>{valor}</div>
       {subtitulo && <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))', marginTop: '0.25rem' }}>{subtitulo}</div>}
     </div>
   );
