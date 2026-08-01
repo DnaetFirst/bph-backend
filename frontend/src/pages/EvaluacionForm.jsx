@@ -242,8 +242,7 @@ export default function EvaluacionForm() {
       </div>
     </div>
   );
-
-  const ModalContenido = (
+  const ModalContenido = evaluacionGuardada ? (
     <div className="modal-overlay" onClick={() => navigate('/')}>
       <div className="modal-content" ref={modalRef} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
@@ -332,7 +331,7 @@ export default function EvaluacionForm() {
         </div>
       </div>
     </div>
-  );
+  ) : null;
 
   return (
     <div className="animate-fade-in page-shell" style={{ maxWidth: '920px', margin: '0 auto' }}>
@@ -485,7 +484,7 @@ export default function EvaluacionForm() {
         </div>
       </section>
 
-      {evaluacionGuardada && createPortal(ModalContenido, document.body)}
+      {ModalContenido && createPortal(ModalContenido, document.body)}
     </div>
   );
 }
