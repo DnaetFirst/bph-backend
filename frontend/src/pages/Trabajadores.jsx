@@ -192,7 +192,7 @@ export default function Trabajadores() {
       </header>
 
       {/* Search */}
-      <div style={{ position: 'relative', maxWidth: '320px' }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: '320px' }}>
         <Search size={18} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--color-text-secondary))' }} />
         <input
           type="text"

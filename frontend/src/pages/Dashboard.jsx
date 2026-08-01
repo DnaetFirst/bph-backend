@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   PlusCircle,
-  ChevronLeft,
-  ChevronRight,
   Download,
   Filter,
   RefreshCw,
@@ -12,21 +10,14 @@ import {
   ShieldCheck,
   ShieldAlert,
   CalendarRange,
-  Eye,
-  Check,
-  X,
-  Search,
 } from 'lucide-react';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useUiStore } from '../store/uiStore';
 import { apiClient } from '../api/client';
-import Badge from '../components/ui/Badge';
 import KpiCard from '../components/ui/KpiCard';
 import ProgressRow from '../components/ui/ProgressRow';
 import MiniBarChart from '../components/ui/MiniBarChart';
-import ErrorState from '../components/ui/ErrorState';
-import LoadingState from '../components/ui/LoadingState';
 
 const DEFAULT_FILTERS = {
   trabajadorId: '',
@@ -39,7 +30,7 @@ const DEFAULT_FILTERS = {
 };
 
 export default function Dashboard() {
-  const { evaluaciones, total, cargando, error, fetchEvaluaciones } = useEvaluacionesStore();
+  const { evaluaciones, total, fetchEvaluaciones } = useEvaluacionesStore();
   const { areas, fetchTrabajadores, fetchAreas, obtenerTrabajadoresActivos } = useTrabajadoresStore();
   const mostrarToast = useUiStore((state) => state.mostrarToast);
   const navigate = useNavigate();
@@ -48,8 +39,6 @@ export default function Dashboard() {
   const porPagina = 12;
   const [mostrarFiltrosExportar, setMostrarFiltrosExportar] = useState(false);
   const [filtros, setFiltros] = useState(DEFAULT_FILTERS);
-  const [mostrarEvaluaciones, setMostrarEvaluaciones] = useState(false);
-  const [searchNombre, setSearchNombre] = useState('');
 
   useEffect(() => {
     fetchTrabajadores();
@@ -74,19 +63,11 @@ export default function Dashboard() {
     fetchEvaluaciones({ pagina, porPagina, ...filtros });
   }, [fetchEvaluaciones, pagina, porPagina, filtros]);
 
-  const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
+
   const evaluacionesActivas = useMemo(
     () => evaluaciones.filter((ev) => ev.estado === 'ACTIVA'),
     [evaluaciones]
   );
-
-  const evaluacionesFiltradas = useMemo(() => {
-    if (!searchNombre) return evaluaciones;
-    const lower = searchNombre.toLowerCase();
-    return evaluaciones.filter((ev) =>
-      (ev.trabajador?.nombre || '').toLowerCase().includes(lower)
-    );
-  }, [evaluaciones, searchNombre]);
 
   const resumen = useMemo(() => {
     const totalItems = evaluacionesActivas.length;
@@ -390,145 +371,6 @@ export default function Dashboard() {
           )}
         </div>
       </section>
-
-      {/* Botón para desplegar tabla de evaluaciones */}
-      <section className="section-card">
-        <div className="section-card-body">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h3 className="section-title">Detalle de evaluaciones individuales</h3>
-              <p className="section-subtitle">Vista operativa para análisis puntual y seguimiento</p>
-            </div>
-            <button
-              className={`btn ${mostrarEvaluaciones ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => setMostrarEvaluaciones((prev) => !prev)}
-            >
-              {mostrarEvaluaciones ? 'Ocultar evaluaciones' : 'Ver evaluaciones'}
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Tabla de evaluaciones (solo cuando se hace clic) */}
-      {mostrarEvaluaciones && (
-        <section className="section-card" style={{ padding: 0, overflow: 'hidden', minHeight: '420px', display: 'flex', flexDirection: 'column' }}>
-          <div className="section-card-body" style={{ padding: '1rem 1.25rem', borderBottom: '1px solid hsla(var(--color-secondary), 0.15)', margin: 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, minWidth: 200 }}>
-                <Search size={18} style={{ color: 'hsl(var(--color-text-secondary))' }} />
-                <input
-                  className="input-field"
-                  placeholder="Filtrar por nombre de trabajador..."
-                  value={searchNombre}
-                  onChange={(e) => setSearchNombre(e.target.value)}
-                  style={{ maxWidth: 260 }}
-                />
-              </div>
-              <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>
-                Mostrando {evaluacionesFiltradas.length} de {evaluaciones.length} resultados
-              </div>
-            </div>
-          </div>
-
-          {error ? (
-            <ErrorState error={error} onRetry={() => fetchEvaluaciones({ pagina, porPagina, ...filtros })} />
-          ) : cargando ? (
-            <LoadingState mensaje="Cargando evaluaciones..." />
-          ) : evaluacionesFiltradas.length === 0 ? (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'hsl(var(--color-text-secondary))' }}>
-              No se encontraron evaluaciones con el nombre buscado.
-            </div>
-          ) : (
-            <>
-              <div style={{ overflowX: 'auto', flex: 1 }}>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th className="th-nombre">Fecha</th>
-                      <th className="th-area">Trabajador</th>
-                   <th className="th-area hide-mobile">Área</th>
-                   <th className="hide-mobile">Evaluador</th>
-                      <th>Higiene</th>
-                      <th>Uniforme</th>
-                      <th>General</th>
-                      <th>Color</th>
-                      <th>Estado</th>
-                      <th className="th-actions">Detalle</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {evaluacionesFiltradas.map((ev) => (
-                      <tr key={ev.id}>
-                        <td className="td-nombre" style={{ whiteSpace: 'nowrap', color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
-                          {ev.fecha ? new Date(ev.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
-                        </td>
-                        <td className="td-area" style={{ fontWeight: 600 }}>{ev.trabajador?.nombre || '—'}</td>
-                         <td className="td-area hide-mobile" style={{ color: 'hsl(var(--color-text-secondary))' }}>{ev.area?.nombre || '—'}</td>
-                         <td className="hide-mobile" style={{ color: 'hsl(var(--color-text-secondary))' }}>{ev.evaluador?.nombre || '—'}</td>
-                        <td>{ev.higienePorcentaje != null ? `${ev.higienePorcentaje}%` : '—'}</td>
-                        <td>{ev.uniformePorcentaje != null ? `${ev.uniformePorcentaje}%` : '—'}</td>
-                        <td>
-                          <Badge
-                            variant={
-                              ev.clasificacion === 'Excelente' ? 'success'
-                                : ev.clasificacion === 'Aceptable' ? 'warning'
-                                  : ev.clasificacion === 'Deficiente' ? 'danger'
-                                    : 'neutral'
-                            }
-                          >
-                            {ev.generalPorcentaje != null ? `${ev.generalPorcentaje}% · ${ev.clasificacion || ''}` : '—'}
-                          </Badge>
-                        </td>
-                        <td>
-                          {ev.cumplimientoColor === 'Cumple' ? (
-                            <Badge variant="success" icon={Check}>
-                              {ev.colorObservado || '—'}
-                            </Badge>
-                          ) : ev.cumplimientoColor === 'No cumple' ? (
-                            <Badge variant="danger" icon={X}>
-                              {ev.colorObservado || '—'}
-                            </Badge>
-                          ) : (
-                            <span style={{ color: 'hsl(var(--color-text-secondary))' }}>{ev.colorObservado || '—'}</span>
-                          )}
-                        </td>
-                        <td>
-                          <Badge variant={ev.estado === 'ACTIVA' ? 'success' : 'danger'}>
-                            {ev.estado === 'ACTIVA' ? 'Activa' : 'Anulada'}
-                          </Badge>
-                        </td>
-                        <td className="td-actions">
-                          <button
-                            className="btn-ghost btn-small"
-                            onClick={() => navigate(`/evaluacion/${ev.id}`)}
-                            title="Ver detalle de evaluación"
-                          >
-                            <Eye size={14} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {totalPaginas > 1 && (
-                <div className="pagination-footer">
-                  <button className="btn btn-outline btn-small" disabled={pagina <= 1} onClick={() => setPagina((p) => p - 1)}>
-                    <ChevronLeft size={16} />
-                  </button>
-                  <span className="pagination-info">
-                    Pág. {pagina} de {totalPaginas}
-                  </span>
-                  <button className="btn btn-outline btn-small" disabled={pagina >= totalPaginas} onClick={() => setPagina((p) => p + 1)}>
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-      )}
     </div>
   );
 }

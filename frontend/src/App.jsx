@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import EvaluacionForm from './pages/EvaluacionForm';
 import Trabajadores from './pages/Trabajadores';
 import Bitacora from './pages/Bitacora';
+import Usuarios from './pages/Usuarios';
 
 const Navbar = () => {
   const { usuario, logout } = useAuthStore();
@@ -45,6 +46,9 @@ const Navbar = () => {
     { to: '/dashboard', label: 'Analytics', icon: LayoutDashboard },
     ...(canManageTrabajadores
       ? [{ to: '/bitacora', label: 'Bitácora', icon: History }]
+      : []),
+    ...(isAdmin
+      ? [{ to: '/usuarios', label: 'Usuarios', icon: Shield }]
       : []),
   ];
 
@@ -198,6 +202,11 @@ const AppRoutes = () => {
           <Route path="/bitacora" element={
             <RoleProtectedRoute usuario={usuario} allowedRoles={['administrador', 'supervisor']}>
               <Bitacora />
+            </RoleProtectedRoute>
+          } />
+          <Route path="/usuarios" element={
+            <RoleProtectedRoute usuario={usuario} allowedRoles={['administrador']}>
+              <Usuarios />
             </RoleProtectedRoute>
           } />
           <Route path="*" element={<Navigate to={usuario ? '/' : '/login'} replace />} />
