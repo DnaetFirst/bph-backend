@@ -33,7 +33,7 @@ router.get('/usuarios', async (req, res, next) => {
 
 router.post('/usuarios', validar(crearUsuarioSchema), async (req, res, next) => {
   try {
-    const { nombre, email, rol } = req.body;
+    const { nombre, email, rol, pin } = req.body;
     const existente = await prisma.usuario.findUnique({ where: { nombre } });
 
     if (existente) {
@@ -46,8 +46,8 @@ router.post('/usuarios', validar(crearUsuarioSchema), async (req, res, next) => 
       return res.status(400).json({ error: 'El email ya está registrado' });
     }
 
-    const pinPorDefecto = '000000';
-    const hashPin = await derivarPin(pinPorDefecto);
+    const pinAUsar = pin || '000000';
+    const hashPin = await derivarPin(pinAUsar);
 
     const usuario = await prisma.usuario.create({
       data: {

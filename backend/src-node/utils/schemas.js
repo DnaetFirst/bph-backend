@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const loginSchema = z.object({
   nombre: z.string().min(2).max(100),
-  pin: z.string().min(4).max(20),
+  pin: z.string().min(6).max(20),
 });
 
 export const cambiarPinSchema = z.object({
@@ -48,6 +48,7 @@ export const crearUsuarioSchema = z.object({
   nombre: z.string().min(2).max(100),
   email: z.string().email(),
   rol: z.enum(['evaluador', 'supervisor', 'administrador']),
+  pin: z.string().min(6).optional(),
 });
 
 export const actualizarUsuarioSchema = z.object({

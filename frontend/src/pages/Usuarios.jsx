@@ -28,7 +28,7 @@ export default function Usuarios() {
 
   const [mostrarFormUsuario, setMostrarFormUsuario] = useState(false);
   const [editandoUsuario, setEditandoUsuario] = useState(null);
-  const [formDataUsuario, setFormDataUsuario] = useState({ nombre: '', email: '', rol: 'evaluador' });
+  const [formDataUsuario, setFormDataUsuario] = useState({ nombre: '', email: '', rol: 'evaluador', pin: '', pinConfirm: '' });
 
   const [mostrarFormArea, setMostrarFormArea] = useState(false);
   const [editandoArea, setEditandoArea] = useState(null);
@@ -121,10 +121,28 @@ export default function Usuarios() {
     e.preventDefault();
     setProcesando(true);
     try {
-      await apiClient.post('/admin/usuarios', formDataUsuario);
+      const err = validarPin(formDataUsuario.pin);
+      if (err) {
+        mostrarToast({ tipo: 'error', titulo: 'PIN inválido', mensaje: err });
+        setProcesando(false);
+        return;
+      }
+      if (formDataUsuario.pin && formDataUsuario.pin !== formDataUsuario.pinConfirm) {
+        mostrarToast({ tipo: 'error', titulo: 'PIN inválido', mensaje: 'Los PIN no coinciden.' });
+        setProcesando(false);
+        return;
+      }
+
+      await apiClient.post('/admin/usuarios', {
+        nombre: formDataUsuario.nombre,
+        email: formDataUsuario.email,
+        rol: formDataUsuario.rol,
+        pin: formDataUsuario.pin || undefined,
+      });
       await fetchUsuarios();
-      mostrarToast({ tipo: 'success', titulo: 'Usuario creado', mensaje: `Usuario "${formDataUsuario.nombre}" creado. PIN por defecto: 000000` });
-      setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador' });
+      const pinMsg = formDataUsuario.pin ? ` con PIN personalizado` : ' con PIN por defecto: 000000';
+      mostrarToast({ tipo: 'success', titulo: 'Usuario creado', mensaje: `Usuario "${formDataUsuario.nombre}" creado${pinMsg}.` });
+      setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador', pin: '', pinConfirm: '' });
       setMostrarFormUsuario(false);
     } catch (err) {
       mostrarToast({ tipo: 'error', titulo: 'No se pudo crear', mensaje: err.response?.data?.error || 'Error al crear usuario' });
@@ -145,7 +163,7 @@ export default function Usuarios() {
       await fetchUsuarios();
       mostrarToast({ tipo: 'success', titulo: 'Usuario actualizado', mensaje: `Usuario "${formDataUsuario.nombre}" actualizado.` });
       setEditandoUsuario(null);
-      setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador' });
+      setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador', pin: '', pinConfirm: '' });
       setMostrarFormUsuario(false);
     } catch (err) {
       mostrarToast({ tipo: 'error', titulo: 'No se pudo actualizar', mensaje: err.response?.data?.error || 'Error al actualizar usuario' });
@@ -234,13 +252,13 @@ export default function Usuarios() {
 
   const openCrearUsuario = () => {
     setEditandoUsuario(null);
-    setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador' });
+    setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador', pin: '', pinConfirm: '' });
     setMostrarFormUsuario(true);
   };
 
   const cancelarUsuario = () => {
     setEditandoUsuario(null);
-    setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador' });
+    setFormDataUsuario({ nombre: '', email: '', rol: 'evaluador', pin: '', pinConfirm: '' });
     setMostrarFormUsuario(false);
   };
 
@@ -299,7 +317,7 @@ export default function Usuarios() {
     <div className="animate-fade-in page-shell">
       <header className="page-header">
         <div>
-          <h1 className="page-title">Gestión de usuarios y áreas</h1>
+          <h1 className="page-title">Gestión de Usuarios</h1>
           <p className="page-subtitle">
             Administra cuentas de usuarios con sus roles (evaluador, supervisor, administrador) y define las áreas de trabajo.
           </p>
@@ -362,6 +380,38 @@ export default function Usuarios() {
                   </select>
                 </div>
               </div>
+
+              {!editandoUsuario && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <label className="label">PIN inicial (opcional)</label>
+                    <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.8rem', marginTop: '-0.5rem', marginBottom: '0.25rem' }}>
+                      Mínimo 6 caracteres, con al menos un número. Si lo dejas vacío, se usará 000000.
+                    </p>
+                    <input
+                      className="input-field"
+                      type="password"
+                      placeholder="Ej: 123456"
+                      value={formDataUsuario.pin}
+                      onChange={(e) => setFormDataUsuario({ ...formDataUsuario, pin: e.target.value })}
+                      disabled={procesando}
+                      minLength={6}
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Confirmar PIN</label>
+                    <input
+                      className="input-field"
+                      type="password"
+                      placeholder="Repite el PIN..."
+                      value={formDataUsuario.pinConfirm}
+                      onChange={(e) => setFormDataUsuario({ ...formDataUsuario, pinConfirm: e.target.value })}
+                      disabled={procesando}
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="action-group" style={{ marginTop: '1.25rem' }}>
                 <button type="submit" className="btn btn-primary" disabled={procesando}>

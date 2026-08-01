@@ -1,19 +1,19 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
 export async function enviarEmailResetPin(email, nombre, resetUrl) {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     throw new Error('EMAIL_USER y EMAIL_PASS no están configurados');
   }
+
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
 
   const html = `
 <!DOCTYPE html>
@@ -35,7 +35,7 @@ export async function enviarEmailResetPin(email, nombre, resetUrl) {
 <body>
   <div class="container">
     <div class="logo">
-      <img src="https://bph-backend-esqueleto.workers.dev/LogoNexocorp.png" alt="Nexocorp">
+      <img src="https://frontend-auto.bph-backend-esqueleto.workers.dev/LogoNexocorp.png" alt="Nexocorp">
     </div>
     <h1>Recuperación de PIN</h1>
     <p>Hola <strong>${nombre}</strong>,</p>

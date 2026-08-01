@@ -102,6 +102,7 @@ router.post('/forgot-pin', async (req, res, next) => {
       await enviarEmailResetPin(email, usuario.nombre, resetUrl);
     } catch (emailError) {
       console.error('[auth] Error enviando email de recuperación:', emailError.message);
+      return res.status(503).json({ error: 'No se pudo enviar el email de recuperación. Contacta al administrador.' });
     }
 
     res.json({ ok: true, mensaje: 'Si el email está registrado, recibirás un enlace de recuperación.' });
