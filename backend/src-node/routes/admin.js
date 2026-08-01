@@ -8,8 +8,10 @@ import {
   crearUsuarioSchema,
   actualizarUsuarioSchema,
   areaSchema,
+  resetearPinAdminSchema,
   validar,
 } from '../utils/schemas.js';
+import { registrarBitacora } from '../utils/bitacora.js';
 
 const router = Router();
 
@@ -73,11 +75,17 @@ router.put('/usuarios/:id', validar(actualizarUsuarioSchema), async (req, res, n
   }
 });
 
-router.put('/usuarios/:id/reset-pin', async (req, res, next) => {
+router.put('/usuarios/:id/reset-pin', validar(resetearPinAdminSchema), async (req, res, next) => {
   try {
     const { id } = req.params;
-    const pinPorDefecto = '000000';
-    const hashPin = await derivarPin(pinPorDefecto);
+    const { pinNuevo } = req.body;
+    const pinAUsar = pinNuevo || '000000';
+    const hashPin = await derivarPin(pinAUsar);
+
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: Number(id) },
+      select: { nombre: true },
+    });
 
     await prisma.usuario.update({
       where: { id: Number(id) },
@@ -89,7 +97,14 @@ router.put('/usuarios/:id/reset-pin', async (req, res, next) => {
       },
     });
 
-    res.json({ ok: true, mensaje: 'PIN restablecido a 000000' });
+    await registrarBitacora({
+      accion: pinNuevo ? 'Modificación de PIN' : 'Restablecimiento de PIN',
+      usuarioId: req.usuario.id,
+      ip: req.ip,
+      detalles: `PIN ${pinNuevo ? 'modificado' : 'restablecido'} para usuario ID ${id} (${usuario?.nombre || 'desconocido'})`,
+    });
+
+    res.json({ ok: true, mensaje: `PIN ${pinNuevo ? 'actualizado' : 'restablecido a 000000'}` });
   } catch (error) {
     next(error);
   }

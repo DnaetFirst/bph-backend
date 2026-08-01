@@ -4,6 +4,7 @@ import { useUiStore } from '../store/uiStore';
 import { Search, Edit, Check, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import ErrorState from '../components/ui/ErrorState';
 import EmptyState from '../components/ui/EmptyState';
+import Tooltip from '../components/ui/Tooltip';
 
 export default function Trabajadores() {
   const trabajadores = useTrabajadoresStore((state) => state.trabajadores);
@@ -141,18 +142,16 @@ export default function Trabajadores() {
       return (
         <td className="td-actions">
           <div className="btn-group-actions">
-            <span className="tooltip">
+            <Tooltip text="Editar trabajador">
               <button className="btn-ghost btn-small" onClick={() => handleEditar(t)} title="Editar">
                 <Edit size={14} /> Editar
               </button>
-              <span className="tooltip-text">Editar</span>
-            </span>
-            <span className="tooltip">
+            </Tooltip>
+            <Tooltip text="Desactivar trabajador">
               <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-warning))' }} onClick={() => handleDesactivar(t.id)} title="Desactivar" disabled={cargando || procesando}>
                 <X size={14} /> Desactivar
               </button>
-              <span className="tooltip-text">Desactivar trabajador</span>
-            </span>
+            </Tooltip>
           </div>
         </td>
       );
@@ -160,18 +159,16 @@ export default function Trabajadores() {
     return (
       <td className="td-actions">
         <div className="btn-group-actions">
-          <span className="tooltip">
+          <Tooltip text="Activar trabajador">
             <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-success))' }} onClick={() => handleActivar(t.id)} title="Activar" disabled={cargando}>
               <Check size={14} /> Activar
             </button>
-            <span className="tooltip-text">Activar trabajador</span>
-          </span>
-          <span className="tooltip">
+          </Tooltip>
+          <Tooltip text="Eliminar trabajador">
             <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-danger))' }} onClick={() => handleEliminar(t.id)} title="Eliminar" disabled={cargando}>
               <Trash2 size={14} /> Eliminar
             </button>
-            <span className="tooltip-text">Eliminar trabajador</span>
-          </span>
+          </Tooltip>
         </div>
       </td>
     );

@@ -7,7 +7,17 @@ export const loginSchema = z.object({
 
 export const cambiarPinSchema = z.object({
   pinActual: z.string().min(4).max(20),
-  pinNuevo: z.string().min(4).max(20),
+  pinNuevo: z.string().min(6).max(20),
+});
+
+export const recuperarPinSchema = z.object({
+  nombre: z.string().min(2).max(100),
+  email: z.string().email(),
+  pinNuevo: z.string().min(6).max(20),
+});
+
+export const resetearPinAdminSchema = z.object({
+  pinNuevo: z.string().min(6).max(20).optional(),
 });
 
 export const detalleSchema = z.object({

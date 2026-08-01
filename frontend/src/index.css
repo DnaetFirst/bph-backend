@@ -447,6 +447,48 @@ textarea.input-field {
 }
 .btn-ghost:hover { color: hsl(var(--color-text-primary)); }
 
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+.modal-content {
+  background: hsl(var(--color-bg));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 0.75rem 1.5rem;
+  border-bottom: 1px solid hsla(var(--color-table-border), 1);
+}
+.modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 0.75rem 1.5rem 1.5rem 1.5rem;
+  border-top: 1px solid hsla(var(--color-table-border), 1);
+}
+
 /* Tooltip */
 .tooltip {
   position: relative;
@@ -455,7 +497,7 @@ textarea.input-field {
 .tooltip .tooltip-text {
   visibility: hidden;
   width: max-content;
-  max-width: 160px;
+  max-width: 180px;
   background: hsl(var(--color-secondary));
   color: #fff;
   text-align: center;
@@ -464,17 +506,34 @@ textarea.input-field {
   font-size: 0.75rem;
   font-weight: 500;
   position: absolute;
-  z-index: 999;
-  bottom: 125%;
+  z-index: 9999;
+  top: 100%;
   left: 50%;
   transform: translateX(-50%);
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
   pointer-events: none;
+  white-space: nowrap;
 }
 .tooltip:hover .tooltip-text {
   visibility: visible;
   opacity: 1;
+}
+
+/* Portal-based tooltip (renders at body level, escapes stacking contexts) */
+.tooltip-portal-trigger {
+  display: inline-block;
+}
+.tooltip-portal-text {
+  background: hsl(var(--color-secondary));
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
 }
 
 /* ============================================================

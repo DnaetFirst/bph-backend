@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import {
   Users, UserCheck, UserX, Edit,
   MapPin, Save, Plus, ChevronLeft, ChevronRight, Key,
-  Search,
+  Search, X,
 } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useUiStore } from '../store/uiStore';
@@ -10,6 +10,7 @@ import ErrorState from '../components/ui/ErrorState';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingState from '../components/ui/LoadingState';
 import Badge from '../components/ui/Badge';
+import Tooltip from '../components/ui/Tooltip';
 
 const ROLES = [
   { value: 'evaluador', label: 'Evaluador' },
@@ -34,6 +35,12 @@ export default function Usuarios() {
   const [formDataArea, setFormDataArea] = useState({ nombre: '' });
 
   const [procesando, setProcesando] = useState(false);
+
+  const [mostrarModalPin, setMostrarModalPin] = useState(false);
+  const [usuarioEditandoPin, setUsuarioEditandoPin] = useState(null);
+  const [pinNuevo, setPinNuevo] = useState('');
+  const [pinNuevoConfirm, setPinNuevoConfirm] = useState('');
+  const [pinError, setPinError] = useState('');
 
   const [searchUsuarios, setSearchUsuarios] = useState('');
   const [searchDebounced, setSearchDebounced] = useState('');
@@ -145,13 +152,54 @@ export default function Usuarios() {
     }
   };
 
-  const handleResetPin = async (id, nombre) => {
-    if (!confirm(`¿Restablecer el PIN de "${nombre}"? Se reseteará a 000000.`)) return;
+  const validarPin = (pin) => {
+    if (pin.length < 6) return 'El PIN debe tener al menos 6 caracteres.';
+    if (!/\d/.test(pin)) return 'El PIN debe contener al menos un número.';
+    return '';
+  };
+
+  const openModalPin = (u) => {
+    setUsuarioEditandoPin(u);
+    setPinNuevo('');
+    setPinNuevoConfirm('');
+    setPinError('');
+    setMostrarModalPin(true);
+  };
+
+  const closeModalPin = () => {
+    setMostrarModalPin(false);
+    setUsuarioEditandoPin(null);
+    setPinNuevo('');
+    setPinNuevoConfirm('');
+    setPinError('');
+  };
+
+  const handleCambiarPin = async (e) => {
+    e.preventDefault();
+    if (!usuarioEditandoPin) return;
+
+    const err = validarPin(pinNuevo);
+    if (err) {
+      setPinError(err);
+      return;
+    }
+    if (pinNuevo !== pinNuevoConfirm) {
+      setPinError('Los PIN no coinciden.');
+      return;
+    }
+    setPinError('');
+    setProcesando(true);
+
     try {
-      await apiClient.put(`/admin/usuarios/${id}/reset-pin`);
-      mostrarToast({ tipo: 'success', titulo: 'PIN restablecido', mensaje: `El PIN de "${nombre}" fue restablecido a 000000.` });
+      await apiClient.put(`/admin/usuarios/${usuarioEditandoPin.id}/reset-pin`, {
+        pinNuevo: pinNuevo,
+      });
+      mostrarToast({ tipo: 'success', titulo: 'PIN actualizado', mensaje: `El PIN de "${usuarioEditandoPin.nombre}" fue actualizado.` });
+      closeModalPin();
     } catch (err) {
-      mostrarToast({ tipo: 'error', titulo: 'No se pudo resetear', mensaje: err.response?.data?.error || 'Error al restablecer PIN' });
+      mostrarToast({ tipo: 'error', titulo: 'No se pudo actualizar', mensaje: err.response?.data?.error || 'Error al actualizar PIN' });
+    } finally {
+      setProcesando(false);
     }
   };
 
@@ -411,26 +459,23 @@ export default function Usuarios() {
                             <Badge variant="success">Activo</Badge>
                           </td>
                           <td className="td-actions">
-                            <div className="btn-group-actions">
-                              <span className="tooltip">
-                                <button className="btn-ghost btn-small" onClick={() => openEditarUsuario(u)} title="Editar">
-                                  <Edit size={14} /> Editar
-                                </button>
-                                <span className="tooltip-text">Editar usuario</span>
-                              </span>
-                              <span className="tooltip">
-                                <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-warning))' }} onClick={() => handleResetPin(u.id, u.nombre)} title="Resetear PIN">
-                                  <Key size={14} /> PIN
-                                </button>
-                                <span className="tooltip-text">Resetear PIN a 000000</span>
-                              </span>
-                              <span className="tooltip">
-                                <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-danger))' }} onClick={() => handleDesactivarUsuario(u.id)} title="Desactivar" disabled={procesando}>
-                                  <UserX size={14} /> Desactivar
-                                </button>
-                                <span className="tooltip-text">Desactivar usuario</span>
-                              </span>
-                            </div>
+                             <div className="btn-group-actions">
+                               <Tooltip text="Editar usuario">
+                                 <button className="btn-ghost btn-small" onClick={() => openEditarUsuario(u)} title="Editar">
+                                   <Edit size={14} /> Editar
+                                 </button>
+                               </Tooltip>
+                               <Tooltip text="Cambiar PIN del usuario">
+                                 <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-warning))' }} onClick={() => openModalPin(u)} title="Cambiar PIN">
+                                   <Key size={14} /> PIN
+                                 </button>
+                               </Tooltip>
+                               <Tooltip text="Desactivar usuario">
+                                 <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-danger))' }} onClick={() => handleDesactivarUsuario(u.id)} title="Desactivar" disabled={procesando}>
+                                   <UserX size={14} /> Desactivar
+                                 </button>
+                               </Tooltip>
+                             </div>
                           </td>
                         </tr>
                       ))}
@@ -450,14 +495,13 @@ export default function Usuarios() {
                             <Badge variant="danger">Inactivo</Badge>
                           </td>
                           <td className="td-actions">
-                            <div className="btn-group-actions">
-                              <span className="tooltip">
-                                <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-success))' }} onClick={() => handleActivarUsuario(u.id)} title="Activar" disabled={procesando}>
-                                  <UserCheck size={14} /> Activar
-                                </button>
-                                <span className="tooltip-text">Activar usuario</span>
-                              </span>
-                            </div>
+                             <div className="btn-group-actions">
+                               <Tooltip text="Activar usuario">
+                                 <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-success))' }} onClick={() => handleActivarUsuario(u.id)} title="Activar" disabled={procesando}>
+                                   <UserCheck size={14} /> Activar
+                                 </button>
+                               </Tooltip>
+                             </div>
                           </td>
                         </tr>
                       ))}
@@ -522,8 +566,67 @@ export default function Usuarios() {
               </div>
             )}
           </div>
-        </section>
-      </div>
+          </section>
+        </div>
+
+        {/* === MODAL: CAMBIAR PIN === */}
+        {mostrarModalPin && usuarioEditandoPin && (
+          <div className="modal-overlay" onClick={closeModalPin}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>Cambiar PIN de "{usuarioEditandoPin.nombre}"</h3>
+                <button type="button" className="btn-ghost btn-small" onClick={closeModalPin}>
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="modal-body">
+                <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                  Ingresa un nuevo PIN de al menos 6 caracteres (debe contener números). El usuario deberá cambiarlo en su primer ingreso.
+                </p>
+                <form id="form-cambiar-pin" onSubmit={handleCambiarPin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <label className="label">Nuevo PIN</label>
+                    <input
+                      className="input-field"
+                      type="password"
+                      placeholder="Mínimo 6 caracteres, con números..."
+                      value={pinNuevo}
+                      onChange={(e) => { setPinNuevo(e.target.value); setPinError(''); }}
+                      disabled={procesando}
+                      minLength={6}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <div>
+                    <label className="label">Confirmar PIN</label>
+                    <input
+                      className="input-field"
+                      type="password"
+                      placeholder="Repite el nuevo PIN..."
+                      value={pinNuevoConfirm}
+                      onChange={(e) => { setPinNuevoConfirm(e.target.value); setPinError(''); }}
+                      disabled={procesando}
+                      minLength={6}
+                      required
+                    />
+                  </div>
+                  {pinError && (
+                    <div style={{ color: 'hsl(var(--color-danger))', fontSize: '0.8rem' }}>{pinError}</div>
+                  )}
+                </form>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline btn-small" onClick={closeModalPin} disabled={procesando}>
+                  Cancelar
+                </button>
+                <button type="submit" form="form-cambiar-pin" className="btn btn-primary btn-small" disabled={procesando || !pinNuevo || !pinNuevoConfirm}>
+                  {procesando ? 'Guardando...' : 'Guardar PIN'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
