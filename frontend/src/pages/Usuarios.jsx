@@ -415,7 +415,7 @@ export default function Usuarios() {
       )}
 
       {/* === TABLAS === */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+      <div className="tables-grid">
         {/* Tabla de usuarios */}
         <section className="section-card">
           <div className="section-card-body">
@@ -451,7 +451,7 @@ export default function Usuarios() {
                     <thead>
                       <tr>
                         <th className="th-nombre">Usuario</th>
-                        <th className="th-area">Email</th>
+                        <th className="th-email">Email</th>
                         <th>Rol</th>
                         <th className="hide-mobile">Creado</th>
                         <th>Estado</th>
@@ -462,7 +462,7 @@ export default function Usuarios() {
                       {activosPaginados.map((u) => (
                         <tr key={u.id}>
                           <td className="td-nombre" style={{ fontWeight: 600 }}>{u.nombre}</td>
-                          <td className="td-area" style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>{u.email}</td>
+                          <td className="td-email" style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>{u.email}</td>
                           <td className="td-area">
                             <Badge variant={u.rol === 'administrador' ? 'info' : u.rol === 'supervisor' ? 'warning' : 'neutral'}>
                               {u.rol}
@@ -499,7 +499,7 @@ export default function Usuarios() {
                       {inactivosPaginados.map((u) => (
                         <tr key={u.id}>
                           <td className="td-nombre" style={{ fontWeight: 600, opacity: 0.75 }}>{u.nombre}</td>
-                          <td className="td-area" style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>{u.email}</td>
+                          <td className="td-email" style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>{u.email}</td>
                           <td className="td-area">
                             <Badge variant={u.rol === 'administrador' ? 'info' : u.rol === 'supervisor' ? 'warning' : 'neutral'}>
                               {u.rol}

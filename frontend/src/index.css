@@ -785,8 +785,10 @@ textarea.input-field {
    Utility classes (responsive)
    ============================================================ */
 .hide-mobile { display: none !important; }
-.kpi-valor { font-size: 1.9rem; }
-.charts-row { display: grid; grid-template-columns: 2fr 1.2fr; gap: 1rem; }
+  .kpi-valor { font-size: 1.9rem; }
+  .charts-row { display: grid; grid-template-columns: 2fr 1.2fr; gap: 1rem; }
+  .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .th-email, .td-email { min-width: 120px; max-width: 180px; width: 150px; }
 
 .card-opcion { padding: 1.5rem; }
 .card-opcion-title {
@@ -855,6 +857,7 @@ textarea.input-field {
 
   .kpi-valor { font-size: 1.4rem; }
   .charts-row { grid-template-columns: 1fr; }
+  .tables-grid { grid-template-columns: 1fr; }
 
   .card-opcion { padding: 1.1rem; }
   .card-opcion-title { font-size: 1rem; }
