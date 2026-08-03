@@ -885,17 +885,12 @@ textarea.input-field {
   background: hsla(var(--color-surface-hover), 0.8);
 }
 .dropdown-actions .dropdown-menu-actions {
-  position: absolute;
-  right: 0;
-  top: 100%;
-  margin-top: 0.35rem;
   min-width: 150px;
   background: hsl(var(--color-surface));
   border: 1px solid hsl(var(--color-table-border));
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   padding: 0.4rem;
-  z-index: 10;
 }
 .dropdown-actions.open .dropdown-menu-actions {
   display: block;

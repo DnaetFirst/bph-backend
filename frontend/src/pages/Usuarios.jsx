@@ -45,6 +45,7 @@ export default function Usuarios() {
   const [searchDebounced, setSearchDebounced] = useState('');
   const [paginaUsuarios, setPaginaUsuarios] = useState(1);
   const [dropdownOpenId, setDropdownOpenId] = useState(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const [verDetalleUsuario, setVerDetalleUsuario] = useState(null);
   const [eliminarAreaConfirm, setEliminarAreaConfirm] = useState(null);
   const porPagina = 10;
@@ -64,8 +65,15 @@ export default function Usuarios() {
         setDropdownOpenId(null);
       }
     };
+    const handleScroll = () => {
+      if (dropdownOpenId) setDropdownOpenId(null);
+    };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [dropdownOpenId]);
 
   const fetchUsuarios = async () => {
@@ -348,18 +356,36 @@ export default function Usuarios() {
     setMostrarFormArea(false);
   };
 
+  const openDropdown = (id, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setDropdownPos({
+      top: rect.bottom + window.scrollY,
+      left: rect.right + window.scrollX,
+    });
+    setDropdownOpenId(id);
+  };
+
   const renderUserActions = (u, isActive) => (
     <td className="td-actions">
       <div className="dropdown-actions">
         <button
           type="button"
           className="dropdown-trigger btn-ghost btn-small"
-          onClick={(e) => { e.stopPropagation(); setDropdownOpenId(dropdownOpenId === u.id ? null : u.id); }}
+          onClick={(e) => { e.stopPropagation(); openDropdown(u.id, e); }}
         >
           <ChevronDown size={14} />
         </button>
         {dropdownOpenId === u.id && (
-          <div className="dropdown-menu-actions" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="dropdown-menu-actions"
+            style={{
+              position: 'fixed',
+              top: dropdownPos.top + 'px',
+              left: Math.max(10, dropdownPos.left - 145) + 'px',
+              zIndex: 9999,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button className="btn-ghost btn-small" onClick={() => { setDropdownOpenId(null); setVerDetalleUsuario(u); }}>
               <Eye size={14} /> Ver detalles
             </button>
@@ -397,12 +423,21 @@ export default function Usuarios() {
         <button
           type="button"
           className="dropdown-trigger btn-ghost btn-small"
-          onClick={(e) => { e.stopPropagation(); setDropdownOpenId(dropdownOpenId === ('area-' + a.id) ? null : 'area-' + a.id); }}
+          onClick={(e) => { e.stopPropagation(); openDropdown('area-' + a.id, e); }}
         >
           <ChevronDown size={14} />
         </button>
         {dropdownOpenId === ('area-' + a.id) && (
-          <div className="dropdown-menu-actions" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="dropdown-menu-actions"
+            style={{
+              position: 'fixed',
+              top: dropdownPos.top + 'px',
+              left: Math.max(10, dropdownPos.left - 145) + 'px',
+              zIndex: 9999,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button className="btn-ghost btn-small" onClick={() => { setDropdownOpenId(null); openEditarArea(a); }}>
               <Edit size={14} /> Editar
             </button>
