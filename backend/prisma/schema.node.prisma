@@ -44,8 +44,11 @@ model Usuario {
 model Area {
   id           Int          @id @default(autoincrement())
   nombre       String       @unique
+  activo       Boolean      @default(true)
   evaluaciones Evaluacion[]
   trabajadores Trabajador[]
+
+  @@index([activo])
 }
 
 model Trabajador {

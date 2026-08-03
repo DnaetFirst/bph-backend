@@ -196,7 +196,7 @@ router.delete('/usuarios/:id', async (req, res, next) => {
 
 router.get('/areas', async (req, res, next) => {
   try {
-    const areas = await prisma.area.findMany({ orderBy: { nombre: 'asc' } });
+    const areas = await prisma.area.findMany({ where: { activo: true }, orderBy: { nombre: 'asc' } });
     res.json(areas);
   } catch (error) {
     next(error);
@@ -224,6 +224,49 @@ router.put('/areas/:id', validar(areaSchema), async (req, res, next) => {
       data: req.body,
     });
     res.json(area);
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+router.delete('/areas/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const areaId = Number(id);
+
+    const existente = await prisma.area.findUnique({
+      where: { id: areaId, activo: true },
+      select: { id: true, nombre: true },
+    });
+
+    if (!existente) {
+      return res.status(404).json({ error: 'Area no encontrada' });
+    }
+
+    // Check if there are active trabajadores related
+    const trabajadoresRelacionados = await prisma.trabajador.count({
+      where: { areaId: areaId, activo: true },
+    });
+
+    if (trabajadoresRelacionados > 0) {
+      return res.status(409).json({ error: 'No se puede desactivar el area porque tiene trabajadores activos.' });
+    }
+
+    // Soft delete: set activo=false
+    await prisma.area.update({
+      where: { id: areaId },
+      data: { activo: false },
+    });
+
+    await registrarBitacora({
+      accion: 'Desactivacion de area',
+      usuarioId: req.usuario.id,
+      ip: req.ip,
+      detalles: 'Area ID ' + areaId + ' (' + existente.nombre + ') desactivada (soft delete).',
+    });
+
+    res.json({ ok: true, mensaje: 'Area " ' + existente.nombre + ' " desactivada.' });
   } catch (error) {
     next(error);
   }
