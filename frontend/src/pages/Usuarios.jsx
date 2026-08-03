@@ -359,8 +359,8 @@ export default function Usuarios() {
   const openDropdown = (id, event) => {
     const rect = event.currentTarget.getBoundingClientRect();
     setDropdownPos({
-      top: rect.bottom + window.scrollY,
-      left: rect.right + window.scrollX,
+      top: rect.top,
+      left: rect.left,
     });
     setDropdownOpenId(id);
   };
@@ -381,8 +381,8 @@ export default function Usuarios() {
             style={{
               position: 'fixed',
               top: dropdownPos.top + 'px',
-              left: Math.max(10, dropdownPos.left - 145) + 'px',
-              zIndex: 9999,
+              left: Math.max(10, dropdownPos.left - 160) + 'px',
+              zIndex: 99999,
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -433,8 +433,8 @@ export default function Usuarios() {
             style={{
               position: 'fixed',
               top: dropdownPos.top + 'px',
-              left: Math.max(10, dropdownPos.left - 145) + 'px',
-              zIndex: 9999,
+              left: Math.max(10, dropdownPos.left - 160) + 'px',
+              zIndex: 99999,
             }}
             onClick={(e) => e.stopPropagation()}
           >

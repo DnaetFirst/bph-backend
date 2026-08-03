@@ -10,7 +10,13 @@ import {
   ShieldCheck,
   ShieldAlert,
   CalendarRange,
+  Eye,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Search,
 } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useUiStore } from '../store/uiStore';
@@ -30,10 +36,14 @@ const DEFAULT_FILTERS = {
 };
 
 export default function Dashboard() {
-  const { evaluaciones, total, fetchEvaluaciones } = useEvaluacionesStore();
+  const { evaluaciones, total, fetchEvaluaciones, anularEvaluacion } = useEvaluacionesStore();
   const { areas, fetchTrabajadores, fetchAreas, obtenerTrabajadoresActivos } = useTrabajadoresStore();
+  const { usuario } = useAuthStore();
   const mostrarToast = useUiStore((state) => state.mostrarToast);
   const navigate = useNavigate();
+
+  const [verDetalleEvaluacion, setVerDetalleEvaluacion] = useState(null);
+  const [busquedaTabla, setBusquedaTabla] = useState('');
 
   const [pagina, setPagina] = useState(1);
   const porPagina = 12;
@@ -68,6 +78,25 @@ export default function Dashboard() {
     () => evaluaciones.filter((ev) => ev.estado === 'ACTIVA'),
     [evaluaciones]
   );
+
+  const evaluacionesTabla = useMemo(() => {
+    if (!busquedaTabla) return evaluaciones;
+    const term = busquedaTabla.toLowerCase();
+    return evaluaciones.filter(ev => 
+      ev.trabajador?.nombre?.toLowerCase().includes(term) ||
+      ev.evaluador?.nombre?.toLowerCase().includes(term) ||
+      ev.clasificacion?.toLowerCase().includes(term)
+    );
+  }, [evaluaciones, busquedaTabla]);
+
+  const handleEliminarFormulario = async (id) => {
+    if (!window.confirm('¿Estás seguro de anular esta evaluación?')) return;
+    try {
+      await anularEvaluacion(id, 'Eliminado desde Analytics');
+    } catch (error) {
+      // El error ya es manejado en el store
+    }
+  };
 
   const resumen = useMemo(() => {
     const totalItems = evaluacionesActivas.length;
@@ -380,6 +409,181 @@ export default function Dashboard() {
           )}
         </div>
       </section>
+
+      {/* Formularios (sólo administrador) */}
+      {usuario?.rol === 'administrador' && (
+        <section className="section-card" style={{ marginTop: '1.5rem' }}>
+          <div className="section-card-body">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <h3 className="section-title">Gestión de Formularios</h3>
+                <p className="section-subtitle">Visualiza y anula evaluaciones realizadas</p>
+              </div>
+              <div className="search-box">
+                <Search size={16} />
+                <input
+                  type="text"
+                  placeholder="Buscar en esta página..."
+                  value={busquedaTabla}
+                  onChange={(e) => setBusquedaTabla(e.target.value)}
+                  style={{ minWidth: '220px' }}
+                />
+              </div>
+            </div>
+
+            <div className="table-responsive" style={{ marginTop: '1rem' }}>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Trabajador</th>
+                    <th>Evaluador</th>
+                    <th>Área</th>
+                    <th>Clasificación</th>
+                    <th>Estado</th>
+                    <th className="th-actions">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {evaluacionesTabla.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="empty-state">No se encontraron formularios.</td>
+                    </tr>
+                  ) : (
+                    evaluacionesTabla.map(ev => (
+                      <tr key={ev.id}>
+                        <td>{new Date(ev.fecha).toLocaleDateString()}</td>
+                        <td>{ev.trabajador?.nombre || 'N/A'}</td>
+                        <td>{ev.evaluador?.nombre || 'N/A'}</td>
+                        <td>{areas.find(a => String(a.id) === String(ev.trabajador?.areaId || ev.areaId))?.nombre || 'N/A'}</td>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{ev.generalPorcentaje !== null ? `${ev.generalPorcentaje}%` : 'N/A'}</div>
+                          <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>{ev.clasificacion}</div>
+                        </td>
+                        <td>
+                           <span style={{
+                             padding: '0.2rem 0.6rem',
+                             borderRadius: '999px',
+                             fontSize: '0.8rem',
+                             fontWeight: 600,
+                             backgroundColor: ev.estado === 'ACTIVA' ? 'hsla(var(--color-success), 0.15)' : 'hsla(var(--color-danger), 0.15)',
+                             color: ev.estado === 'ACTIVA' ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))'
+                           }}>
+                             {ev.estado}
+                           </span>
+                        </td>
+                        <td className="td-actions">
+                          <button
+                            type="button"
+                            className="btn-ghost btn-small"
+                            onClick={() => setVerDetalleEvaluacion(ev)}
+                            title="Ver detalles"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-ghost btn-small"
+                            style={{ color: 'hsl(var(--color-danger))' }}
+                            onClick={() => handleEliminarFormulario(ev.id)}
+                            disabled={ev.estado === 'ANULADA'}
+                            title={ev.estado === 'ANULADA' ? 'Ya está anulada' : 'Anular evaluación'}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pagination" style={{ marginTop: '1rem' }}>
+              <button
+                className="btn btn-outline"
+                disabled={pagina === 1}
+                onClick={() => setPagina((p) => Math.max(1, p - 1))}
+              >
+                <ChevronLeft size={16} /> Anterior
+              </button>
+              <span style={{ fontSize: '0.9rem', color: 'hsl(var(--color-text-secondary))' }}>
+                Página {pagina} de {Math.ceil(total / porPagina) || 1} ({total} totales)
+              </span>
+              <button
+                className="btn btn-outline"
+                disabled={pagina >= Math.ceil(total / porPagina) || total === 0}
+                onClick={() => setPagina((p) => p + 1)}
+              >
+                Siguiente <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Modal para ver detalles */}
+      {verDetalleEvaluacion && (
+        <div className="modal-overlay" onClick={() => setVerDetalleEvaluacion(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Detalles de la Evaluación</h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+               <div>
+                 <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Fecha</p>
+                 <p style={{ fontWeight: 600 }}>{new Date(verDetalleEvaluacion.fecha).toLocaleString()}</p>
+               </div>
+               <div>
+                 <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Estado</p>
+                 <p style={{ fontWeight: 600, color: verDetalleEvaluacion.estado === 'ACTIVA' ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))' }}>{verDetalleEvaluacion.estado}</p>
+               </div>
+               <div>
+                 <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Trabajador</p>
+                 <p style={{ fontWeight: 600 }}>{verDetalleEvaluacion.trabajador?.nombre || 'N/A'}</p>
+               </div>
+               <div>
+                 <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Evaluador</p>
+                 <p style={{ fontWeight: 600 }}>{verDetalleEvaluacion.evaluador?.nombre || 'N/A'}</p>
+               </div>
+            </div>
+
+            <div style={{ padding: '1rem', background: 'hsl(var(--color-background))', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
+               <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Resultados</h4>
+               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span>General:</span>
+                  <strong>{verDetalleEvaluacion.generalPorcentaje !== null ? `${verDetalleEvaluacion.generalPorcentaje}%` : 'N/A'}</strong>
+               </div>
+               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span>Higiene:</span>
+                  <strong>{verDetalleEvaluacion.higienePorcentaje !== null ? `${verDetalleEvaluacion.higienePorcentaje}%` : 'N/A'}</strong>
+               </div>
+               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span>Uniforme:</span>
+                  <strong>{verDetalleEvaluacion.uniformePorcentaje !== null ? `${verDetalleEvaluacion.uniformePorcentaje}%` : 'N/A'}</strong>
+               </div>
+               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Clasificación:</span>
+                  <strong>{verDetalleEvaluacion.clasificacion || 'N/A'}</strong>
+               </div>
+            </div>
+            
+            {verDetalleEvaluacion.observaciones && (
+              <div style={{ marginBottom: '1.5rem' }}>
+                 <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Observaciones</p>
+                 <p style={{ padding: '0.75rem', background: 'hsl(var(--color-background))', borderRadius: 'var(--radius-md)', fontSize: '0.9rem' }}>
+                   {verDetalleEvaluacion.observaciones}
+                 </p>
+              </div>
+            )}
+
+            <div className="action-group" style={{ justifyContent: 'flex-end' }}>
+              <button className="btn btn-outline" onClick={() => setVerDetalleEvaluacion(null)}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
