@@ -15,7 +15,7 @@ if (!globalThis.crypto) {
 
 const prisma = new PrismaClient();
 
-const AREAS = ['Cárnicos', 'Comidas MAP', 'F.F.V.V.', 'Panificación'];
+const AREAS = ['Carnicos', 'Comidas MAP', 'F.F.V.V.', 'Panificacion', 'Produccion', 'Calidad e inocuidad'];
 
 // Trabajadores iniciales del HTML original con sus áreas correctas
 const TRABAJADORES = [

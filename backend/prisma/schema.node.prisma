@@ -63,12 +63,13 @@ model Trabajador {
 }
 
 model Parametro {
-  id        Int      @id @default(autoincrement())
-  categoria String   // "higiene" | "uniforme"
-  texto     String
-  orden     Int      @default(0)
-  activo    Boolean  @default(true)
-  detalles  DetalleEvaluacion[]
+  id                Int                 @id @default(autoincrement())
+  categoria         String              // "higiene" | "uniforme"
+  texto             String
+  orden             Int                 @default(0)
+  activo            Boolean             @default(true)
+  excluyeAreasJson  String?             // JSON array of area names where this param is excluded
+  detalles          DetalleEvaluacion[]
 
   @@index([categoria, activo])
 }

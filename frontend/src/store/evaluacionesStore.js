@@ -11,8 +11,8 @@ const PARAMETROS_FALLBACK = [
   { id: 5, categoria: 'higiene', texto: 'Sin heridas expuestas o cubiertas correctamente', orden: 5 },
   { id: 6, categoria: 'higiene', texto: 'No come, bebe ni fuma en el área', orden: 6 },
   { id: 7, categoria: 'higiene', texto: 'Higiene personal general adecuada', orden: 7 },
-  { id: 8, categoria: 'uniforme', texto: 'Uniforme completo, limpio y en buen estado', orden: 1 },
-  { id: 9, categoria: 'uniforme', texto: 'Cofia o gorro correctamente colocado', orden: 2 },
+  { id: 8, categoria: 'uniforme', texto: 'Uniforme completo, limpio y en buen estado', orden: 1, excluyeAreasJson: null },
+  { id: 9, categoria: 'uniforme', texto: 'Cofia o gorro correctamente colocado', orden: 2, excluyeAreasJson: null },
   { id: 10, categoria: 'uniforme', texto: 'Calzado cerrado, limpio y exclusivo del área', orden: 3 },
 ];
 

@@ -63,7 +63,7 @@ app.get('/api/v1/parametros', async (req, res, next) => {
   try {
     const parametros = await prisma.parametro.findMany({
       where: { activo: true },
-      select: { id: true, categoria: true, texto: true, orden: true },
+      select: { id: true, categoria: true, texto: true, orden: true, excluyeAreasJson: true },
       orderBy: [{ categoria: 'asc' }, { orden: 'asc' }],
     });
     res.json(parametros);

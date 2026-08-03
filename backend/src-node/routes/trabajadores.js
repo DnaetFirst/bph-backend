@@ -148,10 +148,10 @@ router.delete('/:id', async (req, res, next) => {
     const id = Number.parseInt(req.params.id, 10);
     await service.eliminar(id);
     await registrarBitacora({
-      accion: 'Eliminar trabajador',
+      accion: 'Desactivacion de trabajador',
       usuarioId: req.usuario.id,
       ip: req.ip,
-      detalles: `ID: ${id}`,
+      detalles: 'Trabajador ID ' + id + ' desactivado (soft delete).',
     });
     res.set('Cache-Control', 'no-store');
     res.json({ ok: true });
@@ -159,7 +159,7 @@ router.delete('/:id', async (req, res, next) => {
     if (error.message.includes('no existe')) {
       return res.status(404).json({ error: error.message });
     }
-    if (error.message.includes('evaluaciones relacionadas') || error.message.includes('desactivado')) {
+    if (error.message.includes('evaluaciones relacionadas')) {
       return res.status(409).json({ error: error.message });
     }
     next(error);

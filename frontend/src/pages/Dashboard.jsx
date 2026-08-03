@@ -80,6 +80,7 @@ export default function Dashboard() {
     const promedioUniforme = totalItems
       ? Math.round(evaluacionesActivas.reduce((sum, ev) => sum + (ev.uniformePorcentaje || 0), 0) / totalItems)
       : 0;
+    const tieneUniforme = evaluacionesActivas.some((ev) => ev.uniformePorcentaje !== null && ev.uniformePorcentaje !== undefined);
     const excelentes = evaluacionesActivas.filter((ev) => ev.clasificacion === 'Excelente').length;
     const aceptables = evaluacionesActivas.filter((ev) => ev.clasificacion === 'Aceptable').length;
     const deficientes = evaluacionesActivas.filter((ev) => ev.clasificacion === 'Deficiente').length;
@@ -117,6 +118,7 @@ export default function Dashboard() {
       promedioGeneral,
       promedioHigiene,
       promedioUniforme,
+      tieneUniforme,
       excelentes,
       aceptables,
       deficientes,
@@ -337,7 +339,14 @@ export default function Dashboard() {
 
             <ProgressRow label="General" value={resumen.promedioGeneral} color="linear-gradient(90deg, hsla(221, 83%, 53%, 0.75), hsla(217, 91%, 60%, 0.95))" />
             <ProgressRow label="Higiene" value={resumen.promedioHigiene} color="linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))" />
+            {resumen.tieneUniforme ? (
             <ProgressRow label="Uniforme" value={resumen.promedioUniforme} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0', fontSize: '0.9rem' }}>
+              <span>Uniforme</span>
+              <strong style={{ color: 'hsl(var(--color-text-secondary))' }}>N/A</strong>
+            </div>
+          )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '0.5rem' }}>
               <div style={{ padding: '0.85rem', borderRadius: 12, background: 'hsla(142, 71%, 45%, 0.1)', textAlign: 'center' }}>

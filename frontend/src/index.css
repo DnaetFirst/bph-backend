@@ -784,7 +784,6 @@ textarea.input-field {
 /* ============================================================
    Utility classes (responsive)
    ============================================================ */
-.hide-mobile { display: none !important; }
   .kpi-valor { font-size: 1.9rem; }
   .charts-row { display: grid; grid-template-columns: 2fr 1.2fr; gap: 1rem; }
   .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
@@ -863,5 +862,60 @@ textarea.input-field {
   .card-opcion-title { font-size: 1rem; }
   .card-opcion-subtitle { font-size: 0.8rem; }
 
-  .hide-mobile { display: none !important; }
+  .hide-mobile, .th-email, .td-email { display: none !important; }
+}
+
+/* Dropdown action menu (Usuarios page) */
+.dropdown-actions {
+  position: relative;
+  display: inline-block;
+}
+.dropdown-actions .dropdown-trigger {
+  background: transparent;
+  border: 1px solid transparent;
+  color: hsl(var(--color-text-secondary));
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.dropdown-actions .dropdown-trigger:hover {
+  background: hsla(var(--color-surface-hover), 0.8);
+}
+.dropdown-actions .dropdown-menu-actions {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 0.35rem;
+  min-width: 150px;
+  background: hsl(var(--color-surface));
+  border: 1px solid hsl(var(--color-table-border));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 0.4rem;
+  z-index: 10;
+  display: none;
+}
+.dropdown-actions.open .dropdown-menu-actions {
+  display: block;
+}
+.dropdown-actions .dropdown-menu-actions button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border: none;
+  background: transparent;
+  font-size: 0.82rem;
+  color: hsl(var(--color-text-primary));
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.dropdown-actions .dropdown-menu-actions button:hover {
+  background: hsla(var(--color-surface-hover), 0.8);
 }

@@ -143,26 +143,18 @@ export class TrabajadorService {
   async eliminar(id) {
     const trabajador = await this.prisma.trabajador.findUnique({
       where: { id },
-      select: { id: true, activo: true },
+      select: { id: true },
     });
 
     if (!trabajador) {
       throw new Error('El trabajador no existe');
     }
 
-    if (trabajador.activo) {
-      throw new Error('Solo se puede eliminar un trabajador desactivado');
-    }
-
-    const evaluacionesRelacionadas = await this.prisma.evaluacion.count({
-      where: { trabajadorId: id },
+    // Soft delete: marcar como inactivo en lugar de eliminar fisicamente
+    await this.prisma.trabajador.update({
+      where: { id },
+      data: { activo: false },
     });
-
-    if (evaluacionesRelacionadas > 0) {
-      throw new Error('No se puede eliminar el trabajador porque tiene evaluaciones relacionadas');
-    }
-
-    await this.prisma.trabajador.delete({ where: { id } });
     return { ok: true };
   }
 }

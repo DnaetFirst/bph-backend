@@ -154,6 +154,44 @@ router.put('/usuarios/:id/reset-pin', validar(resetearPinAdminSchema), async (re
   }
 });
 
+
+// --- SOFT DELETE: desactivar usuario (mantiene integridad y auditoria) ---
+router.delete('/usuarios/:id', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const usuarioId = Number(id);
+
+    if (usuarioId === req.usuario.id) {
+      return res.status(400).json({ error: 'No puedes desactivar tu propia cuenta' });
+    }
+
+    const existente = await prisma.usuario.findUnique({
+      where: { id: usuarioId },
+      select: { id: true, nombre: true, email: true, rol: true, activo: true },
+    });
+
+    if (!existente) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    await prisma.usuario.update({
+      where: { id: usuarioId },
+      data: { activo: false, requiereCambioPin: true },
+    });
+
+    await registrarBitacora({
+      accion: 'Desactivacion de usuario',
+      usuarioId: req.usuario.id,
+      ip: req.ip,
+      detalles: 'Usuario ID ' + usuarioId + ' desactivado. Soft delete: activo=false.',
+    });
+
+    res.json({ ok: true, mensaje: 'Usuario desactivado correctamente.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // --- ÁREAS ---
 
 router.get('/areas', async (req, res, next) => {

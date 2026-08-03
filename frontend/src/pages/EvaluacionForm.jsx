@@ -92,7 +92,16 @@ export default function EvaluacionForm() {
   };
 
   const higieneParams = parametros.filter(p => p.categoria === 'higiene');
-  const uniformeParams = parametros.filter(p => p.categoria === 'uniforme');
+  const uniformeParams = parametros.filter(p => p.categoria === 'uniforme').filter(p => {
+    if (!p.excluyeAreasJson) return true;
+    try {
+      const excluded = JSON.parse(p.excluyeAreasJson);
+      const areaNombre = areas.find(a => String(a.id) === String(areaId))?.nombre || '';
+      return !excluded.includes(areaNombre);
+    } catch {
+      return true;
+    }
+  });
 
   const calcularProgreso = (params) => {
     const total = params.length;
@@ -117,7 +126,7 @@ export default function EvaluacionForm() {
       : 'hsl(var(--color-danger))';
 
   const datosBaseCompletos = trabajadorId && areaId;
-  const puedeAvanzar = datosBaseCompletos && higieneParams.length > 0;
+  const puedeAvanzar = datosBaseCompletos && (higieneParams.length > 0 || uniformeParams.length > 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -406,8 +415,19 @@ export default function EvaluacionForm() {
                 </div>
 
                 <div className="action-group" style={{ justifyContent: 'flex-end', marginTop: '1rem' }}>
-                  <button type="button" className="btn btn-primary" onClick={() => setPaso(2)} disabled={!puedeAvanzar}>
-                    Siguiente
+                 <button type="button" className="btn btn-primary" onClick={() => {
+                    if (uniformeParams.length > 0) {
+                      setPaso(2);
+                    } else {
+                      // No uniform params for this area - submit directly
+                      const form = formRef.current;
+                      if (form) {
+                        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                        form.dispatchEvent(submitEvent);
+                      }
+                    }
+                  }} disabled={!puedeAvanzar}>
+                    {uniformeParams.length > 0 ? 'Siguiente' : 'Guardar Evaluaci�n'}
                   </button>
                 </div>
               </>

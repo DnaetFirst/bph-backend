@@ -132,7 +132,7 @@ export default function Trabajadores() {
         await eliminarTrabajador(id);
       } catch (err) {
         const errorMsg = err.response?.data?.error || 'Error al eliminar trabajador.';
-        mostrarToast({ tipo: 'error', titulo: 'No se pudo eliminar', mensaje: errorMsg });
+        mostrarToast({ tipo: 'error', titulo: 'No se pudo desactivar', mensaje: errorMsg });
       }
     }
   };
