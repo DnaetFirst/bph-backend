@@ -148,14 +148,39 @@ router.post('/:id/anular', async (req, res, next) => {
       accion: 'Anular evaluación',
       usuarioId: req.usuario.id,
       ip: req.ip,
-      detalles: `ID: ${req.params.id}, Motivo: ${parsed.data.motivo || ''}`,
+      detalles: `Anulada evaluación ID: ${req.params.id}. Motivo: ${parsed.data.motivo}`,
     });
   } catch (error) {
     next(error);
   }
 });
 
-router.get('/exportar', async (req, res, next) => {
+router.delete('/:id', authorize('administrador'), async (req, res, next) => {
+  try {
+    const existente = await prisma.evaluacion.findUnique({ where: { id: req.params.id } });
+    if (!existente) {
+      return res.status(404).json({ error: 'Evaluación no encontrada' });
+    }
+
+    await service.eliminar(req.params.id, {
+      usuarioId: req.usuario.id,
+    });
+
+    res.set('Cache-Control', 'no-store');
+    res.json({ success: true, message: 'Evaluación eliminada permanentemente' });
+    
+    await registrarBitacora({
+      accion: 'Eliminar evaluación (Hard Delete)',
+      usuarioId: req.usuario.id,
+      ip: req.ip,
+      detalles: `Eliminada evaluación ID: ${req.params.id} y recálculo de integridad completado.`,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/exportar', authorize('administrador', 'supervisor'), async (req, res, next) => {
   try {
     if (!['supervisor', 'administrador'].includes(req.usuario.rol)) {
       return res.status(403).json({ error: 'No autorizado' });

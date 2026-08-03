@@ -36,7 +36,7 @@ const DEFAULT_FILTERS = {
 };
 
 export default function Dashboard() {
-  const { evaluaciones, total, fetchEvaluaciones, anularEvaluacion } = useEvaluacionesStore();
+  const { evaluaciones, total, fetchEvaluaciones, borrarEvaluacion } = useEvaluacionesStore();
   const { areas, fetchTrabajadores, fetchAreas, obtenerTrabajadoresActivos } = useTrabajadoresStore();
   const { usuario } = useAuthStore();
   const mostrarToast = useUiStore((state) => state.mostrarToast);
@@ -90,9 +90,9 @@ export default function Dashboard() {
   }, [evaluaciones, busquedaTabla]);
 
   const handleEliminarFormulario = async (id) => {
-    if (!window.confirm('¿Estás seguro de anular esta evaluación?')) return;
+    if (!window.confirm('¿Estás seguro de eliminar físicamente esta evaluación por completo?')) return;
     try {
-      await anularEvaluacion(id, 'Eliminado desde Analytics');
+      await borrarEvaluacion(id);
     } catch (error) {
       // El error ya es manejado en el store
     }
@@ -414,64 +414,41 @@ export default function Dashboard() {
       {usuario?.rol === 'administrador' && (
         <section className="section-card" style={{ marginTop: '1.5rem' }}>
           <div className="section-card-body">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-              <div>
-                <h3 className="section-title">Gestión de Formularios</h3>
-                <p className="section-subtitle">Visualiza y anula evaluaciones realizadas</p>
-              </div>
-              <div className="search-box">
-                <Search size={16} />
-                <input
-                  type="text"
-                  placeholder="Buscar en esta página..."
-                  value={busquedaTabla}
-                  onChange={(e) => setBusquedaTabla(e.target.value)}
-                  style={{ minWidth: '220px' }}
-                />
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 className="section-title">Gestión de Formularios</h2>
             </div>
 
-            <div className="table-responsive" style={{ marginTop: '1rem' }}>
-              <table className="table">
+            <div style={{ position: 'relative', width: '100%', maxWidth: '320px', marginBottom: '1rem' }}>
+              <Search size={16} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--color-text-secondary))' }} />
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Buscar por trabajador, evaluador o clasificación..."
+                value={busquedaTabla}
+                onChange={(e) => setBusquedaTabla(e.target.value)}
+                style={{ paddingLeft: '2.5rem', width: '100%' }}
+              />
+            </div>
+
+            <div className="table-wrapper">
+              <table className="data-table">
                 <thead>
                   <tr>
                     <th>Fecha</th>
-                    <th>Trabajador</th>
-                    <th>Evaluador</th>
-                    <th>Área</th>
-                    <th>Clasificación</th>
-                    <th>Estado</th>
+                    <th className="th-nombre">Trabajador</th>
                     <th className="th-actions">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {evaluacionesTabla.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="empty-state">No se encontraron formularios.</td>
+                      <td colSpan="3" className="empty-state">No se encontraron formularios.</td>
                     </tr>
                   ) : (
                     evaluacionesTabla.map(ev => (
                       <tr key={ev.id}>
                         <td>{new Date(ev.fecha).toLocaleDateString()}</td>
                         <td>{ev.trabajador?.nombre || 'N/A'}</td>
-                        <td>{ev.evaluador?.nombre || 'N/A'}</td>
-                        <td>{areas.find(a => String(a.id) === String(ev.trabajador?.areaId || ev.areaId))?.nombre || 'N/A'}</td>
-                        <td>
-                          <div style={{ fontWeight: 600 }}>{ev.generalPorcentaje !== null ? `${ev.generalPorcentaje}%` : 'N/A'}</div>
-                          <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>{ev.clasificacion}</div>
-                        </td>
-                        <td>
-                           <span style={{
-                             padding: '0.2rem 0.6rem',
-                             borderRadius: '999px',
-                             fontSize: '0.8rem',
-                             fontWeight: 600,
-                             backgroundColor: ev.estado === 'ACTIVA' ? 'hsla(var(--color-success), 0.15)' : 'hsla(var(--color-danger), 0.15)',
-                             color: ev.estado === 'ACTIVA' ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))'
-                           }}>
-                             {ev.estado}
-                           </span>
-                        </td>
                         <td className="td-actions">
                           <button
                             type="button"
@@ -486,8 +463,7 @@ export default function Dashboard() {
                             className="btn-ghost btn-small"
                             style={{ color: 'hsl(var(--color-danger))' }}
                             onClick={() => handleEliminarFormulario(ev.id)}
-                            disabled={ev.estado === 'ANULADA'}
-                            title={ev.estado === 'ANULADA' ? 'Ya está anulada' : 'Anular evaluación'}
+                            title="Eliminar por completo"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -499,25 +475,27 @@ export default function Dashboard() {
               </table>
             </div>
 
-            <div className="pagination" style={{ marginTop: '1rem' }}>
-              <button
-                className="btn btn-outline"
-                disabled={pagina === 1}
-                onClick={() => setPagina((p) => Math.max(1, p - 1))}
-              >
-                <ChevronLeft size={16} /> Anterior
-              </button>
-              <span style={{ fontSize: '0.9rem', color: 'hsl(var(--color-text-secondary))' }}>
-                Página {pagina} de {Math.ceil(total / porPagina) || 1} ({total} totales)
-              </span>
-              <button
-                className="btn btn-outline"
-                disabled={pagina >= Math.ceil(total / porPagina) || total === 0}
-                onClick={() => setPagina((p) => p + 1)}
-              >
-                Siguiente <ChevronRight size={16} />
-              </button>
-            </div>
+            {Math.ceil(total / porPagina) > 1 && (
+              <div className="pagination-footer">
+                <button
+                  className="btn btn-outline btn-small"
+                  disabled={pagina <= 1}
+                  onClick={() => setPagina((p) => Math.max(1, p - 1))}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="pagination-info">
+                  Página {pagina} de {Math.ceil(total / porPagina)}
+                </span>
+                <button
+                  className="btn btn-outline btn-small"
+                  disabled={pagina >= Math.ceil(total / porPagina)}
+                  onClick={() => setPagina((p) => p + 1)}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
           </div>
         </section>
       )}

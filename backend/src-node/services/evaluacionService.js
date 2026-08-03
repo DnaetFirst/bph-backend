@@ -104,6 +104,51 @@ export class EvaluacionService {
     });
   }
 
+  async eliminar(id, { usuarioId }) {
+    const evaluacionAEliminar = await this.prisma.evaluacion.findUnique({
+      where: { id },
+      select: { creadoEn: true }
+    });
+
+    if (!evaluacionAEliminar) return null;
+
+    // Eliminar físicamente
+    await this.prisma.evaluacion.delete({
+      where: { id }
+    });
+
+    // Recalcular la cadena criptográfica desde este punto en adelante
+    const evaluacionesAfectadas = await this.prisma.evaluacion.findMany({
+      where: { creadoEn: { gt: evaluacionAEliminar.creadoEn } },
+      orderBy: { creadoEn: 'asc' }
+    });
+
+    // Encontrar el último hash íntegro antes de los afectados
+    const ultimaIntegra = await this.prisma.evaluacion.findFirst({
+      where: { creadoEn: { lt: evaluacionAEliminar.creadoEn } },
+      orderBy: { creadoEn: 'desc' },
+      select: { hashIntegridad: true }
+    });
+
+    let hashAnterior = ultimaIntegra ? ultimaIntegra.hashIntegridad : null;
+
+    for (const ev of evaluacionesAfectadas) {
+      const nuevoHashIntegridad = await sha256Hex(contenidoEvaluacionParaHash({ ...ev, hashAnterior }));
+      
+      await this.prisma.evaluacion.update({
+        where: { id: ev.id },
+        data: {
+          hashAnterior,
+          hashIntegridad: nuevoHashIntegridad
+        }
+      });
+      
+      hashAnterior = nuevoHashIntegridad;
+    }
+
+    return true;
+  }
+
   /** Recalcula toda la cadena y compara contra lo almacenado — para el panel de integridad. */
   async verificarIntegridadCompleta() {
     const evaluaciones = await this.prisma.evaluacion.findMany({ orderBy: { creadoEn: 'asc' } });
