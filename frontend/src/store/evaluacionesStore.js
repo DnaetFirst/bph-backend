@@ -11,16 +11,18 @@ const PARAMETROS_FALLBACK = [
   { id: 5, categoria: 'higiene', texto: 'Sin heridas expuestas o cubiertas correctamente', orden: 5 },
   { id: 6, categoria: 'higiene', texto: 'No come, bebe ni fuma en el área', orden: 6 },
   { id: 7, categoria: 'higiene', texto: 'Higiene personal general adecuada', orden: 7 },
-  { id: 8, categoria: 'uniforme', texto: 'Uniforme completo, limpio y en buen estado', orden: 1, excluyeAreasJson: null },
-  { id: 9, categoria: 'uniforme', texto: 'Cofia o gorro correctamente colocado', orden: 2, excluyeAreasJson: null },
-  { id: 10, categoria: 'uniforme', texto: 'Calzado cerrado, limpio y exclusivo del área', orden: 3 },
+  { id: 8, categoria: 'uniforme', texto: 'Uniforme completo, limpio y en buen estado', orden: 1, excluyeAreasJson: '["Producción","Calidad e inocuidad"]' },
+  { id: 9, categoria: 'uniforme', texto: 'Cofia o gorro correctamente colocado', orden: 2, excluyeAreasJson: '["Producción","Calidad e inocuidad"]' },
+  { id: 10, categoria: 'uniforme', texto: 'Calzado cerrado, limpio y exclusivo del área', orden: 3, excluyeAreasJson: '["Producción","Calidad e inocuidad"]' },
 ];
 
 const AREAS_FALLBACK = [
   { id: 1, nombre: 'Cárnicos' },
-  { id: 2, nombre: 'MAP' },
-  { id: 3, nombre: 'FFVV' },
-  { id: 4, nombre: 'Panificación' }
+  { id: 2, nombre: 'Comidas MAP' },
+  { id: 3, nombre: 'F.F.V.V.' },
+  { id: 4, nombre: 'Panificación' },
+  { id: 5, nombre: 'Producción' },
+  { id: 6, nombre: 'Calidad e inocuidad' },
 ];
 
 export const useEvaluacionesStore = create((set, get) => ({

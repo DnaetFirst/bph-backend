@@ -50,6 +50,7 @@ app.get('/api/v1/health', async (req, res, next) => {
 app.get('/api/v1/areas', async (req, res, next) => {
   try {
     const areas = await prisma.area.findMany({
+      where: { activo: true },
       select: { id: true, nombre: true },
       orderBy: { nombre: 'asc' },
     });

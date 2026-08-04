@@ -18,8 +18,8 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
-import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useUiStore } from '../store/uiStore';
+import { getLocalISODate } from '../utils/fecha';
 import { apiClient } from '../api/client';
 import KpiCard from '../components/ui/KpiCard';
 import ProgressRow from '../components/ui/ProgressRow';
@@ -138,7 +138,7 @@ export default function Dashboard() {
       .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
       .slice(-6)
       .map((ev) => ({
-        label: new Date(ev.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }),
+                         label: new Date(ev.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' }),
         value: ev.generalPorcentaje || 0,
       }));
 
@@ -181,7 +181,7 @@ export default function Dashboard() {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `evaluaciones_bph_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      link.setAttribute('download', `evaluaciones_bph_${getLocalISODate()}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -447,7 +447,7 @@ export default function Dashboard() {
                   ) : (
                     evaluacionesTabla.map(ev => (
                       <tr key={ev.id}>
-                        <td>{new Date(ev.fecha).toLocaleDateString()}</td>
+                         <td>{new Date(ev.fecha).toLocaleDateString('es-AR', { timeZone: 'UTC' })}</td>
                         <td>{ev.trabajador?.nombre || 'N/A'}</td>
                         <td className="td-actions">
                           <button
@@ -509,7 +509,7 @@ export default function Dashboard() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
                <div>
                  <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Fecha</p>
-                 <p style={{ fontWeight: 600 }}>{new Date(verDetalleEvaluacion.fecha).toLocaleString()}</p>
+                  <p style={{ fontWeight: 600 }}>{new Date(verDetalleEvaluacion.fecha).toLocaleString('es-AR', { timeZone: 'UTC' })}</p>
                </div>
                <div>
                  <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Estado</p>

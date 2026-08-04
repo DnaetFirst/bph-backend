@@ -6,6 +6,7 @@ import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
+import { getLocalISODate, normalizarNombre } from '../utils/fecha';
 import ErrorState from '../components/ui/ErrorState';
 
 export default function EvaluacionForm() {
@@ -22,7 +23,7 @@ export default function EvaluacionForm() {
   const [colorObservado, setColorObservado] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [respuestas, setRespuestas] = useState({});
-  const [fecha, _setFecha] = useState(new Date().toISOString().split('T')[0]);
+  const [fecha, _setFecha] = useState(getLocalISODate());
   const [evaluacionGuardada, setEvaluacionGuardada] = useState(null);
   const [paso, setPaso] = useState(1);
   const modalRef = useRef(null);
@@ -45,7 +46,7 @@ export default function EvaluacionForm() {
   }, [trabajadorId, obtenerTrabajadoresActivos]);
 
   useEffect(() => {
-    if (!fecha) return;
+    if (!fecha || uniformeParams.length === 0) return;
     const fechaObj = new Date(fecha + 'T12:00:00');
     const diaSemana = fechaObj.getDay();
 
@@ -59,7 +60,7 @@ export default function EvaluacionForm() {
     };
 
     setColorEsperado(coloresPorDia[diaSemana] || '');
-  }, [fecha]);
+  }, [fecha, uniformeParams.length]);
 
   useEffect(() => {
     if (!evaluacionGuardada) return;
@@ -97,7 +98,8 @@ export default function EvaluacionForm() {
     try {
       const excluded = JSON.parse(p.excluyeAreasJson);
       const areaNombre = areas.find(a => String(a.id) === String(areaId))?.nombre || '';
-      return !excluded.includes(areaNombre);
+      if (excluded.includes(areaNombre)) return false;
+      return !excluded.some(e => normalizarNombre(e) === normalizarNombre(areaNombre));
     } catch {
       return true;
     }
@@ -150,9 +152,11 @@ export default function EvaluacionForm() {
       trabajadorId: parseInt(trabajadorId),
       areaId: parseInt(areaId),
       evaluadorId: usuario?.id || 1,
-      colorEsperado: colorEsperado || undefined,
-      colorObservado: colorObservado || undefined,
-      cumplimientoColor: colorEsperado === colorObservado ? 'Cumple' : 'No cumple',
+      ...(uniformeParams.length > 0 && {
+        colorEsperado: colorEsperado || undefined,
+        colorObservado: colorObservado || undefined,
+        cumplimientoColor: colorEsperado === colorObservado ? 'Cumple' : 'No cumple',
+      }),
       observaciones: observaciones || undefined,
       detalles
     };
@@ -279,7 +283,7 @@ export default function EvaluacionForm() {
           </div>
           <div>
             <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Fecha: </span>
-            <strong>{evaluacionGuardada.fecha ? new Date(evaluacionGuardada.fecha).toLocaleDateString('es-AR') : '---'}</strong>
+            <strong>{evaluacionGuardada.fecha ? new Date(evaluacionGuardada.fecha).toLocaleDateString('es-AR', { timeZone: 'UTC' }) : '---'}</strong>
           </div>
           <div>
             <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Evaluador: </span>
@@ -292,7 +296,7 @@ export default function EvaluacionForm() {
             Cumplimiento por dimensión
           </h3>
           <BarraProgreso label="Higiene" value={higieneProgress.porcentaje} color="linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))" />
-          <BarraProgreso label="Uniforme" value={uniformeProgress.porcentaje} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />
+          {uniformeParams.length > 0 && <BarraProgreso label="Uniforme" value={uniformeProgress.porcentaje} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />}
           <BarraProgreso label="General" value={progresoGeneral} color="linear-gradient(90deg, hsla(221, 83%, 53%, 0.75), hsla(217, 91%, 60%, 0.95))" />
         </div>
 
@@ -303,6 +307,7 @@ export default function EvaluacionForm() {
               Clasificación: {clasificacion}
             </span>
           </div>
+          {uniformeParams.length > 0 && (
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Cumplimiento de color</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'flex-end' }}>
@@ -314,12 +319,13 @@ export default function EvaluacionForm() {
               <strong>{colorEsperado === colorObservado ? 'Cumple' : 'No cumple'}</strong>
             </div>
           </div>
+        )}
         </div>
 
         <div className="action-group" style={{ justifyContent: 'center', gap: '1rem' }}>
           <button className="btn btn-outline" onClick={() => {
-            setEvaluacionGuardada(null);
-            setPaso(2);
+             setEvaluacionGuardada(null);
+             setPaso(uniformeParams.length > 0 ? 2 : 1);
             formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }}>
             Editar evaluación
@@ -371,7 +377,7 @@ export default function EvaluacionForm() {
                     disabled
                     readOnly
                     style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }}
-                    max={new Date().toISOString().split('T')[0]}
+                     max={getLocalISODate()}
                   />
                   <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
                     <Info size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />
@@ -436,54 +442,56 @@ export default function EvaluacionForm() {
             {paso === 2 && (
               <>
                 {uniformeParams.length > 0 && (
-                  <SeccionParametros titulo="Parámetros de Uniforme" params={uniformeParams} progreso={uniformeProgress} />
-                )}
+                  <>
+                    <SeccionParametros titulo="Parámetros de Uniforme" params={uniformeParams} progreso={uniformeProgress} />
 
-                {/* Control de Color */}
-                <section className="info-banner" style={{ padding: '1.25rem' }}>
-                  <div className="form-grid-2" style={{ gap: '1rem' }}>
-                    <div>
-                      <label className="label">Color de uniforme esperado</label>
-                      <input
-                        className="input-field"
-                        value={colorEsperado}
-                        disabled
-                        style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }}
-                      />
-                      {colorEsperado && (
-                        <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
-                          <Info size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />
-                          Calculado automáticamente según el día de la semana
+                    {/* Control de Color */}
+                    <section className="info-banner" style={{ padding: '1.25rem' }}>
+                      <div className="form-grid-2" style={{ gap: '1rem' }}>
+                        <div>
+                          <label className="label">Color de uniforme esperado</label>
+                          <input
+                            className="input-field"
+                            value={colorEsperado}
+                            disabled
+                            style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }}
+                          />
+                          {colorEsperado && (
+                            <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
+                              <Info size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />
+                              Calculado automáticamente según el día de la semana
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div>
-                      <label className="label">Color observado</label>
-                      <select className="input-field" value={colorObservado} onChange={e => setColorObservado(e.target.value)}>
-                        <option value="">Selecciona el color observado...</option>
-                        <option value="Rojo">Rojo</option>
-                        <option value="Amarillo">Amarillo</option>
-                        <option value="Verde">Verde</option>
-                      </select>
-                    </div>
-                  </div>
-                </section>
+                        <div>
+                          <label className="label">Color observado</label>
+                          <select className="input-field" value={colorObservado} onChange={e => setColorObservado(e.target.value)}>
+                            <option value="">Selecciona el color observado...</option>
+                            <option value="Rojo">Rojo</option>
+                            <option value="Amarillo">Amarillo</option>
+                            <option value="Verde">Verde</option>
+                          </select>
+                        </div>
+                      </div>
+                    </section>
 
-                {/* Observaciones */}
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label className="label">Observaciones adicionales</label>
-                  <textarea
-                    className="input-field"
-                    rows="3"
-                    maxLength={observacionesMaxLen}
-                    value={observaciones}
-                    onChange={e => setObservaciones(e.target.value)}
-                    placeholder="Anotaciones sobre la evaluación..."
-                  />
-                  <div className="char-counter" style={{ color: progresoObservaciones >= 100 ? 'hsl(var(--color-danger))' : progresoObservaciones >= 75 ? 'hsl(var(--color-warning))' : 'hsl(var(--color-text-secondary))' }}>
-                    {observaciones.length}/{observacionesMaxLen} caracteres
-                  </div>
-                </div>
+                    {/* Observaciones */}
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <label className="label">Observaciones adicionales</label>
+                      <textarea
+                        className="input-field"
+                        rows="3"
+                        maxLength={observacionesMaxLen}
+                        value={observaciones}
+                        onChange={e => setObservaciones(e.target.value)}
+                        placeholder="Anotaciones sobre la evaluación..."
+                      />
+                      <div className="char-counter" style={{ color: progresoObservaciones >= 100 ? 'hsl(var(--color-danger))' : progresoObservaciones >= 75 ? 'hsl(var(--color-warning))' : 'hsl(var(--color-text-secondary))' }}>
+                        {observaciones.length}/{observacionesMaxLen} caracteres
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Botones de acción */}
                 <div className="action-group" style={{ justifyContent: 'flex-end' }}>
