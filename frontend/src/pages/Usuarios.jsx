@@ -461,6 +461,142 @@ export default function Usuarios() {
         </div>
       </header>
 
+      <div className="tables-grid">
+        <section className="section-card">
+          <div className="section-card-body">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 className="section-title">Usuarios</h2>
+              <button className="btn btn-primary btn-small" onClick={openCrearUsuario}>
+                <Plus size={14} /> Nuevo usuario
+              </button>
+            </div>
+
+            {error && <ErrorState error={error} onRetry={fetchUsuarios} />}
+
+            <div style={{ position: 'relative', width: '100%', maxWidth: '320px', marginBottom: '1rem' }}>
+              <Search size={16} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--color-text-secondary))' }} />
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Buscar por nombre, email o rol..."
+                value={searchUsuarios}
+                onChange={(e) => setSearchUsuarios(e.target.value)}
+                style={{ paddingLeft: '2.5rem', width: '100%' }}
+              />
+            </div>
+
+            {cargando ? (
+              <LoadingState mensaje="Cargando usuarios..." />
+            ) : usuariosActivos.length === 0 && usuariosInactivos.length === 0 ? (
+              <EmptyState titulo="Sin usuarios" mensaje="No hay usuarios registrados." icono={Users} />
+            ) : (
+              <>
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th className="th-nombre">Usuario</th>
+                        <th className="th-area">Rol</th>
+                        <th className="hide-mobile">Creado</th>
+                        <th>Estado</th>
+                        <th className="th-actions">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activosPaginados.map((u) => (
+                        <tr key={u.id}>
+                          <td className="td-nombre" style={{ fontWeight: 600 }}>{u.nombre}</td>
+                          <td className="td-area">
+                            <Badge variant={u.rol === 'administrador' ? 'info' : u.rol === 'supervisor' ? 'warning' : 'neutral'}>
+                              {u.rol}
+                            </Badge>
+                          </td>
+                          <td className="hide-mobile" style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>
+                            {new Date(u.creadoEn).toLocaleDateString('es-AR')}
+                          </td>
+                          <td>
+                            <Badge variant="success">Activo</Badge>
+                          </td>
+                          {renderUserActions(u, true)}
+                        </tr>
+                      ))}
+
+                      {inactivosPaginados.map((u) => (
+                        <tr key={u.id}>
+                          <td className="td-nombre" style={{ fontWeight: 600, opacity: 0.75 }}>{u.nombre}</td>
+                          <td className="td-area">
+                            <Badge variant={u.rol === 'administrador' ? 'info' : u.rol === 'supervisor' ? 'warning' : 'neutral'}>
+                              {u.rol}
+                            </Badge>
+                          </td>
+                          <td className="hide-mobile" style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>
+                            {new Date(u.creadoEn).toLocaleDateString('es-AR')}
+                          </td>
+                          <td>
+                            <Badge variant="danger">Inactivo</Badge>
+                          </td>
+                          {renderUserActions(u, false)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {totalPaginas > 1 && (
+                  <div className="pagination-footer">
+                    <button className="btn btn-outline btn-small" disabled={paginaUsuarios <= 1} onClick={() => setPaginaUsuarios((p) => p - 1)}>
+                      <ChevronLeft size={16} />
+                    </button>
+                    <span className="pagination-info">
+                      Página {paginaUsuarios} de {totalPaginas}
+                    </span>
+                    <button className="btn btn-outline btn-small" disabled={paginaUsuarios >= totalPaginas} onClick={() => setPaginaUsuarios((p) => p + 1)}>
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+
+        <section className="section-card">
+          <div className="section-card-body">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 className="section-title">Áreas</h2>
+              <button className="btn btn-primary btn-small" onClick={openCrearArea}>
+                <Plus size={14} /> Nueva área
+              </button>
+            </div>
+
+            {cargando ? (
+              <LoadingState mensaje="Cargando áreas..." />
+            ) : areas.length === 0 ? (
+              <EmptyState titulo="Sin áreas" mensaje="No hay áreas registradas." icono={MapPin} />
+            ) : (
+              <div className="table-wrapper">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th className="th-actions">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {areas.map((a) => (
+                      <tr key={a.id}>
+                        <td style={{ fontWeight: 600 }}>{a.nombre}</td>
+                        {renderAreaActions(a)}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
       {mostrarFormUsuario && (
         <section className="section-card">
           <div className="section-card-body">
@@ -598,142 +734,6 @@ export default function Usuarios() {
           </div>
         </section>
       )}
-
-      <div className="tables-grid">
-        <section className="section-card">
-          <div className="section-card-body">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 className="section-title">Usuarios</h2>
-              <button className="btn btn-primary btn-small" onClick={openCrearUsuario}>
-                <Plus size={14} /> Nuevo usuario
-              </button>
-            </div>
-
-            {error && <ErrorState error={error} onRetry={fetchUsuarios} />}
-
-            <div style={{ position: 'relative', width: '100%', maxWidth: '320px', marginBottom: '1rem' }}>
-              <Search size={16} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--color-text-secondary))' }} />
-              <input
-                type="text"
-                className="input-field"
-                placeholder="Buscar por nombre, email o rol..."
-                value={searchUsuarios}
-                onChange={(e) => setSearchUsuarios(e.target.value)}
-                style={{ paddingLeft: '2.5rem', width: '100%' }}
-              />
-            </div>
-
-            {cargando ? (
-              <LoadingState mensaje="Cargando usuarios..." />
-            ) : usuariosActivos.length === 0 && usuariosInactivos.length === 0 ? (
-              <EmptyState titulo="Sin usuarios" mensaje="No hay usuarios registrados." icono={Users} />
-            ) : (
-              <>
-                <div className="table-wrapper">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th className="th-nombre">Usuario</th>
-                        <th className="th-area">Rol</th>
-                        <th className="hide-mobile">Creado</th>
-                        <th>Estado</th>
-                        <th className="th-actions">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {activosPaginados.map((u) => (
-                        <tr key={u.id}>
-                          <td className="td-nombre" style={{ fontWeight: 600 }}>{u.nombre}</td>
-                          <td className="td-area">
-                            <Badge variant={u.rol === 'administrador' ? 'info' : u.rol === 'supervisor' ? 'warning' : 'neutral'}>
-                              {u.rol}
-                            </Badge>
-                          </td>
-                          <td className="hide-mobile" style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>
-                            {new Date(u.creadoEn).toLocaleDateString('es-AR')}
-                          </td>
-                          <td>
-                            <Badge variant="success">Activo</Badge>
-                          </td>
-                          {renderUserActions(u, true)}
-                        </tr>
-                      ))}
-
-                      {inactivosPaginados.map((u) => (
-                        <tr key={u.id}>
-                          <td className="td-nombre" style={{ fontWeight: 600, opacity: 0.75 }}>{u.nombre}</td>
-                          <td className="td-area">
-                            <Badge variant={u.rol === 'administrador' ? 'info' : u.rol === 'supervisor' ? 'warning' : 'neutral'}>
-                              {u.rol}
-                            </Badge>
-                          </td>
-                          <td className="hide-mobile" style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem' }}>
-                            {new Date(u.creadoEn).toLocaleDateString('es-AR')}
-                          </td>
-                          <td>
-                            <Badge variant="danger">Inactivo</Badge>
-                          </td>
-                          {renderUserActions(u, false)}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {totalPaginas > 1 && (
-                  <div className="pagination-footer">
-                    <button className="btn btn-outline btn-small" disabled={paginaUsuarios <= 1} onClick={() => setPaginaUsuarios((p) => p - 1)}>
-                      <ChevronLeft size={16} />
-                    </button>
-                    <span className="pagination-info">
-                      Página {paginaUsuarios} de {totalPaginas}
-                    </span>
-                    <button className="btn btn-outline btn-small" disabled={paginaUsuarios >= totalPaginas} onClick={() => setPaginaUsuarios((p) => p + 1)}>
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </section>
-
-        <section className="section-card">
-          <div className="section-card-body">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 className="section-title">Áreas</h2>
-              <button className="btn btn-primary btn-small" onClick={openCrearArea}>
-                <Plus size={14} /> Nueva área
-              </button>
-            </div>
-
-            {cargando ? (
-              <LoadingState mensaje="Cargando áreas..." />
-            ) : areas.length === 0 ? (
-              <EmptyState titulo="Sin áreas" mensaje="No hay áreas registradas." icono={MapPin} />
-            ) : (
-              <div className="table-wrapper">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Nombre</th>
-                      <th className="th-actions">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {areas.map((a) => (
-                      <tr key={a.id}>
-                        <td style={{ fontWeight: 600 }}>{a.nombre}</td>
-                        {renderAreaActions(a)}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
 
       {/* Modal: Ver detalle de usuario */}
       {verDetalleUsuario && (
