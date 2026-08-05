@@ -7,4 +7,4 @@ export const getLocalISODate = () => {
 };
 
 export const normalizarNombre = (str) =>
-  str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  str.replace(/[^\u0000-\u007F]/g, '').toLowerCase();

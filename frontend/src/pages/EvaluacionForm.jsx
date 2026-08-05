@@ -45,6 +45,20 @@ export default function EvaluacionForm() {
     }
   }, [trabajadorId, obtenerTrabajadoresActivos]);
 
+
+  const higieneParams = parametros.filter(p => p.categoria === 'higiene');
+  const uniformeParams = parametros.filter(p => p.categoria === 'uniforme').filter(p => {
+    if (!p.excluyeAreasJson) return true;
+    try {
+      const excluded = JSON.parse(p.excluyeAreasJson);
+      const areaNombre = areas.find(a => String(a.id) === String(areaId))?.nombre || '';
+      if (excluded.includes(areaNombre)) return false;
+      return !excluded.some(e => normalizarNombre(e) === normalizarNombre(areaNombre));
+    } catch {
+      return true;
+    }
+  });
+
   useEffect(() => {
     if (!fecha || uniformeParams.length === 0) return;
     const fechaObj = new Date(fecha + 'T12:00:00');
@@ -91,19 +105,6 @@ export default function EvaluacionForm() {
       [parametroId]: resultado
     }));
   };
-
-  const higieneParams = parametros.filter(p => p.categoria === 'higiene');
-  const uniformeParams = parametros.filter(p => p.categoria === 'uniforme').filter(p => {
-    if (!p.excluyeAreasJson) return true;
-    try {
-      const excluded = JSON.parse(p.excluyeAreasJson);
-      const areaNombre = areas.find(a => String(a.id) === String(areaId))?.nombre || '';
-      if (excluded.includes(areaNombre)) return false;
-      return !excluded.some(e => normalizarNombre(e) === normalizarNombre(areaNombre));
-    } catch {
-      return true;
-    }
-  });
 
   const calcularProgreso = (params) => {
     const total = params.length;
