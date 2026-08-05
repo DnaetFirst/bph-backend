@@ -6,7 +6,7 @@ import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
-import { getLocalISODate, normalizarNombre } from '../utils/fecha';
+import { getLocalISODate, getDiaSemanaBolivia, normalizarNombre } from '../utils/fecha';
 import ErrorState from '../components/ui/ErrorState';
 
 export default function EvaluacionForm() {
@@ -61,20 +61,20 @@ export default function EvaluacionForm() {
 
   useEffect(() => {
     if (!fecha) return;
-    const fechaObj = new Date(fecha + 'T12:00:00');
-    const diaSemana = fechaObj.getDay();
+    const diaSemana = getDiaSemanaBolivia(fecha);
 
+    // Sábado (6) y Domingo (0) no tienen color de uniforme asignado
     const coloresPorDia = {
-      0: 'Verde', // Domingo
-      1: 'Rojo',   // Lunes
-      2: 'Amarillo', // Martes
-      3: 'Verde',   // Miércoles
-      4: 'Rojo',   // Jueves
-      5: 'Amarillo', // Viernes
-      6: 'Verde',   // Sábado
+      1: 'Rojo',      // Lunes
+      2: 'Amarillo',  // Martes
+      3: 'Verde',     // Miércoles
+      4: 'Rojo',      // Jueves
+      5: 'Amarillo',  // Viernes
     };
 
     setColorEsperado(coloresPorDia[diaSemana] || '');
+    // Al cambiar de día resetear color observado
+    setColorObservado('');
   }, [fecha]);
 
   useEffect(() => {
@@ -132,6 +132,10 @@ export default function EvaluacionForm() {
   const datosBaseCompletos = trabajadorId && areaId;
   const puedeAvanzar = datosBaseCompletos;
 
+  // Determinar si la fecha corresponde a un día de semana con color de uniforme
+  const diaSemanaActual = fecha ? getDiaSemanaBolivia(fecha) : -1;
+  const esFinDeSemana = diaSemanaActual === 0 || diaSemanaActual === 6;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!trabajadorId || !areaId) {
@@ -153,10 +157,13 @@ export default function EvaluacionForm() {
       fecha: fecha,
       trabajadorId: parseInt(trabajadorId),
       areaId: parseInt(areaId),
-       evaluadorId: usuario?.id || 1,
-      colorEsperado: colorEsperado || undefined,
-      colorObservado: colorObservado || undefined,
-      cumplimientoColor: colorEsperado === colorObservado ? 'Cumple' : 'No cumple',
+      evaluadorId: usuario?.id || 1,
+      // En fin de semana no se registra color de uniforme
+      colorEsperado: !esFinDeSemana && colorEsperado ? colorEsperado : undefined,
+      colorObservado: !esFinDeSemana && colorObservado ? colorObservado : undefined,
+      cumplimientoColor: !esFinDeSemana && colorEsperado && colorObservado
+        ? (colorEsperado === colorObservado ? 'Cumple' : 'No cumple')
+        : undefined,
       observaciones: observaciones || undefined,
       detalles
     };
@@ -307,17 +314,19 @@ export default function EvaluacionForm() {
               Clasificación: {clasificacion}
             </span>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Cumplimiento de color</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'flex-end' }}>
-              {colorEsperado === colorObservado ? (
-                <ShieldCheck size={16} style={{ color: 'hsl(var(--color-success))' }} />
-              ) : (
-                <XCircle size={16} style={{ color: 'hsl(var(--color-danger))' }} />
-              )}
-              <strong>{colorEsperado === colorObservado ? 'Cumple' : 'No cumple'}</strong>
+          {!esFinDeSemana && (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Cumplimiento de color</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                {colorEsperado === colorObservado ? (
+                  <ShieldCheck size={16} style={{ color: 'hsl(var(--color-success))' }} />
+                ) : (
+                  <XCircle size={16} style={{ color: 'hsl(var(--color-danger))' }} />
+                )}
+                <strong>{colorEsperado === colorObservado ? 'Cumple' : 'No cumple'}</strong>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="action-group" style={{ justifyContent: 'center', gap: '1rem' }}>
@@ -432,35 +441,37 @@ export default function EvaluacionForm() {
                   <SeccionParametros titulo="Parámetros de Uniforme" params={uniformeParams} progreso={uniformeProgress} />
                 )}
 
-                {/* Control de Color */}
-                <section className="info-banner" style={{ padding: '1.25rem' }}>
-                  <div className="form-grid-2" style={{ gap: '1rem' }}>
-                    <div>
-                      <label className="label">Color de uniforme esperado</label>
-                      <input
-                        className="input-field"
-                        value={colorEsperado}
-                        disabled
-                        style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }}
-                      />
-                      {colorEsperado && (
-                        <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
-                          <Info size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />
-                          Calculado automáticamente según el día de la semana
-                        </div>
-                      )}
+                {/* Control de Color — solo días de semana (Lunes a Viernes) */}
+                {!esFinDeSemana && (
+                  <section className="info-banner" style={{ padding: '1.25rem' }}>
+                    <div className="form-grid-2" style={{ gap: '1rem' }}>
+                      <div>
+                        <label className="label">Color de uniforme esperado</label>
+                        <input
+                          className="input-field"
+                          value={colorEsperado}
+                          disabled
+                          style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }}
+                        />
+                        {colorEsperado && (
+                          <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
+                            <Info size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />
+                            Calculado automáticamente según el día de la semana
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="label">Color observado</label>
+                        <select className="input-field" value={colorObservado} onChange={e => setColorObservado(e.target.value)}>
+                          <option value="">Selecciona el color observado...</option>
+                          <option value="Rojo">Rojo</option>
+                          <option value="Amarillo">Amarillo</option>
+                          <option value="Verde">Verde</option>
+                        </select>
+                      </div>
                     </div>
-                    <div>
-                      <label className="label">Color observado</label>
-                      <select className="input-field" value={colorObservado} onChange={e => setColorObservado(e.target.value)}>
-                        <option value="">Selecciona el color observado...</option>
-                        <option value="Rojo">Rojo</option>
-                        <option value="Amarillo">Amarillo</option>
-                        <option value="Verde">Verde</option>
-                      </select>
-                    </div>
-                  </div>
-                </section>
+                  </section>
+                )}
 
                 {/* Observaciones */}
                 <div style={{ marginBottom: '1.5rem' }}>

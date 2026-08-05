@@ -20,7 +20,7 @@ import { useAuthStore } from '../store/authStore';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useUiStore } from '../store/uiStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
-import { getLocalISODate } from '../utils/fecha';
+import { getLocalISODate, getDiaSemanaBolivia } from '../utils/fecha';
 import { apiClient } from '../api/client';
 import KpiCard from '../components/ui/KpiCard';
 import ProgressRow from '../components/ui/ProgressRow';
@@ -115,7 +115,9 @@ export default function Dashboard() {
     const aceptables = evaluacionesActivas.filter((ev) => ev.clasificacion === 'Aceptable').length;
     const deficientes = evaluacionesActivas.filter((ev) => ev.clasificacion === 'Deficiente').length;
     const cumplimientoColor = evaluacionesActivas.filter((ev) => ev.cumplimientoColor === 'Cumple').length;
-    const cumplimientoColorPorcentaje = totalItems ? Math.round((cumplimientoColor / totalItems) * 100) : 0;
+    // Solo contar evaluaciones con color registrado (días de semana) para el porcentaje
+    const conColor = evaluacionesActivas.filter((ev) => ev.colorEsperado != null && ev.colorEsperado !== '').length;
+    const cumplimientoColorPorcentaje = conColor ? Math.round((cumplimientoColor / conColor) * 100) : 0;
 
     const topTrabajadores = Object.values(
       evaluacionesActivas.reduce((acc, ev) => {
@@ -139,7 +141,15 @@ export default function Dashboard() {
       .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
       .slice(-6)
       .map((ev) => ({
-                         label: new Date(ev.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' }),
+        // Formato de fecha en hora boliviana (UTC-4)
+        label: (() => {
+          const fechaStr = ev.fecha ? ev.fecha.slice(0, 10) : '';
+          if (!fechaStr) return '';
+          const d = getDiaSemanaBolivia(fechaStr);
+          const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+          const [, mm, dd] = fechaStr.split('-');
+          return `${dias[d]} ${dd}/${mm}`;
+        })(),
         value: ev.generalPorcentaje || 0,
       }));
 
