@@ -19,6 +19,7 @@ import {
 import { useAuthStore } from '../store/authStore';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useUiStore } from '../store/uiStore';
+import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { getLocalISODate } from '../utils/fecha';
 import { apiClient } from '../api/client';
 import KpiCard from '../components/ui/KpiCard';
@@ -93,7 +94,7 @@ export default function Dashboard() {
     if (!window.confirm('¿Estás seguro de eliminar físicamente esta evaluación por completo?')) return;
     try {
       await borrarEvaluacion(id);
-    } catch (error) {
+    } catch {
       // El error ya es manejado en el store
     }
   };

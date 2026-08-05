@@ -112,4 +112,23 @@ export const useEvaluacionesStore = create((set, get) => ({
       throw err;
     }
   },
+
+  borrarEvaluacion: async (id) => {
+    set({ cargando: true, error: null });
+    try {
+      await apiClient.delete('/evaluaciones/' + id);
+      await get().fetchEvaluaciones();
+      useUiStore.getState().mostrarToast({ tipo: 'success', titulo: 'Evaluación eliminada', mensaje: 'La evaluación fue eliminada permanentemente y el listado ya se actualizó.' });
+    } catch (err) {
+      if (err.response?.status === 401) {
+        set({ cargando: false });
+        throw err;
+      }
+      set({
+        error: err.response?.data?.error || 'Error al eliminar la evaluación',
+        cargando: false
+      });
+      throw err;
+    }
+  },
 }));
