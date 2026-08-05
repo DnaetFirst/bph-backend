@@ -112,7 +112,7 @@ export const useTrabajadoresStore = create((set, get) => ({
     try {
       await apiClient.put(`/trabajadores/${id}`, { activo: false });
       await get().fetchTrabajadores();
-      useUiStore.getState().mostrarToast({ tipo: 'success', titulo: 'Trabajador desactivado', mensaje: 'El trabajador fue desactivado (soft delete). Se conserva el registro para auditor�a.' });
+      useUiStore.getState().mostrarToast({ tipo: 'success', titulo: 'Trabajador desactivado', mensaje: 'El trabajador fue desactivado (soft delete). Se conserva el registro para auditoría.' });
     } catch (err) {
       if (err.response?.status !== 401) {
         set({ error: err.response?.data?.error || 'Error al eliminar trabajador' });
