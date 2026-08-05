@@ -65,12 +65,13 @@ export default function EvaluacionForm() {
     const diaSemana = fechaObj.getDay();
 
     const coloresPorDia = {
-      1: 'Rojo',
-      2: 'Amarillo',
-      3: 'Verde',
-      4: 'Rojo',
-      5: 'Amarillo',
-      6: 'Verde',
+      0: 'Verde', // Domingo
+      1: 'Rojo',   // Lunes
+      2: 'Amarillo', // Martes
+      3: 'Verde',   // Miércoles
+      4: 'Rojo',   // Jueves
+      5: 'Amarillo', // Viernes
+      6: 'Verde',   // Sábado
     };
 
     setColorEsperado(coloresPorDia[diaSemana] || '');
