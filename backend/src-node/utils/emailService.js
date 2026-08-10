@@ -35,7 +35,7 @@ export async function enviarEmailResetPin(email, nombre, resetUrl) {
 <body>
   <div class="container">
     <div class="logo">
-      <img src="https://frontend-auto.bph-backend-esqueleto.workers.dev/LogoNexocorp.png" alt="Nexocorp">
+      <img src="https://ceprod.portal-online-dante.workers.dev/LogoNexocorp.png" alt="Nexocorp">
     </div>
     <h1>Recuperación de PIN</h1>
     <p>Hola <strong>${nombre}</strong>,</p>

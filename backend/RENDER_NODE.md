@@ -56,13 +56,13 @@ Configura estas variables:
 Mientras tu frontend siga en Cloudflare Workers/Pages, usa el origen público real. Ejemplo:
 
 ```env
-FRONTEND_URL=https://frontend.bph-backend-esqueleto.workers.dev
+FRONTEND_URL=https://ceprod.portal-online-dante.workers.dev
 ```
 
 Si luego agregas otro frontend o dominio propio, puedes permitir varios separados por coma:
 
 ```env
-FRONTEND_URL=https://frontend.bph-backend-esqueleto.workers.dev,https://app.tudominio.com
+FRONTEND_URL=https://ceprod.portal-online-dante.workers.dev,https://app.tudominio.com
 ```
 
 ## 5. Probar el deploy
