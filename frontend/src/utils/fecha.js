@@ -25,4 +25,8 @@ export const getDiaSemanaBolivia = (fechaStr) => {
 };
 
 export const normalizarNombre = (str) =>
-  str.replace(/[^\u0000-\u007F]/g, '').toLowerCase();
+  String(str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();

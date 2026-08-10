@@ -5,6 +5,7 @@
 // ============================================================================
 
 import { sha256Hex, contenidoEvaluacionParaHash } from '../utils/crypto.js';
+import { areaExcluyeUniforme, parametroExcluidoEnArea } from '../utils/areaRules.js';
 
 export class EvaluacionService {
   constructor(prisma) {
@@ -52,8 +53,33 @@ export class EvaluacionService {
   }
 
   async crear({ datos, detalles, parametros, evaluadorId, creadoPorId }) {
+    const area = await this.prisma.area.findUnique({
+      where: { id: datos.areaId },
+      select: { nombre: true },
+    });
+    if (!area) {
+      const error = new Error('Área no encontrada');
+      error.status = 404;
+      throw error;
+    }
+
+    const sinUniforme = areaExcluyeUniforme(area.nombre);
+    const parametrosPorId = new Map(parametros.map((parametro) => [parametro.id, parametro]));
+    const detallesAplicables = detalles.filter((detalle) => {
+      const parametro = parametrosPorId.get(detalle.parametroId);
+      if (!parametro) return false;
+      if (sinUniforme && parametro.categoria === 'uniforme') return false;
+      return !parametroExcluidoEnArea(parametro, area.nombre);
+    });
+
+    if (detallesAplicables.length === 0) {
+      const error = new Error('La evaluación debe incluir al menos un parámetro aplicable al área');
+      error.status = 400;
+      throw error;
+    }
+
     const { higienePorcentaje, uniformePorcentaje, generalPorcentaje, clasificacion } =
-      this.calcularPorcentajes(detalles, parametros);
+      this.calcularPorcentajes(detallesAplicables, parametros);
 
     const hashAnterior = await this.obtenerUltimoHash();
 
@@ -68,13 +94,13 @@ export class EvaluacionService {
         uniformePorcentaje,
         generalPorcentaje,
         clasificacion,
-        colorEsperado: datos.colorEsperado || null,
-        colorObservado: datos.colorObservado || null,
-        cumplimientoColor: datos.cumplimientoColor || null,
+        colorEsperado: sinUniforme ? null : (datos.colorEsperado || null),
+        colorObservado: sinUniforme ? null : (datos.colorObservado || null),
+        cumplimientoColor: sinUniforme ? null : (datos.cumplimientoColor || null),
         observaciones: datos.observaciones || null,
         hashAnterior,
         detalles: {
-          create: detalles.map((d) => ({
+          create: detallesAplicables.map((d) => ({
             parametroId: d.parametroId,
             resultado: d.resultado,
           })),

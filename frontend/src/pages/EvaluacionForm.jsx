@@ -47,7 +47,11 @@ export default function EvaluacionForm() {
 
 
   const higieneParams = parametros.filter(p => p.categoria === 'higiene');
+  const areaSeleccionada = areas.find(a => String(a.id) === String(areaId));
+  const areaNormalizada = normalizarNombre(areaSeleccionada?.nombre || '');
+  const sinUniforme = ['produccion', 'calidad e inocuidad'].includes(areaNormalizada);
   const uniformeParams = parametros.filter(p => p.categoria === 'uniforme').filter(p => {
+    if (sinUniforme) return false;
     if (!p.excluyeAreasJson) return true;
     try {
       const excluded = JSON.parse(p.excluyeAreasJson);
@@ -60,7 +64,24 @@ export default function EvaluacionForm() {
   });
 
   useEffect(() => {
+    if (!sinUniforme) return;
+    const idsUniforme = new Set(
+      parametros.filter((parametro) => parametro.categoria === 'uniforme').map((parametro) => String(parametro.id))
+    );
+    setRespuestas((prev) => Object.fromEntries(
+      Object.entries(prev).filter(([parametroId]) => !idsUniforme.has(String(parametroId)))
+    ));
+    setColorEsperado('');
+    setColorObservado('');
+  }, [sinUniforme, parametros]);
+
+  useEffect(() => {
     if (!fecha) return;
+    if (sinUniforme) {
+      setColorEsperado('');
+      setColorObservado('');
+      return;
+    }
     const diaSemana = getDiaSemanaBolivia(fecha);
 
     // Sábado (6) y Domingo (0) no tienen color de uniforme asignado
@@ -75,7 +96,7 @@ export default function EvaluacionForm() {
     setColorEsperado(coloresPorDia[diaSemana] || '');
     // Al cambiar de día resetear color observado
     setColorObservado('');
-  }, [fecha]);
+  }, [fecha, sinUniforme]);
 
   useEffect(() => {
     if (!evaluacionGuardada) return;
@@ -159,9 +180,9 @@ export default function EvaluacionForm() {
       areaId: parseInt(areaId),
       evaluadorId: usuario?.id || 1,
       // En fin de semana no se registra color de uniforme
-      colorEsperado: !esFinDeSemana && colorEsperado ? colorEsperado : undefined,
-      colorObservado: !esFinDeSemana && colorObservado ? colorObservado : undefined,
-      cumplimientoColor: !esFinDeSemana && colorEsperado && colorObservado
+      colorEsperado: !sinUniforme && !esFinDeSemana && colorEsperado ? colorEsperado : undefined,
+      colorObservado: !sinUniforme && !esFinDeSemana && colorObservado ? colorObservado : undefined,
+      cumplimientoColor: !sinUniforme && !esFinDeSemana && colorEsperado && colorObservado
         ? (colorEsperado === colorObservado ? 'Cumple' : 'No cumple')
         : undefined,
       observaciones: observaciones || undefined,
@@ -314,7 +335,7 @@ export default function EvaluacionForm() {
               Clasificación: {clasificacion}
             </span>
           </div>
-          {!esFinDeSemana && (
+          {!sinUniforme && !esFinDeSemana && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Cumplimiento de color</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'flex-end' }}>
@@ -361,7 +382,9 @@ export default function EvaluacionForm() {
         <div>
           <h1 className="page-title">Nueva evaluación BPH</h1>
           <p className="page-subtitle">
-            Registra una evaluación individual con criterios de higiene, uniforme y control visual de color.
+            {sinUniforme
+              ? 'Registra una evaluación individual con criterios de higiene.'
+              : 'Registra una evaluación individual con criterios de higiene, uniforme y control visual de color.'}
           </p>
         </div>
       </header>
@@ -442,7 +465,7 @@ export default function EvaluacionForm() {
                 )}
 
                 {/* Control de Color — solo días de semana (Lunes a Viernes) */}
-                {!esFinDeSemana && (
+                {!sinUniforme && !esFinDeSemana && (
                   <section className="info-banner" style={{ padding: '1.25rem' }}>
                     <div className="form-grid-2" style={{ gap: '1rem' }}>
                       <div>

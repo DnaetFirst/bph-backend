@@ -212,6 +212,7 @@ router.get('/exportar', authorize('administrador', 'supervisor'), async (req, re
       Clasificación: ev.clasificacion || 'Sin clasificar',
       'Indicador BPH': `${ev.generalPorcentaje || 0}%`,
       Evaluador: ev.evaluador?.nombre || 'Sin evaluador',
+      'Observación': ev.observaciones || '',
     }));
 
     const wb = XLSX.utils.book_new();
