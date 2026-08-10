@@ -4,7 +4,7 @@ import { prisma } from '../prisma.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import { authorize } from '../middlewares/authorize.js';
 import { EvaluacionService } from '../services/evaluacionService.js';
-import { crearEvaluacionSchema, anularEvaluacionSchema } from '../utils/schemas.js';
+import { crearEvaluacionSchema, editarEvaluacionSchema, anularEvaluacionSchema } from '../utils/schemas.js';
 import { registrarBitacora } from '../utils/bitacora.js';
 
 const router = Router();
@@ -113,6 +113,47 @@ router.get('/integridad/verificar', authorize('administrador'), async (req, res,
   try {
     const resultado = await service.verificarIntegridadCompleta();
     res.json(resultado);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/:id([0-9a-fA-F-]{36})', authorize('administrador', 'supervisor'), async (req, res, next) => {
+  try {
+    const evaluacion = await prisma.evaluacion.findUnique({
+      where: { id: req.params.id },
+      include: {
+        detalles: { select: { parametroId: true, resultado: true } },
+        trabajador: { select: { id: true, nombre: true } },
+        area: { select: { id: true, nombre: true } },
+        evaluador: { select: { id: true, nombre: true } },
+      },
+    });
+    if (!evaluacion) return res.status(404).json({ error: 'Evaluación no encontrada' });
+    res.set('Cache-Control', 'no-store');
+    res.json(evaluacion);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put('/:id([0-9a-fA-F-]{36})', authorize('administrador', 'supervisor'), async (req, res, next) => {
+  try {
+    const parsed = editarEvaluacionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Datos inválidos', detalles: parsed.error.flatten() });
+    }
+
+    const parametros = await prisma.parametro.findMany({ where: { activo: true } });
+    const { evaluacion } = await service.editar(req.params.id, {
+      datos: parsed.data,
+      detalles: parsed.data.detalles,
+      parametros,
+      usuarioId: req.usuario.id,
+      ip: req.ip,
+    });
+    res.set('Cache-Control', 'no-store');
+    res.json(evaluacion);
   } catch (error) {
     next(error);
   }

@@ -118,6 +118,94 @@ export class EvaluacionService {
     return { ...evaluacion, hashIntegridad };
   }
 
+  async editar(id, { datos, detalles, parametros, usuarioId, ip }) {
+    return this.prisma.$transaction(async (tx) => {
+      // Impide inserciones concurrentes mientras se reconstruye la cadena.
+      await tx.$executeRawUnsafe('LOCK TABLE "Evaluacion" IN EXCLUSIVE MODE');
+
+      const existente = await tx.evaluacion.findUnique({
+        where: { id },
+        include: { area: { select: { nombre: true } } },
+      });
+      if (!existente) {
+        const error = new Error('Evaluación no encontrada');
+        error.status = 404;
+        throw error;
+      }
+      if (existente.estado === 'ANULADA') {
+        const error = new Error('No se puede editar una evaluación anulada');
+        error.status = 400;
+        throw error;
+      }
+
+      const sinUniforme = areaExcluyeUniforme(existente.area.nombre);
+      const parametrosPorId = new Map(parametros.map((parametro) => [parametro.id, parametro]));
+      const detallesAplicables = detalles.filter((detalle) => {
+        const parametro = parametrosPorId.get(detalle.parametroId);
+        if (!parametro) return false;
+        if (sinUniforme && parametro.categoria === 'uniforme') return false;
+        return !parametroExcluidoEnArea(parametro, existente.area.nombre);
+      });
+      if (detallesAplicables.length === 0) {
+        const error = new Error('La evaluación debe incluir al menos un parámetro aplicable al área');
+        error.status = 400;
+        throw error;
+      }
+
+      const porcentajes = this.calcularPorcentajes(detallesAplicables, parametros);
+      await tx.detalleEvaluacion.deleteMany({ where: { evaluacionId: id } });
+      const actualizada = await tx.evaluacion.update({
+        where: { id },
+        data: {
+          ...porcentajes,
+          colorEsperado: sinUniforme ? null : (datos.colorEsperado || null),
+          colorObservado: sinUniforme ? null : (datos.colorObservado || null),
+          cumplimientoColor: sinUniforme ? null : (datos.cumplimientoColor || null),
+          observaciones: datos.observaciones || null,
+          detalles: {
+            create: detallesAplicables.map((detalle) => ({
+              parametroId: detalle.parametroId,
+              resultado: detalle.resultado,
+            })),
+          },
+        },
+        include: {
+          detalles: true,
+          trabajador: { select: { id: true, nombre: true } },
+          area: { select: { id: true, nombre: true } },
+          evaluador: { select: { id: true, nombre: true } },
+        },
+      });
+
+      const cadena = await tx.evaluacion.findMany({ orderBy: { creadoEn: 'asc' } });
+      const indiceEditado = cadena.findIndex((evaluacion) => evaluacion.id === id);
+      let hashAnterior = indiceEditado > 0 ? cadena[indiceEditado - 1].hashIntegridad : null;
+      let hashEditado = null;
+      for (const evaluacion of cadena.slice(indiceEditado)) {
+        const hashIntegridad = await sha256Hex(
+          contenidoEvaluacionParaHash({ ...evaluacion, hashAnterior })
+        );
+        await tx.evaluacion.update({
+          where: { id: evaluacion.id },
+          data: { hashAnterior, hashIntegridad },
+        });
+        if (evaluacion.id === id) hashEditado = hashIntegridad;
+        hashAnterior = hashIntegridad;
+      }
+
+      await tx.bitacora.create({
+        data: {
+          accion: 'Editar evaluación',
+          usuarioId,
+          ip: ip || null,
+          detalles: `Evaluación ID: ${actualizada.id}. General: ${existente.generalPorcentaje ?? 'N/A'}% → ${actualizada.generalPorcentaje ?? 'N/A'}%`,
+        },
+      });
+
+      return { evaluacion: { ...actualizada, hashIntegridad: hashEditado } };
+    }, { maxWait: 10_000, timeout: 120_000 });
+  }
+
   async anular(id, { motivo, usuarioId }) {
     return this.prisma.evaluacion.update({
       where: { id },

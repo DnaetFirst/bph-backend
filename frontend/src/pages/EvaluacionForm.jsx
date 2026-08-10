@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Save, CheckCircle, XCircle, MinusCircle, Info, X, ShieldCheck } from 'lucide-react';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
@@ -11,8 +11,10 @@ import ErrorState from '../components/ui/ErrorState';
 
 export default function EvaluacionForm() {
   const navigate = useNavigate();
+  const { id: evaluacionId } = useParams();
+  const esEdicion = Boolean(evaluacionId);
   const { usuario } = useAuthStore();
-  const { areas, parametros, fetchDependenciasFormulario, crearEvaluacion, cargando, error } = useEvaluacionesStore();
+  const { areas, parametros, fetchDependenciasFormulario, crearEvaluacion, obtenerEvaluacion, editarEvaluacion, cargando, error } = useEvaluacionesStore();
   const { fetchTrabajadores, obtenerTrabajadoresActivos } = useTrabajadoresStore();
 
   const mostrarToast = useUiStore((state) => state.mostrarToast);
@@ -23,7 +25,9 @@ export default function EvaluacionForm() {
   const [colorObservado, setColorObservado] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [respuestas, setRespuestas] = useState({});
-  const [fecha, _setFecha] = useState(getLocalISODate());
+  const [fecha, setFecha] = useState(getLocalISODate());
+  const [evaluacionOriginal, setEvaluacionOriginal] = useState(null);
+  const [cargandoEdicion, setCargandoEdicion] = useState(esEdicion);
   const [evaluacionGuardada, setEvaluacionGuardada] = useState(null);
   const [paso, setPaso] = useState(1);
   const modalRef = useRef(null);
@@ -35,6 +39,43 @@ export default function EvaluacionForm() {
   }, [fetchDependenciasFormulario, fetchTrabajadores]);
 
   useEffect(() => {
+    if (!esEdicion) return;
+    let vigente = true;
+    setCargandoEdicion(true);
+    obtenerEvaluacion(evaluacionId)
+      .then((evaluacion) => {
+        if (!vigente) return;
+        if (evaluacion.estado === 'ANULADA') {
+          mostrarToast({ tipo: 'error', titulo: 'Edición no permitida', mensaje: 'No se puede editar una evaluación anulada.' });
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+        setEvaluacionOriginal(evaluacion);
+        setTrabajadorId(String(evaluacion.trabajadorId));
+        setAreaId(String(evaluacion.areaId));
+        setFecha(String(evaluacion.fecha).slice(0, 10));
+        setColorEsperado(evaluacion.colorEsperado || '');
+        setColorObservado(evaluacion.colorObservado || '');
+        setObservaciones(evaluacion.observaciones || '');
+        setRespuestas(Object.fromEntries(
+          (evaluacion.detalles || []).map((detalle) => [detalle.parametroId, detalle.resultado])
+        ));
+      })
+      .catch((err) => {
+        if (!vigente) return;
+        mostrarToast({
+          tipo: 'error',
+          titulo: 'No se pudo cargar',
+          mensaje: err.response?.data?.error || 'No se pudo cargar la evaluación para editar.',
+        });
+        navigate('/dashboard', { replace: true });
+      })
+      .finally(() => vigente && setCargandoEdicion(false));
+    return () => { vigente = false; };
+  }, [esEdicion, evaluacionId, obtenerEvaluacion, mostrarToast, navigate]);
+
+  useEffect(() => {
+    if (esEdicion) return;
     if (trabajadorId) {
       const trabajador = obtenerTrabajadoresActivos().find(
         (t) => String(t.id) === String(trabajadorId)
@@ -43,12 +84,12 @@ export default function EvaluacionForm() {
         setAreaId(trabajador.areaId ? String(trabajador.areaId) : '');
       }
     }
-  }, [trabajadorId, obtenerTrabajadoresActivos]);
+  }, [trabajadorId, obtenerTrabajadoresActivos, esEdicion]);
 
 
   const higieneParams = parametros.filter(p => p.categoria === 'higiene');
   const areaSeleccionada = areas.find(a => String(a.id) === String(areaId));
-  const areaNormalizada = normalizarNombre(areaSeleccionada?.nombre || '');
+  const areaNormalizada = normalizarNombre(areaSeleccionada?.nombre || evaluacionOriginal?.area?.nombre || '');
   const sinUniforme = ['produccion', 'calidad e inocuidad'].includes(areaNormalizada);
   const uniformeParams = parametros.filter(p => p.categoria === 'uniforme').filter(p => {
     if (sinUniforme) return false;
@@ -76,6 +117,7 @@ export default function EvaluacionForm() {
   }, [sinUniforme, parametros]);
 
   useEffect(() => {
+    if (esEdicion) return;
     if (!fecha) return;
     if (sinUniforme) {
       setColorEsperado('');
@@ -96,7 +138,7 @@ export default function EvaluacionForm() {
     setColorEsperado(coloresPorDia[diaSemana] || '');
     // Al cambiar de día resetear color observado
     setColorObservado('');
-  }, [fecha, sinUniforme]);
+  }, [fecha, sinUniforme, esEdicion]);
 
   useEffect(() => {
     if (!evaluacionGuardada) return;
@@ -190,6 +232,17 @@ export default function EvaluacionForm() {
     };
 
     try {
+      if (esEdicion) {
+        await editarEvaluacion(evaluacionId, {
+          colorEsperado: datos.colorEsperado,
+          colorObservado: datos.colorObservado,
+          cumplimientoColor: datos.cumplimientoColor,
+          observaciones: datos.observaciones,
+          detalles,
+        });
+        navigate('/dashboard');
+        return;
+      }
       const result = await crearEvaluacion(datos);
       const trabajador = obtenerTrabajadoresActivos().find(
         (t) => String(t.id) === String(trabajadorId)
@@ -380,7 +433,7 @@ export default function EvaluacionForm() {
     <div className="animate-fade-in page-shell" style={{ maxWidth: '920px', margin: '0 auto' }}>
       <header className="page-header">
         <div>
-          <h1 className="page-title">Nueva evaluación BPH</h1>
+          <h1 className="page-title">{esEdicion ? 'Editar evaluación BPH' : 'Nueva evaluación BPH'}</h1>
           <p className="page-subtitle">
             {sinUniforme
               ? 'Registra una evaluación individual con criterios de higiene.'
@@ -393,7 +446,9 @@ export default function EvaluacionForm() {
         <div className="section-card-body">
           {error && <ErrorState error={error} />}
 
-          <form onSubmit={handleSubmit} ref={formRef}>
+          {cargandoEdicion ? (
+            <div className="loading-state">Cargando evaluación...</div>
+          ) : <form onSubmit={handleSubmit} ref={formRef}>
             {/* Datos Base — Solo en Paso 1 */}
             {paso === 1 && (
               <div className="form-grid-2" style={{ gap: '1rem', marginBottom: '1.5rem' }}>
@@ -416,23 +471,31 @@ export default function EvaluacionForm() {
                 </div>
                 <div>
                   <label className="label">Trabajador</label>
-                  <select required className="input-field" value={trabajadorId} onChange={e => setTrabajadorId(e.target.value)}>
-                    <option value="">Selecciona un trabajador...</option>
-                    {obtenerTrabajadoresActivos().map(t => (
-                      <option key={t.id} value={t.id}>{t.nombre}</option>
-                    ))}
-                  </select>
+                  {esEdicion ? (
+                    <input className="input-field" value={evaluacionOriginal?.trabajador?.nombre || ''} disabled />
+                  ) : (
+                    <select required className="input-field" value={trabajadorId} onChange={e => setTrabajadorId(e.target.value)}>
+                      <option value="">Selecciona un trabajador...</option>
+                      {obtenerTrabajadoresActivos().map(t => (
+                        <option key={t.id} value={t.id}>{t.nombre}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <div>
                   <label className="label">Área</label>
-                  <select required className="input-field" value={areaId} onChange={e => setAreaId(e.target.value)} disabled={!trabajadorId}>
-                    <option value="">Selecciona un área...</option>
-                    {areas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
-                  </select>
+                  {esEdicion ? (
+                    <input className="input-field" value={evaluacionOriginal?.area?.nombre || ''} disabled />
+                  ) : (
+                    <select required className="input-field" value={areaId} onChange={e => setAreaId(e.target.value)} disabled={!trabajadorId}>
+                      <option value="">Selecciona un área...</option>
+                      {areas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+                    </select>
+                  )}
                 </div>
                 <div>
                   <label className="label">Evaluador</label>
-                  <input className="input-field" value={usuario?.nombre || ''} disabled style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }} />
+                  <input className="input-field" value={esEdicion ? (evaluacionOriginal?.evaluador?.nombre || '') : (usuario?.nombre || '')} disabled style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }} />
                 </div>
               </div>
             )}
@@ -522,12 +585,12 @@ export default function EvaluacionForm() {
                   </button>
                   <button type="submit" className="btn btn-primary" disabled={cargando}>
                     <Save size={18} />
-                    {cargando ? 'Guardando...' : 'Guardar Evaluación'}
+                    {cargando ? 'Guardando...' : esEdicion ? 'Guardar cambios' : 'Guardar Evaluación'}
                   </button>
                 </div>
               </>
             )}
-          </form>
+          </form>}
         </div>
       </section>
 

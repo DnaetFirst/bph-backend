@@ -198,6 +198,11 @@ const AppRoutes = () => {
           <Route path="/" element={<ProtectedRoute usuario={usuario}><Inicio /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute usuario={usuario}><Dashboard /></ProtectedRoute>} />
           <Route path="/evaluar" element={<ProtectedRoute usuario={usuario}><EvaluacionForm /></ProtectedRoute>} />
+          <Route path="/evaluar/:id/editar" element={
+            <RoleProtectedRoute usuario={usuario} allowedRoles={['administrador', 'supervisor']}>
+              <EvaluacionForm />
+            </RoleProtectedRoute>
+          } />
           <Route path="/trabajadores" element={
             <RoleProtectedRoute usuario={usuario} allowedRoles={['administrador', 'supervisor']}>
               <Trabajadores />

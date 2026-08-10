@@ -40,6 +40,14 @@ export const crearEvaluacionSchema = z.object({
   detalles: z.array(detalleSchema).min(1),
 });
 
+export const editarEvaluacionSchema = z.object({
+  colorEsperado: z.string().optional(),
+  colorObservado: z.string().optional(),
+  cumplimientoColor: z.string().optional(),
+  observaciones: z.string().max(500).optional(),
+  detalles: z.array(detalleSchema).min(1),
+});
+
 export const anularEvaluacionSchema = z.object({
   motivo: z.string().min(3).max(300),
 });

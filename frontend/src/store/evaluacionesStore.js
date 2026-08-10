@@ -94,6 +94,35 @@ export const useEvaluacionesStore = create((set, get) => ({
     }
   },
 
+  obtenerEvaluacion: async (id) => {
+    const { data } = await apiClient.get(`/evaluaciones/${id}`);
+    return data;
+  },
+
+  editarEvaluacion: async (id, datos) => {
+    set({ cargando: true, error: null });
+    try {
+      const { data } = await apiClient.put(`/evaluaciones/${id}`, datos);
+      set({ cargando: false });
+      useUiStore.getState().mostrarToast({
+        tipo: 'success',
+        titulo: 'Evaluación actualizada',
+        mensaje: 'Los cambios se guardaron y la integridad fue recalculada.',
+      });
+      return data;
+    } catch (err) {
+      if (err.response?.status === 401) {
+        set({ cargando: false });
+        throw err;
+      }
+      set({
+        error: err.response?.data?.error || 'Error al actualizar la evaluación',
+        cargando: false,
+      });
+      throw err;
+    }
+  },
+
   anularEvaluacion: async (id, motivo) => {
     set({ cargando: true, error: null });
     try {

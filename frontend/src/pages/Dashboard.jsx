@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   PlusCircle,
@@ -11,6 +12,7 @@ import {
   ShieldAlert,
   CalendarRange,
   Eye,
+  Pencil,
   Trash2,
   ChevronLeft,
   ChevronRight,
@@ -73,6 +75,20 @@ export default function Dashboard() {
   useEffect(() => {
     fetchEvaluaciones({ pagina, porPagina, ...filtros });
   }, [fetchEvaluaciones, pagina, porPagina, filtros]);
+
+  useEffect(() => {
+    if (!verDetalleEvaluacion) return;
+    const overflowAnterior = document.body.style.overflow;
+    const cerrarConEscape = (event) => {
+      if (event.key === 'Escape') setVerDetalleEvaluacion(null);
+    };
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', cerrarConEscape);
+    return () => {
+      document.body.style.overflow = overflowAnterior;
+      document.removeEventListener('keydown', cerrarConEscape);
+    };
+  }, [verDetalleEvaluacion]);
 
 
   const evaluacionesActivas = useMemo(
@@ -461,14 +477,24 @@ export default function Dashboard() {
                          <td>{new Date(ev.fecha).toLocaleDateString('es-AR', { timeZone: 'UTC' })}</td>
                         <td>{ev.trabajador?.nombre || 'N/A'}</td>
                         <td className="td-actions">
-                          <button
+                           <button
                             type="button"
                             className="btn-ghost btn-small"
                             onClick={() => setVerDetalleEvaluacion(ev)}
                             title="Ver detalles"
                           >
-                            <Eye size={16} />
-                          </button>
+                             <Eye size={16} />
+                           </button>
+                           {['administrador', 'supervisor'].includes(usuario?.rol) && ev.estado === 'ACTIVA' && (
+                             <button
+                               type="button"
+                               className="btn-ghost btn-small"
+                               onClick={() => navigate(`/evaluar/${ev.id}/editar`)}
+                               title="Editar formulario"
+                             >
+                               <Pencil size={16} />
+                             </button>
+                           )}
                           <button
                             type="button"
                             className="btn-ghost btn-small"
@@ -512,7 +538,7 @@ export default function Dashboard() {
       )}
 
       {/* Modal para ver detalles */}
-      {verDetalleEvaluacion && (
+      {verDetalleEvaluacion && createPortal((
         <div className="modal-overlay" onClick={() => setVerDetalleEvaluacion(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Detalles de la Evaluación</h3>
@@ -572,7 +598,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </div>
   );
 }
