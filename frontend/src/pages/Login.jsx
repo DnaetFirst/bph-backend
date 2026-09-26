@@ -26,11 +26,11 @@ export default function Login() {
   };
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ maxWidth: '440px', margin: '12vh auto', padding: '2.25rem' }}>
-      <div style={{ display: 'grid', justifyItems: 'center', gap: '1rem', marginBottom: '1.6rem' }}>
+    <div className="glass-panel auth-panel animate-fade-in">
+      <div style={{ display: 'grid', justifyItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <img src="/LogoNexocorp.png" alt="Nexocorp" style={{ height: '120px', width: 'auto' }} />
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '1.55rem', marginBottom: '0.35rem', color: 'hsl(var(--color-text-primary))' }}>Iniciar sesión</h2>
+          <h2 style={{ fontSize: '1.55rem', marginBottom: 'var(--space-1)', color: 'hsl(var(--color-text-primary))' }}>Iniciar sesión</h2>
           <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.92rem' }}>
             Accede al sistema de control BPH con tu cuenta corporativa.
           </p>
@@ -41,7 +41,7 @@ export default function Login() {
         <ErrorState error={error || localError} />
       )}
 
-      <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} onSubmit={handleSubmit}>
+      <form style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }} onSubmit={handleSubmit}>
         <div>
           <label className="label">Usuario</label>
           <input
@@ -68,7 +68,7 @@ export default function Login() {
 
         <button
           className="btn btn-primary"
-          style={{ marginTop: '0.25rem' }}
+          style={{ marginTop: 'var(--space-1)' }}
           disabled={cargando}
           type="submit"
         >

@@ -224,18 +224,18 @@ export default function EvaluacionForm() {
   const SeccionParametros = ({ titulo, params, progreso }) => (
     <section className="section-card">
       <div className="section-card-body">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div className="section-heading-row" style={{ marginBottom: 'var(--space-3)' }}>
           <h3 className="section-title">{titulo}</h3>
           <span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>
             {progreso.cumple}/{progreso.total} cumplen · {progreso.porcentaje == null ? 'N/A' : `${progreso.porcentaje}%`}
           </span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {params.map(p => {
             const valorActual = respuestas[p.id] || null;
             return (
-              <div key={p.id} style={{ padding: '0.85rem', background: 'hsla(var(--color-surface), 0.5)', borderRadius: 'var(--radius-md)' }}>
-                <div style={{ marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500, color: 'hsl(var(--color-text-primary))' }}>
+              <div key={p.id} style={{ padding: 'var(--space-3)', background: 'hsla(var(--color-surface), 0.5)', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ marginBottom: 'var(--space-2)', fontSize: '0.9rem', fontWeight: 500, color: 'hsl(var(--color-text-primary))' }}>
                   {p.texto}
                 </div>
                 <div className="segmented">
@@ -288,20 +288,20 @@ export default function EvaluacionForm() {
   const progresoObservaciones = observaciones ? Math.round((observaciones.length / observacionesMaxLen) * 100) : 0;
 
   const BarraProgreso = ({ label, value, color }) => (
-    <div style={{ marginBottom: '0.75rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+    <div style={{ marginBottom: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 'var(--space-1)' }}>
         <span>{label}</span>
         <strong>{value == null ? 'N/A' : `${value ?? 0}%`}</strong>
       </div>
       <div style={{ width: '100%', height: 10, background: 'hsla(var(--color-secondary), 0.12)', borderRadius: 999, overflow: 'hidden' }}>
-        <div style={{ width: `${value == null ? 'N/A' : `${value ?? 0}%`}`, height: '100%', background: color, borderRadius: 999, transition: 'width 0.3s ease' }} />
+        <div style={{ width: `${value ?? 0}%`, height: '100%', background: color, borderRadius: 999, transition: 'width 0.3s ease' }} />
       </div>
     </div>
   );
   const ModalContenido = evaluacionGuardada ? (
     <Modal label="Evaluación guardada" onClose={() => navigate('/')}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div className="section-heading-row" style={{ marginBottom: 'var(--space-4)' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'hsl(var(--color-text-primary))' }}>
             Resumen de evaluación
           </h2>
@@ -315,7 +315,7 @@ export default function EvaluacionForm() {
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
+        <div className="dialog-details" style={{ gap: 'var(--space-3)', fontSize: '0.9rem', marginBottom: 'var(--space-4)' }}>
           <div>
             <span style={{ color: 'hsl(var(--color-text-secondary))' }}>Trabajador: </span>
             <strong>{evaluacionGuardada.trabajador?.nombre || '---'}</strong>
@@ -334,8 +334,8 @@ export default function EvaluacionForm() {
           </div>
         </div>
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.75rem', color: 'hsl(var(--color-text-primary))' }}>
+        <div style={{ marginBottom: 'var(--space-4)' }}>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: 'var(--space-3)', color: 'hsl(var(--color-text-primary))' }}>
             Cumplimiento por dimensión
           </h3>
           <BarraProgreso label="Higiene" value={higieneProgress.porcentaje} color="linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))" />
@@ -343,8 +343,8 @@ export default function EvaluacionForm() {
           <BarraProgreso label="General" value={progresoGeneral} color="linear-gradient(90deg, hsla(221, 83%, 53%, 0.75), hsla(217, 91%, 60%, 0.95))" />
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="section-heading-row" style={{ marginBottom: 'var(--space-4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
             <ShieldCheck size={24} style={{ color: clasificacionColor }} />
             <span style={{ fontSize: '1rem', fontWeight: 700, color: clasificacionColor }}>
               Clasificación: {clasificacion}
@@ -353,7 +353,7 @@ export default function EvaluacionForm() {
           {!sinUniforme && !esFinDeSemana && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Cumplimiento de color</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'flex-end' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', justifyContent: 'flex-end' }}>
                 {colorEsperado === colorObservado ? (
                   <ShieldCheck size={16} style={{ color: 'hsl(var(--color-success))' }} />
                 ) : (
@@ -365,7 +365,7 @@ export default function EvaluacionForm() {
           )}
         </div>
 
-        <div className="action-group" style={{ justifyContent: 'center', gap: '1rem' }}>
+        <div className="action-group" style={{ justifyContent: 'center', gap: 'var(--space-3)' }}>
           {['administrador', 'supervisor'].includes(usuario?.rol) && <button className="btn btn-outline" onClick={() => {
             navigate(`/evaluar/${evaluacionGuardada.id}/editar`);
             setEvaluacionGuardada(null);
@@ -416,7 +416,7 @@ export default function EvaluacionForm() {
           ) : <form onSubmit={handleSubmit} ref={formRef} style={{ scrollMarginTop: '7rem' }}>
             {/* Datos Base — Solo en Paso 1 */}
             {paso === 1 && (
-              <div className="form-grid-2" style={{ gap: '1rem', marginBottom: '1.5rem' }}>
+              <div className="form-grid-2" style={{ gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
                 <div>
                   <label className="label">Fecha de evaluación</label>
                   <input
@@ -429,8 +429,8 @@ export default function EvaluacionForm() {
                     style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }}
                      max={getLocalISODate()}
                   />
-                  <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
-                    <Info size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />
+                  <div style={{ marginTop: 'var(--space-2)', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
+                    <Info size={12} style={{ display: 'inline', marginRight: 'var(--space-1)' }} />
                     Fecha auto-generada al momento de crear la evaluación
                   </div>
                 </div>
@@ -474,11 +474,11 @@ export default function EvaluacionForm() {
                   <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>No hay parámetros configurados para evaluar.</p>
                 )}
 
-                <div style={{ marginTop: '0.5rem', padding: '0.6rem 0.9rem', background: 'hsla(var(--color-primary), 0.06)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>
+                <div style={{ marginTop: 'var(--space-2)', padding: 'var(--space-2) var(--space-3)', background: 'hsla(var(--color-primary), 0.06)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>
                   Haz clic en cada botón para marcar el estado de cada parámetro: <strong>Cumple</strong>, <strong>No cumple</strong> o <strong>No aplica</strong>.
                 </div>
 
-                <div className="action-group" style={{ justifyContent: 'flex-end', marginTop: '1rem' }}>
+                <div className="action-group" style={{ justifyContent: 'flex-end', marginTop: 'var(--space-3)' }}>
                   <button type="button" className="btn btn-primary" onClick={() => setPaso(2)} disabled={!puedeAvanzar}>
                     Siguiente
                   </button>
@@ -494,8 +494,8 @@ export default function EvaluacionForm() {
 
                 {/* Control de Color — solo días de semana (Lunes a Viernes) */}
                 {!sinUniforme && !esFinDeSemana && (
-                  <section className="info-banner" style={{ padding: '1.25rem' }}>
-                    <div className="form-grid-2" style={{ gap: '1rem' }}>
+                  <section className="info-banner" style={{ padding: 'var(--space-4)' }}>
+                    <div className="form-grid-2" style={{ gap: 'var(--space-3)' }}>
                       <div>
                         <label className="label">Color de uniforme esperado</label>
                         <input
@@ -505,8 +505,8 @@ export default function EvaluacionForm() {
                           style={{ backgroundColor: 'hsla(var(--color-surface), 0.3)' }}
                         />
                         {colorEsperado && (
-                          <div style={{ marginTop: '0.4rem', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
-                            <Info size={12} style={{ display: 'inline', marginRight: '0.2rem' }} />
+                          <div style={{ marginTop: 'var(--space-2)', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
+                            <Info size={12} style={{ display: 'inline', marginRight: 'var(--space-1)' }} />
                             Calculado automáticamente según el día de la semana
                           </div>
                         )}
@@ -525,7 +525,7 @@ export default function EvaluacionForm() {
                 )}
 
                 {/* Observaciones */}
-                <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ marginBottom: 'var(--space-4)' }}>
                   <label className="label">Observaciones adicionales</label>
                   <textarea
                     className="input-field"

@@ -2,9 +2,9 @@ export default function MiniBarChart({ data = [], percentage = false, color = 'h
   const max = percentage ? 100 : Math.max(...data.map((item) => item.value), 1);
 
   return (
-    <div style={{ display: 'grid', gap: '0.75rem' }}>
+    <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
       {data.map((item) => (
-        <div key={item.id ?? item.label} style={{ display: 'grid', gridTemplateColumns: 'minmax(70px, 110px) minmax(0, 1fr) 46px', gap: '0.75rem', alignItems: 'center' }}>
+        <div key={item.id ?? item.label} style={{ display: 'grid', gridTemplateColumns: 'minmax(70px, 110px) minmax(0, 1fr) 46px', gap: 'var(--space-3)', alignItems: 'center' }}>
           <div title={item.label} style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {item.label}
           </div>

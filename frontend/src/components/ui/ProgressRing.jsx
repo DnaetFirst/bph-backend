@@ -5,7 +5,7 @@ export default function ProgressRing({ porcentaje, color = 'primary' }) {
   const offset = circumference - (circumference * Math.min(100, Math.max(0, porcentaje))) / 100;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-1)' }}>
       <svg width="90" height="90" style={{ transform: 'rotate(-90deg)' }}>
         <circle
           cx="45" cy="45" r={radius}

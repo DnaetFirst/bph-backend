@@ -71,7 +71,7 @@ export default function Bitacora() {
         </button>
       </header>
 
-      <div style={{ position: 'relative', width: '100%', maxWidth: '320px', marginBottom: '1rem' }}>
+      <div style={{ position: 'relative', width: '100%', maxWidth: '320px', marginBottom: 'var(--space-3)' }}>
         <Search size={16} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--color-text-secondary))' }} />
         <input
           type="text"
@@ -108,12 +108,12 @@ export default function Bitacora() {
                 {eventos.map((evento) => (
                   <tr key={evento.id}>
                     <td className="td-nombre" style={{ whiteSpace: 'nowrap', color: 'hsl(var(--color-text-secondary))', fontSize: '0.875rem' }}>
-                      <Calendar size={14} style={{ display: 'inline', marginRight: '0.3rem' }} />
+                      <Calendar size={14} style={{ display: 'inline', marginRight: 'var(--space-1)' }} />
                       {new Date(evento.fecha).toLocaleString('es-AR')}
                     </td>
                     <td style={{ fontWeight: 500 }}>{evento.accion}</td>
                     <td>
-                      <User size={13} style={{ display: 'inline', marginRight: '0.3rem' }} />
+                      <User size={13} style={{ display: 'inline', marginRight: 'var(--space-1)' }} />
                       {evento.usuario}
                     </td>
                     <td>{evento.rol}</td>

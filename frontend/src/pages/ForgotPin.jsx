@@ -34,13 +34,13 @@ export default function ForgotPin() {
 
   if (exito) {
     return (
-      <div className="glass-panel animate-fade-in" style={{ maxWidth: '440px', margin: '12vh auto', padding: '2.25rem' }}>
-        <div style={{ display: 'grid', justifyItems: 'center', gap: '1rem', marginBottom: '1.6rem' }}>
+      <div className="glass-panel auth-panel animate-fade-in">
+        <div style={{ display: 'grid', justifyItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', borderRadius: '50%', background: 'hsla(var(--color-success), 0.18)' }}>
             <Mail size={32} style={{ color: 'hsl(var(--color-success))' }} />
           </div>
           <div style={{ textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.55rem', marginBottom: '0.35rem', color: 'hsl(var(--color-text-primary))' }}>¡Email enviado!</h2>
+            <h2 style={{ fontSize: '1.55rem', marginBottom: 'var(--space-1)', color: 'hsl(var(--color-text-primary))' }}>¡Email enviado!</h2>
             <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.92rem' }}>
               Si el correo está registrado, recibirás un enlace para restablecer tu PIN en breve.
             </p>
@@ -59,11 +59,11 @@ export default function ForgotPin() {
   }
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ maxWidth: '440px', margin: '12vh auto', padding: '2.25rem' }}>
-      <div style={{ display: 'grid', justifyItems: 'center', gap: '1rem', marginBottom: '1.6rem' }}>
+    <div className="glass-panel auth-panel animate-fade-in">
+      <div style={{ display: 'grid', justifyItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <img src="/LogoNexocorp.png" alt="Nexocorp" style={{ height: '120px', width: 'auto' }} />
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '1.55rem', marginBottom: '0.35rem', color: 'hsl(var(--color-text-primary))' }}>¿Olvidaste tu PIN?</h2>
+          <h2 style={{ fontSize: '1.55rem', marginBottom: 'var(--space-1)', color: 'hsl(var(--color-text-primary))' }}>¿Olvidaste tu PIN?</h2>
           <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.92rem' }}>
             Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu PIN.
           </p>
@@ -72,7 +72,7 @@ export default function ForgotPin() {
 
       {error && <ErrorState error={error} />}
 
-      <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} onSubmit={handleSubmit}>
+      <form style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }} onSubmit={handleSubmit}>
         <div>
           <label className="label">Correo electrónico</label>
           <input
@@ -89,7 +89,7 @@ export default function ForgotPin() {
 
         <button
           className="btn btn-primary"
-          style={{ marginTop: '0.25rem' }}
+          style={{ marginTop: 'var(--space-1)' }}
           disabled={procesando || !email.trim()}
           type="submit"
         >

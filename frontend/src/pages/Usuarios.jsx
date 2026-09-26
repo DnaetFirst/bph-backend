@@ -500,7 +500,7 @@ export default function Usuarios() {
       <div className="tables-grid">
         <section className="section-card">
           <div className="section-card-body">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className="section-heading-row" style={{ marginBottom: 'var(--space-3)' }}>
               <h2 className="section-title">Usuarios</h2>
               <button className="btn btn-primary btn-small" onClick={openCrearUsuario}>
                 <Plus size={14} /> Nuevo usuario
@@ -509,7 +509,7 @@ export default function Usuarios() {
 
             {error && <ErrorState error={error} onRetry={fetchUsuarios} />}
 
-            <div style={{ position: 'relative', width: '100%', maxWidth: '320px', marginBottom: '1rem' }}>
+            <div style={{ position: 'relative', width: '100%', maxWidth: '320px', marginBottom: 'var(--space-3)' }}>
               <Search size={16} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--color-text-secondary))' }} />
               <input
                 type="text"
@@ -598,7 +598,7 @@ export default function Usuarios() {
 
         <section className="section-card">
           <div className="section-card-body">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className="section-heading-row" style={{ marginBottom: 'var(--space-3)' }}>
               <h2 className="section-title">Áreas</h2>
               <button className="btn btn-primary btn-small" onClick={openCrearArea}>
                 <Plus size={14} /> Nueva área
@@ -640,14 +640,14 @@ export default function Usuarios() {
             <p className="section-subtitle">
               {editandoUsuario ? 'Modifica los datos del usuario.' : 'Crea una nueva cuenta de acceso al sistema.'}
               {!editandoUsuario && (
-                <span style={{ display: 'block', marginTop: '0.35rem', fontSize: '0.8rem', color: 'hsl(var(--color-warning))' }}>
+                <span style={{ display: 'block', marginTop: 'var(--space-1)', fontSize: '0.8rem', color: 'hsl(var(--color-warning))' }}>
                   El PIN por defecto será 000000 y deberá cambiarse en el primer ingreso.
                 </span>
               )}
             </p>
 
             <form onSubmit={editandoUsuario ? handleEditarUsuario : handleCrearUsuario}>
-              <div className="form-grid-2" style={{ gap: '1rem' }}>
+              <div className="form-grid-2" style={{ gap: 'var(--space-3)' }}>
                 <div>
                   <label className="label">Nombre de usuario</label>
                   <input
@@ -690,10 +690,10 @@ export default function Usuarios() {
               </div>
 
               {!editandoUsuario && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                   <div>
                     <label className="label">PIN inicial (opcional)</label>
-                    <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.8rem', marginTop: '-0.5rem', marginBottom: '0.25rem' }}>
+                    <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.8rem', marginTop: '-0.5rem', marginBottom: 'var(--space-1)' }}>
                       Mínimo 6 caracteres, con al menos un número. Si lo dejas vacío, se usará 000000.
                     </p>
                     <input
@@ -721,7 +721,7 @@ export default function Usuarios() {
                 </div>
               )}
 
-              <div className="action-group" style={{ marginTop: '1.25rem' }}>
+              <div className="action-group" style={{ marginTop: 'var(--space-4)' }}>
                 <button type="submit" className="btn btn-primary" disabled={procesando}>
                   <Save size={18} />
                   {procesando ? 'Guardando...' : editandoUsuario ? 'Actualizar' : 'Crear'}
@@ -757,7 +757,7 @@ export default function Usuarios() {
                 />
               </div>
 
-              <div className="action-group" style={{ marginTop: '1.25rem' }}>
+              <div className="action-group" style={{ marginTop: 'var(--space-4)' }}>
                 <button type="submit" className="btn btn-primary" disabled={procesando}>
                   <Save size={18} />
                   {procesando ? 'Guardando...' : editandoArea ? 'Actualizar' : 'Crear'}
@@ -782,7 +782,7 @@ export default function Usuarios() {
               </button>
             </div>
             <div className="modal-body">
-              <div style={{ display: 'grid', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
                 <div><span style={{ color: 'hsl(var(--color-text-secondary))' }}>Nombre: </span><strong>{verDetalleUsuario.nombre}</strong></div>
                 <div><span style={{ color: 'hsl(var(--color-text-secondary))' }}>Email: </span><strong>{verDetalleUsuario.email}</strong></div>
                 <div><span style={{ color: 'hsl(var(--color-text-secondary))' }}>Rol: </span><strong>{verDetalleUsuario.rol}</strong></div>
@@ -835,10 +835,10 @@ export default function Usuarios() {
               </button>
             </div>
             <div className="modal-body">
-              <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem', marginBottom: '1rem' }}>
+              <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.85rem', marginBottom: 'var(--space-3)' }}>
                 Ingresa un nuevo PIN de al menos 6 caracteres (debe contener números).
               </p>
-              <form id="form-cambiar-pin" onSubmit={handleCambiarPin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <form id="form-cambiar-pin" onSubmit={handleCambiarPin} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 <div>
                   <label className="label">Nuevo PIN</label>
                   <input

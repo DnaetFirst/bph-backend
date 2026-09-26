@@ -208,7 +208,7 @@ export default function Trabajadores() {
             </p>
 
             <form onSubmit={handleSubmit}>
-              <div className="form-grid-2" style={{ gap: '1rem' }}>
+              <div className="form-grid-2" style={{ gap: 'var(--space-3)' }}>
                 <div>
                   <label className="label">Nombre del trabajador</label>
                   <input
@@ -240,7 +240,7 @@ export default function Trabajadores() {
                 </div>
               </div>
 
-              <div className="action-group" style={{ marginTop: '1.25rem' }}>
+              <div className="action-group" style={{ marginTop: 'var(--space-4)' }}>
                 <button type="submit" className="btn btn-primary" disabled={cargando}>
                   {cargando ? 'Guardando...' : editando ? 'Actualizar' : 'Crear'}
                 </button>

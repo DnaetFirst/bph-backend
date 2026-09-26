@@ -61,11 +61,11 @@ export default function ResetPin() {
   };
 
   return (
-    <div className="glass-panel animate-fade-in" style={{ maxWidth: '440px', margin: '12vh auto', padding: '2.25rem' }}>
-      <div style={{ display: 'grid', justifyItems: 'center', gap: '1rem', marginBottom: '1.6rem' }}>
+    <div className="glass-panel auth-panel animate-fade-in">
+      <div style={{ display: 'grid', justifyItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
         <img src="/LogoNexocorp.png" alt="Nexocorp" style={{ height: '120px', width: 'auto' }} />
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ fontSize: '1.55rem', marginBottom: '0.35rem', color: 'hsl(var(--color-text-primary))' }}>Nuevo PIN</h2>
+          <h2 style={{ fontSize: '1.55rem', marginBottom: 'var(--space-1)', color: 'hsl(var(--color-text-primary))' }}>Nuevo PIN</h2>
           <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.92rem' }}>
             Ingresa un nuevo PIN de al menos 6 caracteres (con números). El enlace expira en 15 minutos.
           </p>
@@ -73,10 +73,10 @@ export default function ResetPin() {
       </div>
 
       {(error || exito) && (
-        <div style={{ marginBottom: '1rem' }}>
+        <div style={{ marginBottom: 'var(--space-3)' }}>
           {error && <ErrorState error={error} />}
           {exito && (
-            <div style={{ background: 'hsla(var(--color-success), 0.18)', border: '1px solid hsla(var(--color-success), 0.42)', borderRadius: '8px', padding: '0.75rem 1rem', color: 'hsl(var(--color-success))', fontSize: '0.875rem' }}>
+            <div style={{ background: 'hsla(var(--color-success), 0.18)', border: '1px solid hsla(var(--color-success), 0.42)', borderRadius: '8px', padding: 'var(--space-3) var(--space-3)', color: 'hsl(var(--color-success))', fontSize: '0.875rem' }}>
               {exito}
             </div>
           )}
@@ -84,7 +84,7 @@ export default function ResetPin() {
       )}
 
       {!tokenFromUrl && !exito && (
-        <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} onSubmit={handleSubmit}>
+        <form style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }} onSubmit={handleSubmit}>
           <div>
             <label className="label">Token de recuperación</label>
             <input
@@ -134,7 +134,7 @@ export default function ResetPin() {
       )}
 
       {tokenFromUrl && !exito && (
-        <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} onSubmit={handleSubmit}>
+        <form style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }} onSubmit={handleSubmit}>
           <div>
             <label className="label">Nuevo PIN</label>
             <input

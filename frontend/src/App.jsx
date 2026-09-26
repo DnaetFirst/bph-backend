@@ -87,7 +87,7 @@ const Navbar = () => {
             className={location.pathname === item.to ? 'active' : ''}
             onClick={() => setMenuOpen(false)}
           >
-            {item.icon && <item.icon size={16} style={{ marginRight: '0.35rem' }} />}
+            {item.icon && <item.icon size={16} style={{ marginRight: 'var(--space-1)' }} />}
             {item.label}
           </Link>
         ))}
@@ -106,7 +106,7 @@ const Navbar = () => {
           {dropdownOpen && (
             <div
               className="dropdown-menu"
-              style={{ position: 'absolute', right: 0, top: '100%', marginTop: '0.5rem' }}
+              style={{ position: 'absolute', right: 0, top: '100%', marginTop: 'var(--space-2)' }}
             >
               <button onClick={() => { setDropdownOpen(false); logout(); }}>
                 <LogOut size={14} />

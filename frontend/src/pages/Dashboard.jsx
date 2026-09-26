@@ -139,8 +139,8 @@ export default function Dashboard() {
       {/* Filtros */}
       <section className="section-card">
         <div className="section-card-body">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <div className="section-heading-row" style={{ marginBottom: 'var(--space-3)', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <Filter size={18} style={{ color: 'hsl(var(--color-primary))' }} />
               <h2 className="section-title">Filtros analíticos</h2>
             </div>
@@ -150,7 +150,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: 'var(--space-3)' }}>
             <div>
               <label className="label">Trabajador</label>
               <select className="input-field" value={filtros.trabajadorId} onChange={(e) => handleFilterChange('trabajadorId', e.target.value)}>
@@ -216,7 +216,7 @@ export default function Dashboard() {
       {/* Banner de exportación */}
       {mostrarFiltrosExportar && (
         <section className="section-card">
-          <div className="section-card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="section-card-body" style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--space-3)', alignItems: 'center', flexWrap: 'wrap' }}>
             <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>
               La exportación respetará los filtros analíticos actualmente aplicados.
             </p>
@@ -237,7 +237,7 @@ export default function Dashboard() {
       {!error && !cargando && resumen && <>
       {/* KPIs */}
       <section>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 'var(--space-3)' }}>
           <KpiCard icon={ShieldCheck} titulo="Evaluaciones activas" valor={resumen.totalItems} subtitulo={`${total} registros encontrados con filtros`} color="hsl(var(--color-primary))" />
           <KpiCard icon={TrendingUp} titulo="Promedio general" valor={resumen.promedioGeneral == null ? 'N/A' : `${resumen.promedioGeneral}%`} subtitulo="Promedio del indicador BPH" color="hsl(var(--color-success))" />
           <KpiCard icon={CalendarRange} titulo="Cumplimiento de color" valor={resumen.cumplimientoColorPorcentaje == null ? 'N/A' : `${resumen.cumplimientoColorPorcentaje}%`} subtitulo="Coincidencia entre color esperado y observado" color="hsl(var(--color-warning))" />
@@ -256,7 +256,7 @@ export default function Dashboard() {
             </div>
 
             {resumen.tendencia.length > 0 ? (
-              <div style={{ display: 'grid', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
                 {resumen.tendencia.map((item, index) => {
                   const previous = index > 0 ? resumen.tendencia[index - 1].value : item.value;
                   const trendUp = item.value >= previous;
@@ -264,12 +264,12 @@ export default function Dashboard() {
                     ? 'linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))'
                     : 'linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(348, 83%, 47%, 0.85))';
                   return (
-                    <div key={`${item.label}-${index}`} style={{ display: 'grid', gridTemplateColumns: '70px minmax(0, 1fr) 65px', gap: '0.75rem', alignItems: 'center' }}>
+                    <div key={`${item.label}-${index}`} style={{ display: 'grid', gridTemplateColumns: '70px minmax(0, 1fr) 65px', gap: 'var(--space-3)', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.82rem', color: 'hsl(var(--color-text-secondary))' }}>{item.label}</span>
                       <div style={{ height: 12, borderRadius: 999, background: 'hsla(var(--color-secondary), 0.12)', overflow: 'hidden' }}>
                         <div style={{ width: `${item.value}%`, height: '100%', background: barColor, borderRadius: 999 }} />
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.35rem', fontWeight: 700, color: trendUp ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 'var(--space-1)', fontWeight: 700, color: trendUp ? 'hsl(var(--color-success))' : 'hsl(var(--color-danger))' }}>
                         {trendUp ? <TrendingUp size={15} /> : <TrendingDown size={15} />}
                         {item.value}%
                       </div>
@@ -296,22 +296,22 @@ export default function Dashboard() {
             {resumen.tieneUniforme ? (
             <ProgressRow label="Uniforme" value={resumen.promedioUniforme} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />
           ) : (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.4rem 0', fontSize: '0.9rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-2) 0', fontSize: '0.9rem' }}>
               <span>Uniforme</span>
               <strong style={{ color: 'hsl(var(--color-text-secondary))' }}>N/A</strong>
             </div>
           )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(85px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
-              <div style={{ padding: '0.85rem', borderRadius: 12, background: 'hsla(142, 71%, 45%, 0.1)', textAlign: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(85px, 1fr))', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
+              <div style={{ padding: 'var(--space-3)', borderRadius: 12, background: 'hsla(142, 71%, 45%, 0.1)', textAlign: 'center' }}>
                 <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'hsl(var(--color-success))' }}>{resumen.excelentes}</div>
                 <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>Excelentes</div>
               </div>
-              <div style={{ padding: '0.85rem', borderRadius: 12, background: 'hsla(38, 92%, 50%, 0.1)', textAlign: 'center' }}>
+              <div style={{ padding: 'var(--space-3)', borderRadius: 12, background: 'hsla(38, 92%, 50%, 0.1)', textAlign: 'center' }}>
                 <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'hsl(var(--color-warning))' }}>{resumen.aceptables}</div>
                 <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>Aceptables</div>
               </div>
-              <div style={{ padding: '0.85rem', borderRadius: 12, background: 'hsla(348, 83%, 47%, 0.1)', textAlign: 'center' }}>
+              <div style={{ padding: 'var(--space-3)', borderRadius: 12, background: 'hsla(348, 83%, 47%, 0.1)', textAlign: 'center' }}>
                 <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'hsl(var(--color-danger))' }}>{resumen.deficientes}</div>
                 <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>Deficientes</div>
               </div>
@@ -338,13 +338,13 @@ export default function Dashboard() {
       </>}
       {/* Historial y gestión según rol */}
       {['administrador', 'supervisor'].includes(usuario?.rol) && (
-        <section className="section-card" style={{ marginTop: '1.5rem' }}>
+        <section className="section-card" style={{ marginTop: 'var(--space-4)' }}>
           <div className="section-card-body">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className="section-heading-row" style={{ marginBottom: 'var(--space-3)' }}>
               <h2 className="section-title">Gestión de Formularios</h2>
             </div>
 
-            <div style={{ position: 'relative', width: '100%', maxWidth: '320px', marginBottom: '1rem' }}>
+            <div style={{ position: 'relative', width: '100%', maxWidth: '320px', marginBottom: 'var(--space-3)' }}>
               <Search size={16} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'hsl(var(--color-text-secondary))' }} />
               <input
                 type="text"
@@ -440,9 +440,9 @@ export default function Dashboard() {
       {verDetalleEvaluacion && (
         <Modal label="Detalles de evaluación" onClose={() => setVerDetalleEvaluacion(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-            <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Detalles de la Evaluación</h3>
+            <h3 style={{ marginBottom: 'var(--space-3)', fontSize: '1.25rem' }}>Detalles de la Evaluación</h3>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="dialog-details" style={{ gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
                <div>
                  <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Fecha</p>
                   <p style={{ fontWeight: 600 }}>{new Date(verDetalleEvaluacion.fecha).toLocaleString('es-AR', { timeZone: 'UTC' })}</p>
@@ -461,17 +461,17 @@ export default function Dashboard() {
                </div>
             </div>
 
-            <div style={{ padding: '1rem', background: 'hsl(var(--color-bg))', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
-               <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Resultados</h4>
-               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <div style={{ padding: 'var(--space-3)', background: 'hsl(var(--color-bg))', borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-4)' }}>
+               <h4 style={{ marginBottom: 'var(--space-2)', fontSize: '1rem' }}>Resultados</h4>
+               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
                   <span>General:</span>
                   <strong>{verDetalleEvaluacion.generalPorcentaje !== null ? `${verDetalleEvaluacion.generalPorcentaje}%` : 'N/A'}</strong>
                </div>
-               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
                   <span>Higiene:</span>
                   <strong>{verDetalleEvaluacion.higienePorcentaje !== null ? `${verDetalleEvaluacion.higienePorcentaje}%` : 'N/A'}</strong>
                </div>
-               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
                   <span>Uniforme:</span>
                   <strong>{verDetalleEvaluacion.uniformePorcentaje !== null ? `${verDetalleEvaluacion.uniformePorcentaje}%` : 'N/A'}</strong>
                </div>
@@ -482,9 +482,9 @@ export default function Dashboard() {
             </div>
             
             {verDetalleEvaluacion.observaciones && (
-              <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ marginBottom: 'var(--space-4)' }}>
                  <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Observaciones</p>
-                 <p style={{ padding: '0.75rem', background: 'hsl(var(--color-bg))', borderRadius: 'var(--radius-md)', fontSize: '0.9rem' }}>
+                 <p style={{ padding: 'var(--space-3)', background: 'hsl(var(--color-bg))', borderRadius: 'var(--radius-md)', fontSize: '0.9rem' }}>
                    {verDetalleEvaluacion.observaciones}
                  </p>
               </div>
