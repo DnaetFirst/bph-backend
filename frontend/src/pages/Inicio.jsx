@@ -1,94 +1,61 @@
-﻿import { useNavigate } from "react-router-dom";
-import { ClipboardList, Users, LayoutDashboard, History } from "lucide-react";
-import { useAuthStore } from "../store/authStore";
+import { Link } from 'react-router-dom';
+import { ArrowRight, ClipboardList, Users, LayoutDashboard, History, Settings } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 
-const CardOpcion = ({ icon: Icon, titulo, subtitulo, onClick }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="card-opcion"
-    style={{
-      background: "hsl(var(--color-surface))",
-      border: "1px solid hsl(var(--color-table-border))",
-      borderRadius: "var(--radius-lg)",
-      cursor: "pointer",
-      transition: "all 0.15s ease",
-      boxShadow: "var(--shadow-sm)",
-      textAlign: "left",
-      height: "100%",
-      display: "flex",
-      flexDirection: "column",
-      gap: "0.75rem",
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.transform = "translateY(-2px)";
-      e.currentTarget.style.boxShadow = "var(--shadow-md)";
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.transform = "translateY(0)";
-      e.currentTarget.style.boxShadow = "var(--shadow-sm)";
-    }}
-  >
-    <div style={{ width: 48, height: 48, borderRadius: 12, background: "hsla(var(--color-primary), 0.12)", display: "grid", placeItems: "center" }}>
-      <Icon size={24} style={{ color: "hsl(var(--color-primary))" }} />
-    </div>
-    <h3 className="card-opcion-title">{titulo}</h3>
-    <p className="card-opcion-subtitle" style={{ flex: 1 }}>{subtitulo}</p>
-  </button>
-);
+const ROLES = { administrador: 'Administrador', supervisor: 'Supervisor', evaluador: 'Evaluador' };
 
 export default function Inicio() {
-  const { usuario } = useAuthStore();
-  const navigate = useNavigate();
-
-  const isAdmin = usuario?.rol === "administrador";
-  const isSupervisor = usuario?.rol === "supervisor";
-  const canManage = isAdmin || isSupervisor;
+  const usuario = useAuthStore(state => state.usuario);
+  const canManage = ['administrador', 'supervisor'].includes(usuario?.rol);
+  const opciones = [
+    { to: '/dashboard', icon: LayoutDashboard, titulo: 'Evaluaciones y resultados', texto: 'Consulta indicadores, gráficos y el historial de evaluaciones.' },
+    ...(canManage ? [
+      { to: '/trabajadores', icon: Users, titulo: 'Trabajadores', texto: 'Registra personal y actualiza sus datos y áreas de trabajo.' },
+      { to: '/bitacora', icon: History, titulo: 'Bitácora', texto: 'Consulta las acciones realizadas y su registro de auditoría.' },
+    ] : []),
+    ...(usuario?.rol === 'administrador' ? [
+      { to: '/usuarios', icon: Settings, titulo: 'Usuarios y áreas', texto: 'Administra las cuentas, los permisos y las áreas de trabajo.' },
+    ] : []),
+  ];
 
   return (
-    <div className="animate-fade-in page-shell">
-      <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-        <h1 className="page-title">
-          Bienvenido, {usuario?.nombre}
-        </h1>
-        <p className="page-subtitle">
-          Selecciona una acción para comenzar. El acceso a cada sección depende de tu rol: <strong>{usuario?.rol}</strong>
-        </p>
-      </div>
+    <div className="home-page animate-fade-in">
+      <header className="home-header">
+        <div className="home-heading">
+          <p className="home-eyebrow">CONTROL BPH · CEPROD</p>
+          <h1 className="home-title">Bienvenido, {usuario?.nombre || 'usuario'}</h1>
+          <p className="home-description">Realiza una evaluación o consulta la información de tu equipo.</p>
+        </div>
+        <span className="home-role">{ROLES[usuario?.rol] || usuario?.rol}</span>
+      </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: "1.25rem", maxWidth: "960px", margin: "0 auto" }}>
-        <CardOpcion
-          icon={ClipboardList}
-          titulo="Realizar Evaluación"
-          subtitulo="Inicia una nueva evaluación BPH para un trabajador."
-          onClick={() => navigate("/evaluar")}
-        />
+      <Link to="/evaluar" className="home-primary">
+        <span className="home-primary-icon"><ClipboardList size={28} aria-hidden="true" /></span>
+        <span className="home-primary-copy">
+          <span className="home-primary-title">Nueva evaluación BPH</span>
+          <span className="home-primary-description">Revisa los criterios de higiene y uniforme de un trabajador.</span>
+        </span>
+        <span className="home-primary-action">Comenzar <ArrowRight size={18} aria-hidden="true" /></span>
+      </Link>
 
-        {canManage && (
-          <CardOpcion
-            icon={Users}
-            titulo="Trabajadores"
-            subtitulo="Gestiona la lista de personal: altas, ediciones y estado."
-            onClick={() => navigate("/trabajadores")}
-          />
-        )}
-
-        <CardOpcion
-          icon={LayoutDashboard}
-          titulo="Dashboard Analítico"
-          subtitulo="Visualiza indicadores, gráficas y el historial de evaluaciones."
-          onClick={() => navigate("/dashboard")}
-        />
-
-        {canManage && (
-          <CardOpcion
-            icon={History}
-            titulo="Bitácora"
-            subtitulo="Revisa el registro de auditoría: quién hizo qué y cuándo."
-            onClick={() => navigate("/bitacora")}
-          />
-        )}
-      </div>
+      <section className="home-section" aria-labelledby="home-access-title">
+        <div className="home-section-heading">
+          <h2 id="home-access-title">Accesos rápidos</h2>
+          <p>Selecciona la sección que necesitas.</p>
+        </div>
+        <div className={`home-grid home-grid--${opciones.length}`}>
+          {opciones.map(({ to, icon: Icon, titulo, texto }) => (
+            <Link key={to} to={to} className="home-card">
+              <span className="home-card-icon"><Icon size={23} aria-hidden="true" /></span>
+              <span className="home-card-copy">
+                <span className="home-card-title">{titulo}</span>
+                <span className="home-card-description">{texto}</span>
+              </span>
+              <ArrowRight size={19} className="home-card-arrow" aria-hidden="true" />
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
