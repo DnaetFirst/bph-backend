@@ -33,6 +33,17 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    setDropdownOpen(false);
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const close = event => { if (event.key === 'Escape') { setDropdownOpen(false); setMenuOpen(false); } };
+    document.addEventListener('keydown', close);
+    return () => document.removeEventListener('keydown', close);
+  }, []);
+
   if (!usuario) return null;
 
   const isAdmin = usuario.rol === 'administrador';
@@ -177,13 +188,13 @@ const Toasts = () => {
 };
 
 const AppRoutes = () => {
-  const { usuario, verificarSesion, cargando } = useAuthStore();
+  const { usuario, verificarSesion, verificandoSesion } = useAuthStore();
 
   useEffect(() => {
     verificarSesion();
   }, [verificarSesion]);
 
-  if (cargando) return <div className="loading-state">Cargando sistema...</div>;
+  if (verificandoSesion) return <div className="loading-state">Cargando sistema...</div>;
 
   return (
     <>

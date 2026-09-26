@@ -1,16 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Calendar, User, RefreshCw, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiClient } from '../api/client';
 import ErrorState from '../components/ui/ErrorState';
 import LoadingState from '../components/ui/LoadingState';
 
-const eventosSample = [
-  { id: 1, accion: 'Login exitoso', usuario: 'EVA MORALES', rol: 'administrador', ip: '127.0.0.1', fecha: '2026-07-30T14:30:00Z' },
-  { id: 2, accion: 'Crear evaluación', usuario: 'EVA MORALES', rol: 'administrador', ip: '127.0.0.1', fecha: '2026-07-30T14:32:00Z' },
-  { id: 3, accion: 'Anular evaluación', usuario: 'EVA MORALES', rol: 'administrador', ip: '127.0.0.1', fecha: '2026-07-30T14:35:00Z' },
-];
-
 export default function Bitacora() {
+  const solicitudRef = useRef(0);
   const [eventos, setEventos] = useState([]);
   const [total, setTotal] = useState(0);
   const [cargando, setCargando] = useState(true);
@@ -31,6 +26,7 @@ export default function Bitacora() {
 
   const fetchBitacora = async (params = {}) => {
     const { pagina: pag = 1, search = searchDebounced } = params;
+    const solicitud = ++solicitudRef.current;
     setCargando(true);
     setError(null);
     try {
@@ -40,13 +36,16 @@ export default function Bitacora() {
       if (search) queryParams.append('q', search);
 
       const { data } = await apiClient.get(`/admin/bitacora?${queryParams.toString()}`);
+      if (solicitud !== solicitudRef.current) return;
       setEventos(data.eventos || []);
       setTotal(data.total || 0);
-    } catch {
-      setEventos(eventosSample);
-      setTotal(eventosSample.length);
+    } catch (err) {
+      if (solicitud !== solicitudRef.current) return;
+      setEventos([]);
+      setTotal(0);
+      setError(err.response?.data?.error || 'No se pudo cargar la bitácora. Intenta nuevamente.');
     } finally {
-      setCargando(false);
+      if (solicitud === solicitudRef.current) setCargando(false);
     }
   };
 
@@ -66,7 +65,7 @@ export default function Bitacora() {
             Registro completo de acciones realizadas en el sistema.
           </p>
         </div>
-        <button className="btn btn-outline" onClick={fetchBitacora} disabled={cargando}>
+        <button className="btn btn-outline" onClick={() => fetchBitacora({ pagina })} disabled={cargando}>
           <RefreshCw size={16} />
           {cargando ? 'Actualizando...' : 'Actualizar'}
         </button>
@@ -84,9 +83,9 @@ export default function Bitacora() {
         />
       </div>
 
-      {error && <ErrorState error={error} onRetry={fetchBitacora} />}
+      {error && <ErrorState error={error} onRetry={() => fetchBitacora({ pagina })} />}
 
-      {cargando ? (
+      {error ? null : cargando ? (
         <LoadingState mensaje="Cargando bitácora..." />
       ) : eventos.length === 0 ? (
         <div className="empty-state">

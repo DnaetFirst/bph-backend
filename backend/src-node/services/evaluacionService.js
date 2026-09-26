@@ -12,12 +12,21 @@ export class EvaluacionService {
     this.prisma = prisma;
   }
 
+  validarDetalles(detalles, parametros, nombreArea) {
+    const aplicables = parametros.filter(p =>
+      !(areaExcluyeUniforme(nombreArea) && p.categoria === 'uniforme') && !parametroExcluidoEnArea(p, nombreArea));
+    const ids = new Set(detalles.map(d => d.parametroId));
+    if (ids.size !== detalles.length || !aplicables.length || aplicables.some(p => !ids.has(p.id))) {
+      throw Object.assign(new Error('Responde todos los parámetros aplicables sin duplicados'), { status: 400 });
+    }
+  }
+
   calcularPorcentajes(detalles, parametros) {
     const porCategoria = { higiene: { total: 0, cumple: 0 }, uniforme: { total: 0, cumple: 0 } };
 
     for (const d of detalles) {
       const parametro = parametros.find((p) => p.id === d.parametroId);
-      if (!parametro || d.resultado === 'No aplica') continue;
+      if (!parametro || !porCategoria[parametro.categoria] || d.resultado === 'No aplica') continue;
       const cat = porCategoria[parametro.categoria];
       cat.total += 1;
       if (d.resultado === 'Cumple') cat.cumple += 1;
@@ -46,22 +55,33 @@ export class EvaluacionService {
 
   async obtenerUltimoHash() {
     const ultima = await this.prisma.evaluacion.findFirst({
-      orderBy: { creadoEn: 'desc' },
+      orderBy: [{ creadoEn: 'desc' }, { id: 'desc' }],
       select: { hashIntegridad: true },
     });
     return ultima?.hashIntegridad || null;
   }
 
-  async crear({ datos, detalles, parametros, evaluadorId, creadoPorId }) {
+  async crear(args) {
+    return this.prisma.$transaction(async tx => {
+      await tx.$executeRawUnsafe('LOCK TABLE "Evaluacion" IN EXCLUSIVE MODE');
+      return new EvaluacionService(tx).crearDentroTransaccion(args);
+    }, { maxWait: 10_000, timeout: 120_000 });
+  }
+
+  async crearDentroTransaccion({ datos, detalles, parametros, evaluadorId, creadoPorId }) {
     const area = await this.prisma.area.findUnique({
       where: { id: datos.areaId },
-      select: { nombre: true },
+      select: { nombre: true, activo: true },
     });
-    if (!area) {
+    if (!area || !area.activo) {
       const error = new Error('Área no encontrada');
       error.status = 404;
       throw error;
     }
+
+    const trabajador = await this.prisma.trabajador.findUnique({ where: { id: datos.trabajadorId } });
+    if (!trabajador?.activo) throw Object.assign(new Error('Trabajador inactivo o inexistente'), { status: 400 });
+    this.validarDetalles(detalles, parametros, area.nombre);
 
     const sinUniforme = areaExcluyeUniforme(area.nombre);
     const parametrosPorId = new Map(parametros.map((parametro) => [parametro.id, parametro]));
@@ -81,11 +101,17 @@ export class EvaluacionService {
     const { higienePorcentaje, uniformePorcentaje, generalPorcentaje, clasificacion } =
       this.calcularPorcentajes(detallesAplicables, parametros);
 
-    const hashAnterior = await this.obtenerUltimoHash();
+    const ultima = await this.prisma.evaluacion.findFirst({
+      orderBy: [{ creadoEn: 'desc' }, { id: 'desc' }],
+      select: { hashIntegridad: true, creadoEn: true },
+    });
+    const hashAnterior = ultima?.hashIntegridad || null;
+    const creadoEn = new Date(Math.max(Date.now(), ultima ? new Date(ultima.creadoEn).getTime() + 1 : 0));
 
     const evaluacion = await this.prisma.evaluacion.create({
       data: {
         fecha: datos.fecha,
+        creadoEn,
         trabajadorId: datos.trabajadorId,
         areaId: datos.areaId,
         evaluadorId,
@@ -138,6 +164,7 @@ export class EvaluacionService {
         throw error;
       }
 
+      this.validarDetalles(detalles, parametros, existente.area.nombre);
       const sinUniforme = areaExcluyeUniforme(existente.area.nombre);
       const parametrosPorId = new Map(parametros.map((parametro) => [parametro.id, parametro]));
       const detallesAplicables = detalles.filter((detalle) => {
@@ -177,7 +204,7 @@ export class EvaluacionService {
         },
       });
 
-      const cadena = await tx.evaluacion.findMany({ orderBy: { creadoEn: 'asc' } });
+      const cadena = await tx.evaluacion.findMany({ orderBy: [{ creadoEn: 'asc' }, { id: 'asc' }] });
       const indiceEditado = cadena.findIndex((evaluacion) => evaluacion.id === id);
       let hashAnterior = indiceEditado > 0 ? cadena[indiceEditado - 1].hashIntegridad : null;
       let hashEditado = null;
@@ -218,54 +245,26 @@ export class EvaluacionService {
     });
   }
 
-  async eliminar(id, { usuarioId }) {
-    const evaluacionAEliminar = await this.prisma.evaluacion.findUnique({
-      where: { id },
-      select: { creadoEn: true }
-    });
-
-    if (!evaluacionAEliminar) return null;
-
-    // Eliminar físicamente
-    await this.prisma.evaluacion.delete({
-      where: { id }
-    });
-
-    // Recalcular la cadena criptográfica desde este punto en adelante
-    const evaluacionesAfectadas = await this.prisma.evaluacion.findMany({
-      where: { creadoEn: { gt: evaluacionAEliminar.creadoEn } },
-      orderBy: { creadoEn: 'asc' }
-    });
-
-    // Encontrar el último hash íntegro antes de los afectados
-    const ultimaIntegra = await this.prisma.evaluacion.findFirst({
-      where: { creadoEn: { lt: evaluacionAEliminar.creadoEn } },
-      orderBy: { creadoEn: 'desc' },
-      select: { hashIntegridad: true }
-    });
-
-    let hashAnterior = ultimaIntegra ? ultimaIntegra.hashIntegridad : null;
-
-    for (const ev of evaluacionesAfectadas) {
-      const nuevoHashIntegridad = await sha256Hex(contenidoEvaluacionParaHash({ ...ev, hashAnterior }));
-      
-      await this.prisma.evaluacion.update({
-        where: { id: ev.id },
-        data: {
-          hashAnterior,
-          hashIntegridad: nuevoHashIntegridad
-        }
-      });
-      
-      hashAnterior = nuevoHashIntegridad;
-    }
-
-    return true;
+  async eliminar(id) {
+    return this.prisma.$transaction(async tx => {
+      await tx.$executeRawUnsafe('LOCK TABLE "Evaluacion" IN EXCLUSIVE MODE');
+      const existente = await tx.evaluacion.findUnique({ where: { id } });
+      if (!existente) throw Object.assign(new Error('Evaluación no encontrada'), { status: 404 });
+      await tx.evaluacion.delete({ where: { id } });
+      const cadena = await tx.evaluacion.findMany({ orderBy: [{ creadoEn: 'asc' }, { id: 'asc' }] });
+      let hashAnterior = null;
+      for (const ev of cadena) {
+        const hashIntegridad = await sha256Hex(contenidoEvaluacionParaHash({ ...ev, hashAnterior }));
+        await tx.evaluacion.update({ where: { id: ev.id }, data: { hashAnterior, hashIntegridad } });
+        hashAnterior = hashIntegridad;
+      }
+      return true;
+    }, { maxWait: 10_000, timeout: 120_000 });
   }
 
   /** Recalcula toda la cadena y compara contra lo almacenado — para el panel de integridad. */
   async verificarIntegridadCompleta() {
-    const evaluaciones = await this.prisma.evaluacion.findMany({ orderBy: { creadoEn: 'asc' } });
+    const evaluaciones = await this.prisma.evaluacion.findMany({ orderBy: [{ creadoEn: 'asc' }, { id: 'asc' }] });
     let anterior = null;
     const problemas = [];
 

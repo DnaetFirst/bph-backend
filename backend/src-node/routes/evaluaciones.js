@@ -7,6 +7,9 @@ import { EvaluacionService } from '../services/evaluacionService.js';
 import { crearEvaluacionSchema, editarEvaluacionSchema, anularEvaluacionSchema } from '../utils/schemas.js';
 import { registrarBitacora } from '../utils/bitacora.js';
 
+import { filtrosEvaluaciones, paginacion } from '../utils/evaluacionFilters.js';
+import { resumenEvaluaciones } from '../utils/resumenEvaluaciones.js';
+
 const router = Router();
 const service = new EvaluacionService(prisma);
 
@@ -14,33 +17,8 @@ router.use(authenticate);
 
 router.get('/', async (req, res, next) => {
   try {
-    const {
-      areaId,
-      estado,
-      trabajadorId,
-      evaluadorId,
-      clasificacion,
-      fechaDesde,
-      fechaHasta,
-      pagina = 1,
-      porPagina = 20,
-    } = req.query;
-
-    const fechaFiltro = {};
-    if (fechaDesde) fechaFiltro.gte = new Date(`${fechaDesde}T00:00:00.000Z`);
-    if (fechaHasta) fechaFiltro.lte = new Date(`${fechaHasta}T23:59:59.999Z`);
-
-    const where = {
-      areaId: areaId ? Number(areaId) : undefined,
-      estado: estado || undefined,
-      trabajadorId: trabajadorId ? Number(trabajadorId) : undefined,
-      evaluadorId: evaluadorId ? Number(evaluadorId) : undefined,
-      clasificacion: clasificacion || undefined,
-      fecha: Object.keys(fechaFiltro).length ? fechaFiltro : undefined,
-    };
-
-    const paginaNumero = Math.max(1, Number(pagina) || 1);
-    const porPaginaNumero = Math.min(100, Math.max(1, Number(porPagina) || 20));
+    const where = filtrosEvaluaciones(req.query);
+    const { pagina: paginaNumero, porPagina: porPaginaNumero } = paginacion(req.query);
 
     const [items, total] = await Promise.all([
       prisma.evaluacion.findMany({
@@ -78,6 +56,28 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+router.get('/resumen', async (req, res, next) => {
+  try {
+    const where = filtrosEvaluaciones(req.query);
+    const [items, evaluadores] = await Promise.all([
+      prisma.evaluacion.findMany({
+        where,
+        select: {
+          id: true, fecha: true, creadoEn: true, trabajadorId: true,
+          estado: true, higienePorcentaje: true, uniformePorcentaje: true,
+          generalPorcentaje: true, clasificacion: true, colorEsperado: true,
+          cumplimientoColor: true, trabajador: { select: { nombre: true } },
+        },
+      }),
+      prisma.usuario.findMany({
+        where: { evaluacionesRealizadas: { some: {} } },
+        select: { id: true, nombre: true }, orderBy: { nombre: 'asc' },
+      }),
+    ]);
+    res.json({ resumen: resumenEvaluaciones(items), evaluadores });
+  } catch (error) { next(error); }
+});
+
 router.post('/', async (req, res, next) => {
   try {
     const parsed = crearEvaluacionSchema.safeParse(req.body);
@@ -90,7 +90,7 @@ router.post('/', async (req, res, next) => {
       datos: parsed.data,
       detalles: parsed.data.detalles,
       parametros,
-      evaluadorId: parsed.data.evaluadorId,
+      evaluadorId: req.usuario.id,
       creadoPorId: req.usuario.id,
     });
 
@@ -227,15 +227,7 @@ router.get('/exportar', authorize('administrador', 'supervisor'), async (req, re
       return res.status(403).json({ error: 'No autorizado' });
     }
 
-    const { fechaDesde, fechaHasta, trabajadorId, areaId, clasificacion } = req.query;
-    const where = {
-      estado: 'ACTIVA',
-      ...(fechaDesde && { fecha: { gte: new Date(fechaDesde) } }),
-      ...(fechaHasta && { fecha: { lte: new Date(fechaHasta) } }),
-      ...(trabajadorId && { trabajadorId: Number(trabajadorId) }),
-      ...(areaId && { areaId: Number(areaId) }),
-      ...(clasificacion && { clasificacion }),
-    };
+    const where = filtrosEvaluaciones(req.query);
 
     const evaluaciones = await prisma.evaluacion.findMany({
       where,
@@ -248,10 +240,12 @@ router.get('/exportar', authorize('administrador', 'supervisor'), async (req, re
     });
 
     const datos = evaluaciones.map((ev) => ({
-      Fecha: new Date(ev.fecha).toLocaleDateString('es-ES'),
+      Fecha: new Date(ev.fecha).toLocaleDateString('es-BO', { timeZone: 'UTC' }),
       Trabajador: ev.trabajador?.nombre || 'Sin trabajador',
+      'Área': ev.area?.nombre || '',
+      Estado: ev.estado,
       Clasificación: ev.clasificacion || 'Sin clasificar',
-      'Indicador BPH': `${ev.generalPorcentaje || 0}%`,
+      'Indicador BPH': ev.generalPorcentaje == null ? 'N/A' : `${ev.generalPorcentaje}%`,
       Evaluador: ev.evaluador?.nombre || 'Sin evaluador',
       'Observación': ev.observaciones || '',
     }));

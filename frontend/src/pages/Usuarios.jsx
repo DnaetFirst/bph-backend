@@ -1,4 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import Modal from '../components/ui/Modal';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import {
   Users, UserCheck, UserX, Edit,
   MapPin, Save, Plus, ChevronLeft, ChevronRight, Key,
@@ -18,6 +20,8 @@ const ROLES = [
 ];
 
 export default function Usuarios() {
+  const areaFormRef = useRef(null);
+  const usuarioFormRef = useRef(null);
   const mostrarToast = useUiStore((state) => state.mostrarToast);
 
   const [usuarios, setUsuarios] = useState([]);
@@ -61,7 +65,7 @@ export default function Usuarios() {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownOpenId && !e.target.closest('.dropdown-actions')) {
+      if (dropdownOpenId && !e.target.closest('.dropdown-actions, .dropdown-menu-actions')) {
         setDropdownOpenId(null);
       }
     };
@@ -70,9 +74,14 @@ export default function Usuarios() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleScroll);
+    const handleEscape = e => { if (e.key === 'Escape') setDropdownOpenId(null); };
+    document.addEventListener('keydown', handleEscape);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
+      document.removeEventListener('keydown', handleEscape);
     };
   }, [dropdownOpenId]);
 
@@ -128,6 +137,7 @@ export default function Usuarios() {
   );
 
   const totalPaginas = Math.max(1, Math.ceil(usuariosActivos.length / porPagina));
+  useEffect(() => { setPaginaUsuarios(p => Math.min(p, totalPaginas)); }, [totalPaginas]);
   const activosPaginados = usuariosActivos.slice(
     (paginaUsuarios - 1) * porPagina,
     paginaUsuarios * porPagina
@@ -277,6 +287,8 @@ export default function Usuarios() {
   };
 
   const handleEliminarArea = async (a) => {
+    if (procesando) return;
+    setProcesando(true);
     try {
       await apiClient.delete(`/admin/areas/${a.id}`);
       await fetchAreas();
@@ -284,6 +296,8 @@ export default function Usuarios() {
       setEliminarAreaConfirm(null);
     } catch (err) {
       mostrarToast({ tipo: 'error', titulo: 'No se pudo desactivar', mensaje: err.response?.data?.error || 'Error al desactivar área' });
+    } finally {
+      setProcesando(false);
     }
   };
 
@@ -350,6 +364,20 @@ export default function Usuarios() {
     setMostrarFormArea(true);
   };
 
+  useEffect(() => {
+    if (mostrarFormArea) {
+      areaFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      areaFormRef.current?.querySelector('input')?.focus({ preventScroll: true });
+    }
+  }, [mostrarFormArea, editandoArea]);
+
+  useEffect(() => {
+    if (mostrarFormUsuario) {
+      usuarioFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      usuarioFormRef.current?.querySelector('input')?.focus({ preventScroll: true });
+    }
+  }, [mostrarFormUsuario, editandoUsuario]);
+
   const cancelarArea = () => {
     setEditandoArea(null);
     setFormDataArea({ nombre: '' });
@@ -359,10 +387,10 @@ export default function Usuarios() {
   const openDropdown = (id, event) => {
     const rect = event.currentTarget.getBoundingClientRect();
     setDropdownPos({
-      top: rect.top,
-      left: rect.left,
+      top: Math.max(8, Math.min(rect.bottom + 4, window.innerHeight - 220)),
+      left: Math.max(8, Math.min(rect.right - 180, window.innerWidth - 188)),
     });
-    setDropdownOpenId(id);
+    setDropdownOpenId(current => current === id ? null : id);
   };
 
   const renderUserActions = (u, isActive) => (
@@ -371,18 +399,22 @@ export default function Usuarios() {
         <button
           type="button"
           className="dropdown-trigger btn-ghost btn-small"
+          aria-label="Abrir acciones" aria-haspopup="true"
           onClick={(e) => { e.stopPropagation(); openDropdown(u.id, e); }}
         >
           <ChevronDown size={14} />
         </button>
-        {dropdownOpenId === u.id && (
+        {dropdownOpenId === u.id && createPortal(
           <div
             className="dropdown-menu-actions"
             style={{
               position: 'fixed',
               top: dropdownPos.top + 'px',
-              left: Math.max(10, dropdownPos.left - 160) + 'px',
-              zIndex: 99999,
+              left: dropdownPos.left + 'px',
+              width: '180px',
+              maxHeight: 'calc(100dvh - 16px)',
+              overflowY: 'auto',
+              zIndex: 1000,
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -411,7 +443,7 @@ export default function Usuarios() {
                 </button>
               </>
             )}
-          </div>
+          </div>, document.body
         )}
       </div>
     </td>
@@ -423,18 +455,22 @@ export default function Usuarios() {
         <button
           type="button"
           className="dropdown-trigger btn-ghost btn-small"
+          aria-label="Abrir acciones" aria-haspopup="true"
           onClick={(e) => { e.stopPropagation(); openDropdown('area-' + a.id, e); }}
         >
           <ChevronDown size={14} />
         </button>
-        {dropdownOpenId === ('area-' + a.id) && (
+        {dropdownOpenId === ('area-' + a.id) && createPortal(
           <div
             className="dropdown-menu-actions"
             style={{
               position: 'fixed',
               top: dropdownPos.top + 'px',
-              left: Math.max(10, dropdownPos.left - 160) + 'px',
-              zIndex: 99999,
+              left: dropdownPos.left + 'px',
+              width: '180px',
+              maxHeight: 'calc(100dvh - 16px)',
+              overflowY: 'auto',
+              zIndex: 1000,
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -444,7 +480,7 @@ export default function Usuarios() {
             <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-danger))' }} onClick={() => { setDropdownOpenId(null); setEliminarAreaConfirm(a); }}>
               <Trash2 size={14} /> Eliminar
             </button>
-          </div>
+          </div>, document.body
         )}
       </div>
     </td>
@@ -598,7 +634,7 @@ export default function Usuarios() {
       </div>
 
       {mostrarFormUsuario && (
-        <section className="section-card">
+        <section ref={usuarioFormRef} className="section-card" style={{ scrollMarginTop: '7rem' }}>
           <div className="section-card-body">
             <h2 className="section-title">{editandoUsuario ? 'Editar usuario' : 'Nuevo usuario'}</h2>
             <p className="section-subtitle">
@@ -700,7 +736,7 @@ export default function Usuarios() {
       )}
 
       {mostrarFormArea && (
-        <section className="section-card">
+        <section ref={areaFormRef} className="section-card" style={{ scrollMarginTop: '7rem' }}>
           <div className="section-card-body">
             <h2 className="section-title">{editandoArea ? 'Editar área' : 'Nueva área'}</h2>
             <p className="section-subtitle">
@@ -737,7 +773,7 @@ export default function Usuarios() {
 
       {/* Modal: Ver detalle de usuario */}
       {verDetalleUsuario && (
-        <div className="modal-overlay" onClick={() => setVerDetalleUsuario(null)}>
+        <Modal label="Detalle del usuario" onClose={() => setVerDetalleUsuario(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Detalle del usuario</h3>
@@ -760,12 +796,12 @@ export default function Usuarios() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Modal: Confirmar eliminación de área */}
       {eliminarAreaConfirm && (
-        <div className="modal-overlay" onClick={() => setEliminarAreaConfirm(null)}>
+        <Modal label="Desactivar área" busy={procesando} onClose={() => setEliminarAreaConfirm(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Confirmar desactivación</h3>
@@ -780,17 +816,17 @@ export default function Usuarios() {
               <button className="btn btn-outline btn-small" onClick={() => setEliminarAreaConfirm(null)}>
                 Cancelar
               </button>
-              <button className="btn btn-danger btn-small" onClick={() => handleEliminarArea(eliminarAreaConfirm)}>
+              <button className="btn btn-danger btn-small" disabled={procesando} onClick={() => handleEliminarArea(eliminarAreaConfirm)}>
                 Desactivar
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
 
       {/* Modal: Cambiar PIN */}
       {mostrarModalPin && usuarioEditandoPin && (
-        <div className="modal-overlay" onClick={closeModalPin}>
+        <Modal label="Cambiar PIN" busy={procesando} onClose={closeModalPin}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Cambiar PIN de "{usuarioEditandoPin.nombre}"</h3>
@@ -843,7 +879,7 @@ export default function Usuarios() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

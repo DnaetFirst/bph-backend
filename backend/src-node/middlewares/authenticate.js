@@ -15,7 +15,7 @@ export async function authenticate(req, res, next) {
 
   try {
     const authService = new AuthService(prisma, config);
-    const payload = await authService.verificarToken(token);
+    const payload = await authService.verificarSesion(token);
     req.usuario = payload;
     next();
   } catch (error) {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import Modal from '../components/ui/Modal';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Save, CheckCircle, XCircle, MinusCircle, Info, X, ShieldCheck } from 'lucide-react';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
@@ -7,6 +7,8 @@ import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
 import { getLocalISODate, getDiaSemanaBolivia, normalizarNombre } from '../utils/fecha';
+import { calcularProgreso, clasificar } from '../utils/evaluacion';
+import LoadingState from '../components/ui/LoadingState';
 import ErrorState from '../components/ui/ErrorState';
 
 export default function EvaluacionForm() {
@@ -14,7 +16,7 @@ export default function EvaluacionForm() {
   const { id: evaluacionId } = useParams();
   const esEdicion = Boolean(evaluacionId);
   const { usuario } = useAuthStore();
-  const { areas, parametros, fetchDependenciasFormulario, crearEvaluacion, obtenerEvaluacion, editarEvaluacion, cargando, error } = useEvaluacionesStore();
+  const { areas, parametros, fetchDependenciasFormulario, crearEvaluacion, obtenerEvaluacion, editarEvaluacion, cargando, error, dependenciasCargando, dependenciasError } = useEvaluacionesStore();
   const { fetchTrabajadores, obtenerTrabajadoresActivos } = useTrabajadoresStore();
 
   const mostrarToast = useUiStore((state) => state.mostrarToast);
@@ -30,7 +32,6 @@ export default function EvaluacionForm() {
   const [cargandoEdicion, setCargandoEdicion] = useState(esEdicion);
   const [evaluacionGuardada, setEvaluacionGuardada] = useState(null);
   const [paso, setPaso] = useState(1);
-  const modalRef = useRef(null);
   const formRef = useRef(null);
 
   useEffect(() => {
@@ -87,22 +88,18 @@ export default function EvaluacionForm() {
   }, [trabajadorId, obtenerTrabajadoresActivos, esEdicion]);
 
 
-  const higieneParams = parametros.filter(p => p.categoria === 'higiene');
   const areaSeleccionada = areas.find(a => String(a.id) === String(areaId));
   const areaNormalizada = normalizarNombre(areaSeleccionada?.nombre || evaluacionOriginal?.area?.nombre || '');
   const sinUniforme = ['produccion', 'calidad e inocuidad'].includes(areaNormalizada);
-  const uniformeParams = parametros.filter(p => p.categoria === 'uniforme').filter(p => {
-    if (sinUniforme) return false;
-    if (!p.excluyeAreasJson) return true;
+  const parametrosAplicables = parametros.filter(p => {
+    if (sinUniforme && p.categoria === 'uniforme') return false;
     try {
-      const excluded = JSON.parse(p.excluyeAreasJson);
-      const areaNombre = areas.find(a => String(a.id) === String(areaId))?.nombre || '';
-      if (excluded.includes(areaNombre)) return false;
-      return !excluded.some(e => normalizarNombre(e) === normalizarNombre(areaNombre));
-    } catch {
-      return true;
-    }
+      const excluidas = JSON.parse(p.excluyeAreasJson || '[]');
+      return !Array.isArray(excluidas) || !excluidas.some(nombre => normalizarNombre(nombre) === areaNormalizada);
+    } catch { return true; }
   });
+  const higieneParams = parametrosAplicables.filter(p => p.categoria === 'higiene');
+  const uniformeParams = parametrosAplicables.filter(p => p.categoria === 'uniforme');
 
   useEffect(() => {
     if (!sinUniforme) return;
@@ -140,29 +137,6 @@ export default function EvaluacionForm() {
     setColorObservado('');
   }, [fecha, sinUniforme, esEdicion]);
 
-  useEffect(() => {
-    if (!evaluacionGuardada) return;
-
-    const handleClickOutside = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) {
-        navigate('/');
-      }
-    };
-
-    const handleEsc = (e) => {
-      if (e.key === 'Escape') {
-        navigate('/');
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEsc);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEsc);
-    };
-  }, [evaluacionGuardada, navigate]);
-
   const handleResultadoChange = (parametroId, resultado) => {
     setRespuestas(prev => ({
       ...prev,
@@ -170,30 +144,21 @@ export default function EvaluacionForm() {
     }));
   };
 
-  const calcularProgreso = (params) => {
-    const total = params.length;
-    const cumple = params.filter((p) => respuestas[p.id] === 'Cumple').length;
-    const porcentaje = total > 0 ? Math.round((cumple / total) * 100) : 0;
-    return { cumple, total, porcentaje };
-  };
+  useEffect(() => {
+    if (!esEdicion) { setRespuestas({}); setObservaciones(''); setColorObservado(''); }
+  }, [trabajadorId, areaId, esEdicion]);
 
-  const higieneProgress = calcularProgreso(higieneParams);
-  const uniformeProgress = calcularProgreso(uniformeParams);
-
-  const _totalRespondidos = higieneProgress.total + uniformeProgress.total;
-  const _totalProgreso = higieneProgress.cumple + uniformeProgress.cumple;
-  const progresoGeneral = _totalRespondidos > 0 ? Math.round((_totalProgreso / _totalRespondidos) * 100) : 0;
-
-  const clasificacion = progresoGeneral >= 90 ? 'Excelente'
-    : progresoGeneral >= 70 ? 'Aceptable'
-      : 'Deficiente';
-
-  const clasificacionColor = progresoGeneral >= 90 ? 'hsl(var(--color-success))'
-    : progresoGeneral >= 70 ? 'hsl(var(--color-warning))'
-      : 'hsl(var(--color-danger))';
+  const higieneProgress = calcularProgreso(higieneParams, respuestas);
+  const uniformeProgress = calcularProgreso(uniformeParams, respuestas);
+  const progreso = calcularProgreso([...higieneParams, ...uniformeParams], respuestas);
+  const progresoGeneral = progreso.porcentaje;
+  const clasificacion = clasificar(progresoGeneral);
+  const clasificacionColor = progresoGeneral == null ? 'hsl(var(--color-text-secondary))'
+    : progresoGeneral >= 90 ? 'hsl(var(--color-success))'
+    : progresoGeneral >= 75 ? 'hsl(var(--color-warning))' : 'hsl(var(--color-danger))';
 
   const datosBaseCompletos = trabajadorId && areaId;
-  const puedeAvanzar = datosBaseCompletos;
+  const puedeAvanzar = datosBaseCompletos && fecha && !dependenciasCargando && !dependenciasError;
 
   // Determinar si la fecha corresponde a un día de semana con color de uniforme
   const diaSemanaActual = fecha ? getDiaSemanaBolivia(fecha) : -1;
@@ -206,21 +171,18 @@ export default function EvaluacionForm() {
       return;
     }
 
-    const detalles = Object.entries(respuestas).map(([parametroId, resultado]) => ({
-      parametroId: parseInt(parametroId),
-      resultado
-    }));
-
-    if (detalles.length === 0) {
-      mostrarToast({ tipo: 'error', titulo: 'Evaluación incompleta', mensaje: 'Debes evaluar al menos un parámetro.' });
+    const aplicables = [...higieneParams, ...uniformeParams];
+    if (!aplicables.length || aplicables.some(p => !respuestas[p.id])) {
+      mostrarToast({ tipo: 'error', titulo: 'Evaluación incompleta', mensaje: 'Responde todos los parámetros; usa No aplica cuando corresponda.' });
       return;
     }
+    const detalles = aplicables.map(p => ({ parametroId: p.id, resultado: respuestas[p.id] }));
 
     const datos = {
       fecha: fecha,
       trabajadorId: parseInt(trabajadorId),
       areaId: parseInt(areaId),
-      evaluadorId: usuario?.id || 1,
+      evaluadorId: usuario.id,
       // En fin de semana no se registra color de uniforme
       colorEsperado: !sinUniforme && !esFinDeSemana && colorEsperado ? colorEsperado : undefined,
       colorObservado: !sinUniforme && !esFinDeSemana && colorObservado ? colorObservado : undefined,
@@ -265,7 +227,7 @@ export default function EvaluacionForm() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 className="section-title">{titulo}</h3>
           <span style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>
-            {progreso.cumple}/{progreso.total} cumplen · {progreso.porcentaje}%
+            {progreso.cumple}/{progreso.total} cumplen · {progreso.porcentaje == null ? 'N/A' : `${progreso.porcentaje}%`}
           </span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
@@ -329,16 +291,16 @@ export default function EvaluacionForm() {
     <div style={{ marginBottom: '0.75rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
         <span>{label}</span>
-        <strong>{value}%</strong>
+        <strong>{value == null ? 'N/A' : `${value ?? 0}%`}</strong>
       </div>
       <div style={{ width: '100%', height: 10, background: 'hsla(var(--color-secondary), 0.12)', borderRadius: 999, overflow: 'hidden' }}>
-        <div style={{ width: `${value}%`, height: '100%', background: color, borderRadius: 999, transition: 'width 0.3s ease' }} />
+        <div style={{ width: `${value == null ? 'N/A' : `${value ?? 0}%`}`, height: '100%', background: color, borderRadius: 999, transition: 'width 0.3s ease' }} />
       </div>
     </div>
   );
   const ModalContenido = evaluacionGuardada ? (
-    <div className="modal-overlay" onClick={() => navigate('/')}>
-      <div className="modal-content" ref={modalRef} onClick={(e) => e.stopPropagation()}>
+    <Modal label="Evaluación guardada" onClose={() => navigate('/')}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'hsl(var(--color-text-primary))' }}>
             Resumen de evaluación
@@ -397,20 +359,19 @@ export default function EvaluacionForm() {
                 ) : (
                   <XCircle size={16} style={{ color: 'hsl(var(--color-danger))' }} />
                 )}
-                <strong>{colorEsperado === colorObservado ? 'Cumple' : 'No cumple'}</strong>
+                <strong>{evaluacionGuardada.cumplimientoColor || 'Sin registrar'}</strong>
               </div>
             </div>
           )}
         </div>
 
         <div className="action-group" style={{ justifyContent: 'center', gap: '1rem' }}>
-          <button className="btn btn-outline" onClick={() => {
-             setEvaluacionGuardada(null);
-              setPaso(2);
-            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          {['administrador', 'supervisor'].includes(usuario?.rol) && <button className="btn btn-outline" onClick={() => {
+            navigate(`/evaluar/${evaluacionGuardada.id}/editar`);
+            setEvaluacionGuardada(null);
           }}>
             Editar evaluación
-          </button>
+          </button>}
           <button className="btn btn-primary" onClick={() => {
             setEvaluacionGuardada(null);
             setRespuestas({});
@@ -419,6 +380,7 @@ export default function EvaluacionForm() {
             setAreaId('');
             setColorEsperado('');
             setColorObservado('');
+            setFecha(getLocalISODate());
             setPaso(1);
             formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }}>
@@ -426,8 +388,11 @@ export default function EvaluacionForm() {
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   ) : null;
+
+  if (dependenciasCargando) return <LoadingState mensaje="Cargando formulario..." />;
+  if (dependenciasError) return <ErrorState error={dependenciasError} onRetry={fetchDependenciasFormulario} />;
 
   return (
     <div className="animate-fade-in page-shell" style={{ maxWidth: '920px', margin: '0 auto' }}>
@@ -448,7 +413,7 @@ export default function EvaluacionForm() {
 
           {cargandoEdicion ? (
             <div className="loading-state">Cargando evaluación...</div>
-          ) : <form onSubmit={handleSubmit} ref={formRef}>
+          ) : <form onSubmit={handleSubmit} ref={formRef} style={{ scrollMarginTop: '7rem' }}>
             {/* Datos Base — Solo en Paso 1 */}
             {paso === 1 && (
               <div className="form-grid-2" style={{ gap: '1rem', marginBottom: '1.5rem' }}>
@@ -594,7 +559,7 @@ export default function EvaluacionForm() {
         </div>
       </section>
 
-      {ModalContenido && createPortal(ModalContenido, document.body)}
+      {ModalContenido}
     </div>
   );
 }

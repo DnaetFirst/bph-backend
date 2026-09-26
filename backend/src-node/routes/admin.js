@@ -16,7 +16,11 @@ import { registrarBitacora } from '../utils/bitacora.js';
 const router = Router();
 
 router.use(authenticate);
-router.use(authorize('administrador', 'supervisor'));
+router.use((req, res, next) => {
+  const roles = req.method === 'GET' && req.path === '/bitacora'
+    ? ['administrador', 'supervisor'] : ['administrador'];
+  return authorize(...roles)(req, res, next);
+});
 
 // --- USUARIOS ---
 

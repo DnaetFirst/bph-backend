@@ -13,7 +13,7 @@ export default function Tooltip({ children, text, placement = 'bottom' }) {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
         setCoords({
-          x: rect.left + rect.width / 2,
+          x: Math.max(100, Math.min(window.innerWidth - 100, rect.left + rect.width / 2)),
           y: placement === 'bottom' ? rect.bottom + 4 : rect.top - 4,
         });
       }
@@ -49,7 +49,9 @@ export default function Tooltip({ children, text, placement = 'bottom' }) {
               position: 'fixed',
               left: coords.x,
               top: coords.y,
-              transform: 'translateX(-50%)',
+              transform: placement === 'top' ? 'translate(-50%, -100%)' : 'translateX(-50%)',
+              maxWidth: 'min(180px, calc(100vw - 16px))',
+              whiteSpace: 'normal',
               zIndex: 99999,
               pointerEvents: 'none',
               opacity: 1,

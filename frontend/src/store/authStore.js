@@ -5,6 +5,7 @@ import { useUiStore } from './uiStore.js';
 export const useAuthStore = create((set) => ({
   usuario: null,
   cargando: true,
+  verificandoSesion: true,
   error: null,
   sesionExpirada: false,
 
@@ -16,11 +17,11 @@ export const useAuthStore = create((set) => ({
   resetearSesionExpirada: () => set({ sesionExpirada: false }),
 
   verificarSesion: async () => {
-    set({ cargando: true, error: null });
+    set({ cargando: true, verificandoSesion: true, error: null });
     const token = localStorage.getItem('auth_token');
 
     if (!token) {
-      set({ usuario: null, cargando: false, sesionExpirada: false });
+      set({ usuario: null, cargando: false, verificandoSesion: false, sesionExpirada: false });
       return;
     }
 
@@ -30,10 +31,10 @@ export const useAuthStore = create((set) => ({
           'X-Silent-Auth-Check': 'true',
         },
       });
-      set({ usuario: data.usuario, cargando: false, sesionExpirada: false });
+      set({ usuario: data.usuario, cargando: false, verificandoSesion: false, sesionExpirada: false });
     } catch {
       localStorage.removeItem('auth_token');
-      set({ usuario: null, cargando: false, sesionExpirada: true });
+      set({ usuario: null, cargando: false, verificandoSesion: false, sesionExpirada: true });
     }
   },
 

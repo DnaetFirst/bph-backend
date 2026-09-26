@@ -3,7 +3,8 @@ import { ClipboardList, Users, LayoutDashboard, History } from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 
 const CardOpcion = ({ icon: Icon, titulo, subtitulo, onClick }) => (
-  <div
+  <button
+    type="button"
     onClick={onClick}
     className="card-opcion"
     style={{
@@ -33,7 +34,7 @@ const CardOpcion = ({ icon: Icon, titulo, subtitulo, onClick }) => (
     </div>
     <h3 className="card-opcion-title">{titulo}</h3>
     <p className="card-opcion-subtitle" style={{ flex: 1 }}>{subtitulo}</p>
-  </div>
+  </button>
 );
 
 export default function Inicio() {
@@ -55,7 +56,7 @@ export default function Inicio() {
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.25rem", maxWidth: "960px", margin: "0 auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: "1.25rem", maxWidth: "960px", margin: "0 auto" }}>
         <CardOpcion
           icon={ClipboardList}
           titulo="Realizar Evaluación"

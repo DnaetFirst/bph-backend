@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useState } from 'react';
+import Modal from '../components/ui/Modal';
 import { useNavigate } from 'react-router-dom';
 import {
   PlusCircle,
@@ -22,8 +22,10 @@ import { useAuthStore } from '../store/authStore';
 import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useUiStore } from '../store/uiStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
-import { getLocalISODate, getDiaSemanaBolivia } from '../utils/fecha';
+import { getLocalISODate } from '../utils/fecha';
 import { apiClient } from '../api/client';
+import ErrorState from '../components/ui/ErrorState';
+import LoadingState from '../components/ui/LoadingState';
 import KpiCard from '../components/ui/KpiCard';
 import ProgressRow from '../components/ui/ProgressRow';
 import MiniBarChart from '../components/ui/MiniBarChart';
@@ -39,7 +41,7 @@ const DEFAULT_FILTERS = {
 };
 
 export default function Dashboard() {
-  const { evaluaciones, total, fetchEvaluaciones, borrarEvaluacion } = useEvaluacionesStore();
+  const { evaluaciones, total, resumen, evaluadores, cargando, error, fetchEvaluaciones, borrarEvaluacion } = useEvaluacionesStore();
   const { areas, fetchTrabajadores, fetchAreas, obtenerTrabajadoresActivos } = useTrabajadoresStore();
   const { usuario } = useAuthStore();
   const mostrarToast = useUiStore((state) => state.mostrarToast);
@@ -50,6 +52,9 @@ export default function Dashboard() {
 
   const [pagina, setPagina] = useState(1);
   const porPagina = 12;
+  useEffect(() => {
+    if (!cargando && !error) setPagina(p => Math.min(p, Math.max(1, Math.ceil(total / porPagina))));
+  }, [total, cargando, error]);
   const [mostrarFiltrosExportar, setMostrarFiltrosExportar] = useState(false);
   const [filtros, setFiltros] = useState(DEFAULT_FILTERS);
 
@@ -59,52 +64,10 @@ export default function Dashboard() {
   }, [fetchTrabajadores, fetchAreas]);
 
   useEffect(() => {
-    if (filtros.trabajadorId) {
-      const trabajador = obtenerTrabajadoresActivos().find(
-        (t) => String(t.id) === String(filtros.trabajadorId)
-      );
-      if (trabajador) {
-        setFiltros((prev) => ({
-          ...prev,
-          areaId: trabajador.areaId ? String(trabajador.areaId) : '',
-        }));
-      }
-    }
-  }, [filtros.trabajadorId, obtenerTrabajadoresActivos]);
+    fetchEvaluaciones({ pagina, porPagina, ...filtros, q: busquedaTabla });
+  }, [fetchEvaluaciones, pagina, porPagina, filtros, busquedaTabla]);
 
-  useEffect(() => {
-    fetchEvaluaciones({ pagina, porPagina, ...filtros });
-  }, [fetchEvaluaciones, pagina, porPagina, filtros]);
-
-  useEffect(() => {
-    if (!verDetalleEvaluacion) return;
-    const overflowAnterior = document.body.style.overflow;
-    const cerrarConEscape = (event) => {
-      if (event.key === 'Escape') setVerDetalleEvaluacion(null);
-    };
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', cerrarConEscape);
-    return () => {
-      document.body.style.overflow = overflowAnterior;
-      document.removeEventListener('keydown', cerrarConEscape);
-    };
-  }, [verDetalleEvaluacion]);
-
-
-  const evaluacionesActivas = useMemo(
-    () => evaluaciones.filter((ev) => ev.estado === 'ACTIVA'),
-    [evaluaciones]
-  );
-
-  const evaluacionesTabla = useMemo(() => {
-    if (!busquedaTabla) return evaluaciones;
-    const term = busquedaTabla.toLowerCase();
-    return evaluaciones.filter(ev => 
-      ev.trabajador?.nombre?.toLowerCase().includes(term) ||
-      ev.evaluador?.nombre?.toLowerCase().includes(term) ||
-      ev.clasificacion?.toLowerCase().includes(term)
-    );
-  }, [evaluaciones, busquedaTabla]);
+  const evaluacionesTabla = evaluaciones;
 
   const handleEliminarFormulario = async (id) => {
     if (!window.confirm('¿Estás seguro de eliminar físicamente esta evaluación por completo?')) return;
@@ -115,75 +78,6 @@ export default function Dashboard() {
     }
   };
 
-  const resumen = useMemo(() => {
-    const totalItems = evaluacionesActivas.length;
-    const promedioGeneral = totalItems
-      ? Math.round(evaluacionesActivas.reduce((sum, ev) => sum + (ev.generalPorcentaje || 0), 0) / totalItems)
-      : 0;
-    const promedioHigiene = totalItems
-      ? Math.round(evaluacionesActivas.reduce((sum, ev) => sum + (ev.higienePorcentaje || 0), 0) / totalItems)
-      : 0;
-    const promedioUniforme = totalItems
-      ? Math.round(evaluacionesActivas.reduce((sum, ev) => sum + (ev.uniformePorcentaje || 0), 0) / totalItems)
-      : 0;
-    const tieneUniforme = evaluacionesActivas.some((ev) => ev.uniformePorcentaje !== null && ev.uniformePorcentaje !== undefined);
-    const excelentes = evaluacionesActivas.filter((ev) => ev.clasificacion === 'Excelente').length;
-    const aceptables = evaluacionesActivas.filter((ev) => ev.clasificacion === 'Aceptable').length;
-    const deficientes = evaluacionesActivas.filter((ev) => ev.clasificacion === 'Deficiente').length;
-    const cumplimientoColor = evaluacionesActivas.filter((ev) => ev.cumplimientoColor === 'Cumple').length;
-    // Solo contar evaluaciones con color registrado (días de semana) para el porcentaje
-    const conColor = evaluacionesActivas.filter((ev) => ev.colorEsperado != null && ev.colorEsperado !== '').length;
-    const cumplimientoColorPorcentaje = conColor ? Math.round((cumplimientoColor / conColor) * 100) : 0;
-
-    const topTrabajadores = Object.values(
-      evaluacionesActivas.reduce((acc, ev) => {
-        const key = ev.trabajador?.nombre || 'Sin trabajador';
-        if (!acc[key]) {
-          acc[key] = { label: key, total: 0, sum: 0 };
-        }
-        acc[key].total += 1;
-        acc[key].sum += ev.generalPorcentaje || 0;
-        return acc;
-      }, {})
-    )
-      .map((item) => ({
-        label: item.label,
-        value: Math.round(item.sum / item.total),
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
-
-    const tendencia = [...evaluacionesActivas]
-      .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
-      .slice(-6)
-      .map((ev) => ({
-        // Formato de fecha en hora boliviana (UTC-4)
-        label: (() => {
-          const fechaStr = ev.fecha ? ev.fecha.slice(0, 10) : '';
-          if (!fechaStr) return '';
-          const d = getDiaSemanaBolivia(fechaStr);
-          const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-          const [, mm, dd] = fechaStr.split('-');
-          return `${dias[d]} ${dd}/${mm}`;
-        })(),
-        value: ev.generalPorcentaje || 0,
-      }));
-
-    return {
-      totalItems,
-      promedioGeneral,
-      promedioHigiene,
-      promedioUniforme,
-      tieneUniforme,
-      excelentes,
-      aceptables,
-      deficientes,
-      cumplimientoColorPorcentaje,
-      topTrabajadores,
-      tendencia,
-    };
-  }, [evaluacionesActivas]);
-
   const handleFilterChange = (field, value) => {
     setPagina(1);
     setFiltros((prev) => ({ ...prev, [field]: value }));
@@ -192,12 +86,13 @@ export default function Dashboard() {
   const limpiarFiltros = () => {
     setPagina(1);
     setFiltros(DEFAULT_FILTERS);
+    setBusquedaTabla('');
   };
 
   const handleExportarExcel = async () => {
     try {
       const params = new URLSearchParams();
-      Object.entries(filtros).forEach(([key, value]) => {
+      Object.entries({ ...filtros, q: busquedaTabla }).forEach(([key, value]) => {
         if (value) params.append(key, value);
       });
 
@@ -230,10 +125,10 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="action-group">
-          <button className="btn btn-outline" onClick={() => setMostrarFiltrosExportar((prev) => !prev)}>
+          {['administrador', 'supervisor'].includes(usuario?.rol) && <button className="btn btn-outline" onClick={() => setMostrarFiltrosExportar((prev) => !prev)}>
             <Download size={18} />
             Exportar Excel
-          </button>
+          </button>}
           <button className="btn btn-primary" onClick={() => navigate('/evaluar')}>
             <PlusCircle size={18} />
             Nueva Evaluación
@@ -280,7 +175,7 @@ export default function Dashboard() {
               <label className="label">Evaluador</label>
               <select className="input-field" value={filtros.evaluadorId} onChange={(e) => handleFilterChange('evaluadorId', e.target.value)}>
                 <option value="">Todos</option>
-                {[...new Map(evaluaciones.map((ev) => [ev.evaluador?.id, ev.evaluador]).filter(([id]) => id)).values()].map((evaluador) => (
+                {evaluadores.map((evaluador) => (
                   <option key={evaluador.id} value={evaluador.id}>{evaluador.nombre}</option>
                 ))}
               </select>
@@ -337,12 +232,15 @@ export default function Dashboard() {
         </section>
       )}
 
+      {error && <ErrorState error={error} onRetry={() => fetchEvaluaciones({ pagina, porPagina, ...filtros, q: busquedaTabla })} />}
+      {cargando && <LoadingState mensaje="Cargando evaluaciones e indicadores..." />}
+      {!error && !cargando && resumen && <>
       {/* KPIs */}
       <section>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '1rem' }}>
           <KpiCard icon={ShieldCheck} titulo="Evaluaciones activas" valor={resumen.totalItems} subtitulo={`${total} registros encontrados con filtros`} color="hsl(var(--color-primary))" />
-          <KpiCard icon={TrendingUp} titulo="Promedio general" valor={`${resumen.promedioGeneral}%`} subtitulo="Promedio del indicador BPH" color="hsl(var(--color-success))" />
-          <KpiCard icon={CalendarRange} titulo="Cumplimiento de color" valor={`${resumen.cumplimientoColorPorcentaje}%`} subtitulo="Coincidencia entre color esperado y observado" color="hsl(var(--color-warning))" />
+          <KpiCard icon={TrendingUp} titulo="Promedio general" valor={resumen.promedioGeneral == null ? 'N/A' : `${resumen.promedioGeneral}%`} subtitulo="Promedio del indicador BPH" color="hsl(var(--color-success))" />
+          <KpiCard icon={CalendarRange} titulo="Cumplimiento de color" valor={resumen.cumplimientoColorPorcentaje == null ? 'N/A' : `${resumen.cumplimientoColorPorcentaje}%`} subtitulo="Coincidencia entre color esperado y observado" color="hsl(var(--color-warning))" />
           <KpiCard icon={ShieldAlert} titulo="Deficientes" valor={resumen.deficientes} subtitulo="Evaluaciones con resultado crítico" color="hsl(var(--color-danger))" />
         </div>
       </section>
@@ -366,7 +264,7 @@ export default function Dashboard() {
                     ? 'linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))'
                     : 'linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(348, 83%, 47%, 0.85))';
                   return (
-                    <div key={`${item.label}-${index}`} style={{ display: 'grid', gridTemplateColumns: '70px 1fr 80px', gap: '0.75rem', alignItems: 'center' }}>
+                    <div key={`${item.label}-${index}`} style={{ display: 'grid', gridTemplateColumns: '70px minmax(0, 1fr) 65px', gap: '0.75rem', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.82rem', color: 'hsl(var(--color-text-secondary))' }}>{item.label}</span>
                       <div style={{ height: 12, borderRadius: 999, background: 'hsla(var(--color-secondary), 0.12)', overflow: 'hidden' }}>
                         <div style={{ width: `${item.value}%`, height: '100%', background: barColor, borderRadius: 999 }} />
@@ -404,7 +302,7 @@ export default function Dashboard() {
             </div>
           )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(85px, 1fr))', gap: '0.75rem', marginTop: '0.5rem' }}>
               <div style={{ padding: '0.85rem', borderRadius: 12, background: 'hsla(142, 71%, 45%, 0.1)', textAlign: 'center' }}>
                 <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'hsl(var(--color-success))' }}>{resumen.excelentes}</div>
                 <div style={{ fontSize: '0.8rem', color: 'hsl(var(--color-text-secondary))' }}>Excelentes</div>
@@ -430,15 +328,16 @@ export default function Dashboard() {
             <p className="section-subtitle">Promedio general por trabajador</p>
           </div>
           {resumen.topTrabajadores.length > 0 ? (
-            <MiniBarChart data={resumen.topTrabajadores} color="hsl(var(--color-success))" />
+            <MiniBarChart percentage data={resumen.topTrabajadores} color="hsl(var(--color-success))" />
           ) : (
             <p style={{ color: 'hsl(var(--color-text-secondary))', fontSize: '0.9rem' }}>No hay datos para este filtro.</p>
           )}
         </div>
       </section>
 
-      {/* Formularios (sólo administrador) */}
-      {usuario?.rol === 'administrador' && (
+      </>}
+      {/* Historial y gestión según rol */}
+      {['administrador', 'supervisor'].includes(usuario?.rol) && (
         <section className="section-card" style={{ marginTop: '1.5rem' }}>
           <div className="section-card-body">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -452,7 +351,7 @@ export default function Dashboard() {
                 className="input-field"
                 placeholder="Buscar por trabajador, evaluador o clasificación..."
                 value={busquedaTabla}
-                onChange={(e) => setBusquedaTabla(e.target.value)}
+                onChange={(e) => { setPagina(1); setBusquedaTabla(e.target.value); }}
                 style={{ paddingLeft: '2.5rem', width: '100%' }}
               />
             </div>
@@ -495,7 +394,7 @@ export default function Dashboard() {
                                <Pencil size={16} />
                              </button>
                            )}
-                          <button
+                          {usuario?.rol === 'administrador' && <button
                             type="button"
                             className="btn-ghost btn-small"
                             style={{ color: 'hsl(var(--color-danger))' }}
@@ -503,7 +402,7 @@ export default function Dashboard() {
                             title="Eliminar por completo"
                           >
                             <Trash2 size={16} />
-                          </button>
+                          </button>}
                         </td>
                       </tr>
                     ))
@@ -538,8 +437,8 @@ export default function Dashboard() {
       )}
 
       {/* Modal para ver detalles */}
-      {verDetalleEvaluacion && createPortal((
-        <div className="modal-overlay" onClick={() => setVerDetalleEvaluacion(null)}>
+      {verDetalleEvaluacion && (
+        <Modal label="Detalles de evaluación" onClose={() => setVerDetalleEvaluacion(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <h3 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Detalles de la Evaluación</h3>
             
@@ -562,7 +461,7 @@ export default function Dashboard() {
                </div>
             </div>
 
-            <div style={{ padding: '1rem', background: 'hsl(var(--color-background))', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
+            <div style={{ padding: '1rem', background: 'hsl(var(--color-bg))', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
                <h4 style={{ marginBottom: '0.5rem', fontSize: '1rem' }}>Resultados</h4>
                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                   <span>General:</span>
@@ -585,7 +484,7 @@ export default function Dashboard() {
             {verDetalleEvaluacion.observaciones && (
               <div style={{ marginBottom: '1.5rem' }}>
                  <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Observaciones</p>
-                 <p style={{ padding: '0.75rem', background: 'hsl(var(--color-background))', borderRadius: 'var(--radius-md)', fontSize: '0.9rem' }}>
+                 <p style={{ padding: '0.75rem', background: 'hsl(var(--color-bg))', borderRadius: 'var(--radius-md)', fontSize: '0.9rem' }}>
                    {verDetalleEvaluacion.observaciones}
                  </p>
               </div>
@@ -597,8 +496,8 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
-        </div>
-      ), document.body)}
+        </Modal>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../prisma.js';
+import { authorize } from '../middlewares/authorize.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import { TrabajadorService } from '../services/trabajadorService.js';
 import { registrarBitacora } from '../utils/bitacora.js';
@@ -47,6 +48,8 @@ router.get('/:id', async (req, res, next) => {
     next(error);
   }
 });
+
+router.use(authorize('administrador', 'supervisor'));
 
 router.post('/', async (req, res, next) => {
   try {

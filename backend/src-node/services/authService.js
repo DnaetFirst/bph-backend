@@ -83,6 +83,16 @@ export class AuthService {
     return payload;
   }
 
+  async verificarSesion(token) {
+    const payload = await this.verificarToken(token);
+    if (payload.tipo || !Number.isSafeInteger(payload.id)) throw new ErrorAuth('Sesión inválida', 401);
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: payload.id }, select: { id: true, nombre: true, rol: true, activo: true },
+    });
+    if (!usuario?.activo) throw new ErrorAuth('Usuario inactivo o inexistente', 401);
+    return { ...payload, id: usuario.id, nombre: usuario.nombre, rol: usuario.rol };
+  }
+
   async login(nombre, pin) {
     const usuario = await this.prisma.usuario.findFirst({
       where: { nombre },

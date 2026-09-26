@@ -568,7 +568,7 @@ textarea.input-field {
 .navbar-left { display: flex; align-items: center; gap: 0.8rem; }
 .navbar-brand { height: 44px; width: auto; }
 .navbar-nav { display: flex; align-items: center; gap: 1.25rem; }
-.navbar-nav a {
+.navbar-nav-panel a {
   text-decoration: none;
   color: hsl(var(--color-text-primary));
   font-size: 0.9rem;
@@ -576,9 +576,9 @@ textarea.input-field {
   padding: 0.4rem 0.2rem;
   position: relative;
 }
-.navbar-nav a:hover { color: hsl(var(--color-primary)); }
-.navbar-nav a.active { color: hsl(var(--color-primary)); }
-.navbar-nav a.active::after {
+.navbar-nav-panel a:hover { color: hsl(var(--color-primary)); }
+.navbar-nav-panel a.active { color: hsl(var(--color-primary)); }
+.navbar-nav-panel a.active::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -784,8 +784,8 @@ textarea.input-field {
    Utility classes (responsive)
    ============================================================ */
   .kpi-valor { font-size: 1.9rem; }
-  .charts-row { display: grid; grid-template-columns: 2fr 1.2fr; gap: 1rem; }
-  .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .charts-row { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr); gap: 1rem; }
+  .tables-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; }
   .th-email, .td-email { min-width: 120px; max-width: 180px; width: 150px; }
 
 .card-opcion { padding: 1.5rem; }
@@ -883,7 +883,7 @@ textarea.input-field {
 .dropdown-actions .dropdown-trigger:hover {
   background: hsla(var(--color-surface-hover), 0.8);
 }
-.dropdown-actions .dropdown-menu-actions {
+.dropdown-menu-actions {
   min-width: 150px;
   background: hsl(var(--color-surface));
   border: 1px solid hsl(var(--color-table-border));
@@ -894,7 +894,7 @@ textarea.input-field {
 .dropdown-actions.open .dropdown-menu-actions {
   display: block;
 }
-.dropdown-actions .dropdown-menu-actions button {
+.dropdown-menu-actions button {
   display: block;
   width: 100%;
   text-align: left;
@@ -909,6 +909,51 @@ textarea.input-field {
   align-items: center;
   gap: 0.35rem;
 }
-.dropdown-actions .dropdown-menu-actions button:hover {
+.dropdown-menu-actions button:hover {
   background: hsla(var(--color-surface-hover), 0.8);
 }
+
+/* Flexible children must be allowed to shrink inside dashboard grids. */
+.section-card, .section-card-body, .page-shell, .table-wrapper { min-width: 0; }
+.page-title, .page-subtitle, .toast-message, .modal-content { overflow-wrap: anywhere; }
+button, input, select, textarea { font: inherit; }
+button:focus-visible, a:focus-visible { outline: 3px solid hsl(var(--color-primary)); outline-offset: 3px; }
+.segmented-btn.inactive { opacity: 0.8; }
+.modal-overlay { height: 100dvh; }
+.modal-content { max-height: calc(100dvh - 3rem); }
+@media (max-width: 1023px) {
+  .navbar { flex-wrap: wrap; gap: 0.5rem; }
+  .navbar-toggle { display: flex; min-height: 44px; min-width: 44px; align-items: center; justify-content: center; }
+  .navbar-nav-panel { display: none; order: 3; flex-basis: 100%; flex-direction: column; gap: 0.35rem; }
+  .navbar-nav-panel.open { display: flex; }
+  .navbar-nav-panel a { width: 100%; padding: 0.75rem; }
+  .navbar-user { min-width: 0; max-width: 55%; }
+  .navbar-user .dropdown, .dropdown-toggle { min-width: 0; max-width: 100%; }
+  .dropdown-toggle span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .navbar-brand { max-width: 100px; object-fit: contain; }
+}
+@media (max-width: 480px) {
+  .navbar { padding: 0.5rem 0.75rem; }
+  .section-card-body { padding: 0.85rem; }
+  .modal-overlay { padding: 0.5rem; }
+  .modal-content { max-height: calc(100dvh - 1rem); }
+  .toasts-container { left: 0.5rem; right: 0.5rem; }
+  .toast-content, .toast-text { min-width: 0; }
+  .action-group { flex-wrap: wrap; }
+  .segmented-btn { flex: 1 1 100%; min-height: 44px; justify-content: center; }
+  .btn-ghost { min-height: 40px; min-width: 40px; }
+  .pagination-footer { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+@media (max-width: 767px) {
+  .data-table th.th-nombre, .data-table td.td-nombre,
+  .data-table th.th-actions, .data-table td.td-actions { position: static; min-width: 100px; }
+  .modal-header, .modal-body, .modal-footer { padding: 0.75rem 0; }
+  .modal-header { gap: 0.75rem; }
+  .modal-footer { flex-wrap: wrap; }
+}
+
+.toasts-container { z-index: 11000; }

@@ -1,12 +1,13 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useUiStore } from '../store/uiStore';
-import { Search, Edit, Check, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Edit, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import ErrorState from '../components/ui/ErrorState';
 import EmptyState from '../components/ui/EmptyState';
 import Tooltip from '../components/ui/Tooltip';
 
 export default function Trabajadores() {
+  const formularioRef = useRef(null);
   const trabajadores = useTrabajadoresStore((state) => state.trabajadores);
   const areas = useTrabajadoresStore((state) => state.areas);
   const cargando = useTrabajadoresStore((state) => state.cargando);
@@ -17,7 +18,6 @@ export default function Trabajadores() {
   const actualizarTrabajador = useTrabajadoresStore((state) => state.actualizarTrabajador);
   const desactivarTrabajador = useTrabajadoresStore((state) => state.desactivarTrabajador);
   const activarTrabajador = useTrabajadoresStore((state) => state.activarTrabajador);
-  const eliminarTrabajador = useTrabajadoresStore((state) => state.eliminarTrabajador);
 
   const mostrarToast = useUiStore((state) => state.mostrarToast);
 
@@ -67,6 +67,17 @@ export default function Trabajadores() {
   const totalInactivos = trabajadoresInactivos.length;
   const activosPaginados = totalActivos > 0 ? trabajadoresActivos.slice((paginaActivos - 1) * porPagina, paginaActivos * porPagina) : [];
   const inactivosPaginados = totalInactivos > 0 ? trabajadoresInactivos.slice((paginaInactivos - 1) * porPagina, paginaInactivos * porPagina) : [];
+
+  useEffect(() => {
+    if (mostrarFormulario) {
+      formularioRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      formularioRef.current?.querySelector('input')?.focus({ preventScroll: true });
+    }
+  }, [mostrarFormulario, editando]);
+  useEffect(() => {
+    setPaginaActivos(p => Math.min(p, Math.max(1, Math.ceil(totalActivos / porPagina))));
+    setPaginaInactivos(p => Math.min(p, Math.max(1, Math.ceil(totalInactivos / porPagina))));
+  }, [totalActivos, totalInactivos]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -126,17 +137,6 @@ export default function Trabajadores() {
     }
   };
 
-  const handleEliminar = async (id) => {
-    if (confirm('¿Eliminar este trabajador? No se podrá recuperar.')) {
-      try {
-        await eliminarTrabajador(id);
-      } catch (err) {
-        const errorMsg = err.response?.data?.error || 'Error al eliminar trabajador.';
-        mostrarToast({ tipo: 'error', titulo: 'No se pudo desactivar', mensaje: errorMsg });
-      }
-    }
-  };
-
   const renderActions = (t, type) => {
     if (type === 'activo') {
       return (
@@ -164,11 +164,7 @@ export default function Trabajadores() {
               <Check size={14} /> Activar
             </button>
           </Tooltip>
-          <Tooltip text="Eliminar trabajador">
-            <button className="btn-ghost btn-small" style={{ color: 'hsl(var(--color-danger))' }} onClick={() => handleEliminar(t.id)} title="Eliminar" disabled={cargando}>
-              <Trash2 size={14} /> Eliminar
-            </button>
-          </Tooltip>
+
         </div>
       </td>
     );
@@ -180,7 +176,7 @@ export default function Trabajadores() {
         <div>
           <h1 className="page-title">Gestión de trabajadores</h1>
           <p className="page-subtitle">
-            Administra altas, ediciones, activaciones, desactivaciones y eliminaciones con una vista clara y ordenada.
+            Administra altas, ediciones, activaciones y desactivaciones con una vista clara y ordenada.
           </p>
         </div>
         <button className="btn btn-primary" onClick={() => { setEditando(null); setFormData({ nombre: '', areaId: '' }); setMostrarFormulario(true); }} disabled={cargando}>
@@ -204,7 +200,7 @@ export default function Trabajadores() {
       {error && <ErrorState error={error} onRetry={fetchTrabajadores} />}
 
       {mostrarFormulario && (
-        <section className="section-card">
+        <section ref={formularioRef} className="section-card" style={{ scrollMarginTop: '7rem' }}>
           <div className="section-card-body">
             <h2 className="section-title">{editando ? 'Editar trabajador' : 'Nuevo trabajador'}</h2>
             <p className="section-subtitle">
