@@ -380,8 +380,8 @@ export default function EvaluacionForm() {
           <h1 className="page-title">{esEdicion ? 'Editar evaluación BPH' : 'Nueva evaluación BPH'}</h1>
           <p className="page-subtitle">
             {sinUniforme
-              ? 'Evalúa higiene y, de lunes a viernes, el color del uniforme.'
-              : 'Registra una evaluación individual con criterios de higiene y uniforme.'}
+              ? 'Registra una evaluación individual con criterios de higiene.'
+              : 'Evalúa higiene, uniforme y, de lunes a viernes, el color del uniforme.'}
           </p>
         </div>
       </header>

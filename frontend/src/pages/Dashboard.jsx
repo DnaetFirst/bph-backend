@@ -241,7 +241,7 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 'var(--space-3)' }}>
           <KpiCard icon={ShieldCheck} titulo="Evaluaciones activas" valor={resumen.totalItems} subtitulo={`${total} registros encontrados con filtros`} color="hsl(var(--color-primary))" />
           <KpiCard icon={TrendingUp} titulo="Promedio general" valor={resumen.promedioGeneral == null ? 'N/A' : `${resumen.promedioGeneral}%`} subtitulo="Promedio del indicador BPH" color="hsl(var(--color-success))" />
-          <KpiCard icon={CalendarRange} titulo="Cumplimiento de color" valor={resumen.cumplimientoColorPorcentaje == null ? 'N/A' : `${resumen.cumplimientoColorPorcentaje}%`} subtitulo="Producción y Calidad e inocuidad; solo colores registrados" color="hsl(var(--color-warning))" />
+          <KpiCard icon={CalendarRange} titulo="Cumplimiento de color" valor={resumen.cumplimientoColorPorcentaje == null ? 'N/A' : `${resumen.cumplimientoColorPorcentaje}%`} subtitulo="Excepto Producción y Calidad e inocuidad; solo colores registrados" color="hsl(var(--color-warning))" />
           <KpiCard icon={ShieldAlert} titulo="Deficientes" valor={resumen.deficientes} subtitulo="Evaluaciones con resultado crítico" color="hsl(var(--color-danger))" />
         </div>
       </section>

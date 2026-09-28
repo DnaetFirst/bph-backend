@@ -29,7 +29,7 @@ test('búsqueda se aplica al servidor en trabajador, evaluador y clasificación'
 });
 
 const ev = (id, extra = {}) => ({ id: String(id), fecha: new Date('2026-08-10'), creadoEn: new Date(1000 + id),
-  area: { nombre: 'Producción' }, trabajadorId: id, trabajador: { nombre: 'Mismo nombre' }, estado: 'ACTIVA', generalPorcentaje: 100,
+  area: { nombre: 'PH' }, trabajadorId: id, trabajador: { nombre: 'Mismo nombre' }, estado: 'ACTIVA', generalPorcentaje: 100,
   higienePorcentaje: 100, uniformePorcentaje: null, clasificacion: 'Excelente', ...extra });
 
 test('indicadores contemplan más de una página y excluyen N/A de los promedios', () => {
@@ -94,7 +94,7 @@ function database() {
   let locked = false;
   const tx = {
     $executeRawUnsafe: async () => { locked = true; },
-    area: { findUnique: async () => ({ nombre: 'PH', activo: true }) },
+    area: { findUnique: async () => ({ nombre: 'Producción', activo: true }) },
     trabajador: { findUnique: async () => ({ activo: true }) },
     evaluacion: {
       findFirst: async () => rows.at(-1) || null,
@@ -142,7 +142,7 @@ test('un fallo al generar el hash revierte la creación', async () => {
 
 test('crear y editar guardan color puntuable y conservan la cadena', async () => {
   const { db, tx } = database();
-  tx.area.findUnique = async () => ({ nombre: 'Producción', activo: true });
+  tx.area.findUnique = async () => ({ nombre: 'PH', activo: true });
   tx.detalleEvaluacion = { deleteMany: async () => {} };
   tx.bitacora = { create: async () => {} };
   const service = new EvaluacionService(db);
@@ -155,7 +155,7 @@ test('crear y editar guardan color puntuable y conservan la cadena', async () =>
   assert.equal(creada.generalPorcentaje, 88);
   assert.equal(creada.uniformePorcentaje, 0);
   const row = await tx.evaluacion.findUnique({ where: { id: creada.id } });
-  row.area = { nombre: 'Producción' };
+  row.area = { nombre: 'PH' };
   const editada = await service.editar(creada.id, { datos: { colorObservado: 'Rojo' }, detalles, parametros, usuarioId: 1 });
   assert.equal(editada.evaluacion.generalPorcentaje, 100);
   assert.equal(editada.evaluacion.uniformePorcentaje, 100);
