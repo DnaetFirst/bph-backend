@@ -29,7 +29,7 @@ test('búsqueda se aplica al servidor en trabajador, evaluador y clasificación'
 });
 
 const ev = (id, extra = {}) => ({ id: String(id), fecha: new Date('2026-08-10'), creadoEn: new Date(1000 + id),
-  trabajadorId: id, trabajador: { nombre: 'Mismo nombre' }, estado: 'ACTIVA', generalPorcentaje: 100,
+  area: { nombre: 'Producción' }, trabajadorId: id, trabajador: { nombre: 'Mismo nombre' }, estado: 'ACTIVA', generalPorcentaje: 100,
   higienePorcentaje: 100, uniformePorcentaje: null, clasificacion: 'Excelente', ...extra });
 
 test('indicadores contemplan más de una página y excluyen N/A de los promedios', () => {
@@ -137,4 +137,27 @@ test('un fallo al generar el hash revierte la creación', async () => {
   await assert.rejects(service.crear({ datos: { fecha: new Date(), trabajadorId: 1, areaId: 1 },
     detalles: [{ parametroId: 1, resultado: 'Cumple' }], parametros: [{ id: 1, categoria: 'higiene' }], evaluadorId: 1, creadoPorId: 1 }), /Fallo simulado/);
   assert.equal((await service.verificarIntegridadCompleta()).totalVerificado, 0);
+});
+
+
+test('crear y editar guardan color puntuable y conservan la cadena', async () => {
+  const { db, tx } = database();
+  tx.area.findUnique = async () => ({ nombre: 'Producción', activo: true });
+  tx.detalleEvaluacion = { deleteMany: async () => {} };
+  tx.bitacora = { create: async () => {} };
+  const service = new EvaluacionService(db);
+  const parametros = Array.from({ length: 7 }, (_, i) => ({ id: i + 1, categoria: 'higiene' }));
+  const detalles = parametros.map(p => ({ parametroId: p.id, resultado: 'Cumple' }));
+  const creada = await service.crear({ datos: { fecha: new Date('2026-09-28'), trabajadorId: 1, areaId: 1,
+    colorObservado: 'Verde', colorEsperado: 'Verde', cumplimientoColor: 'Cumple' }, detalles, parametros, evaluadorId: 1, creadoPorId: 1 });
+  assert.equal(creada.colorEsperado, 'Rojo');
+  assert.equal(creada.cumplimientoColor, 'No cumple');
+  assert.equal(creada.generalPorcentaje, 88);
+  assert.equal(creada.uniformePorcentaje, 0);
+  const row = await tx.evaluacion.findUnique({ where: { id: creada.id } });
+  row.area = { nombre: 'Producción' };
+  const editada = await service.editar(creada.id, { datos: { colorObservado: 'Rojo' }, detalles, parametros, usuarioId: 1 });
+  assert.equal(editada.evaluacion.generalPorcentaje, 100);
+  assert.equal(editada.evaluacion.uniformePorcentaje, 100);
+  assert.equal((await service.verificarIntegridadCompleta()).ok, true);
 });

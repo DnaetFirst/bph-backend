@@ -1,3 +1,4 @@
+import { resolverColor } from '../utils/colorUniforme.js';
 // ============================================================================
 // evaluacionService — guarda evaluaciones, calcula porcentajes y mantiene
 // el hash encadenado de integridad (mismo esquema que la versión localStorage,
@@ -21,7 +22,7 @@ export class EvaluacionService {
     }
   }
 
-  calcularPorcentajes(detalles, parametros) {
+  calcularPorcentajes(detalles, parametros, cumplimientoColor = null) {
     const porCategoria = { higiene: { total: 0, cumple: 0 }, uniforme: { total: 0, cumple: 0 } };
 
     for (const d of detalles) {
@@ -30,6 +31,11 @@ export class EvaluacionService {
       const cat = porCategoria[parametro.categoria];
       cat.total += 1;
       if (d.resultado === 'Cumple') cat.cumple += 1;
+    }
+
+    if (['Cumple', 'No cumple'].includes(cumplimientoColor)) {
+      porCategoria.uniforme.total += 1;
+      if (cumplimientoColor === 'Cumple') porCategoria.uniforme.cumple += 1;
     }
 
     const higienePorcentaje = porCategoria.higiene.total
@@ -98,8 +104,9 @@ export class EvaluacionService {
       throw error;
     }
 
+    const color = resolverColor(area.nombre, datos.fecha, datos.colorObservado);
     const { higienePorcentaje, uniformePorcentaje, generalPorcentaje, clasificacion } =
-      this.calcularPorcentajes(detallesAplicables, parametros);
+      this.calcularPorcentajes(detallesAplicables, parametros, color.cumplimientoColor);
 
     const ultima = await this.prisma.evaluacion.findFirst({
       orderBy: [{ creadoEn: 'desc' }, { id: 'desc' }],
@@ -120,9 +127,7 @@ export class EvaluacionService {
         uniformePorcentaje,
         generalPorcentaje,
         clasificacion,
-        colorEsperado: sinUniforme ? null : (datos.colorEsperado || null),
-        colorObservado: sinUniforme ? null : (datos.colorObservado || null),
-        cumplimientoColor: sinUniforme ? null : (datos.cumplimientoColor || null),
+        ...color,
         observaciones: datos.observaciones || null,
         hashAnterior,
         detalles: {
@@ -179,15 +184,14 @@ export class EvaluacionService {
         throw error;
       }
 
-      const porcentajes = this.calcularPorcentajes(detallesAplicables, parametros);
+      const color = resolverColor(existente.area.nombre, existente.fecha, datos.colorObservado);
+      const porcentajes = this.calcularPorcentajes(detallesAplicables, parametros, color.cumplimientoColor);
       await tx.detalleEvaluacion.deleteMany({ where: { evaluacionId: id } });
       const actualizada = await tx.evaluacion.update({
         where: { id },
         data: {
           ...porcentajes,
-          colorEsperado: sinUniforme ? null : (datos.colorEsperado || null),
-          colorObservado: sinUniforme ? null : (datos.colorObservado || null),
-          cumplimientoColor: sinUniforme ? null : (datos.cumplimientoColor || null),
+          ...color,
           observaciones: datos.observaciones || null,
           detalles: {
             create: detallesAplicables.map((detalle) => ({

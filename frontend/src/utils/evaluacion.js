@@ -1,9 +1,11 @@
-export function calcularProgreso(params, respuestas) {
+export function calcularProgreso(params, respuestas, cumplimientoColor = null) {
   const respondidos = params.filter(p => ['Cumple', 'No cumple', 'No aplica'].includes(respuestas[p.id]));
   const aplicables = respondidos.filter(p => respuestas[p.id] !== 'No aplica');
-  const cumple = aplicables.filter(p => respuestas[p.id] === 'Cumple').length;
-  return { cumple, total: aplicables.length, respondidos: respondidos.length,
-    porcentaje: aplicables.length ? Math.round(100 * cumple / aplicables.length) : null };
+  const colorRespondido = ['Cumple', 'No cumple'].includes(cumplimientoColor) ? 1 : 0;
+  const total = aplicables.length + colorRespondido;
+  const cumple = aplicables.filter(p => respuestas[p.id] === 'Cumple').length + (cumplimientoColor === 'Cumple' ? 1 : 0);
+  return { cumple, total, respondidos: respondidos.length + colorRespondido,
+    porcentaje: total ? Math.round(100 * cumple / total) : null };
 }
 
 export function clasificar(porcentaje) {

@@ -1,3 +1,4 @@
+import { colorEsperadoParaArea } from './colorUniforme.js';
 const media = (items, key) => {
   const values = items.map(item => item[key]).filter(Number.isFinite);
   return values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : null;
@@ -12,7 +13,7 @@ export function resumenEvaluaciones(items) {
     if (!grupos.has(id)) grupos.set(id, { id, label: ev.trabajador?.nombre || 'Sin trabajador', values: [] });
     grupos.get(id).values.push(ev.generalPorcentaje);
   }
-  const conColor = activas.filter(ev => ev.colorEsperado && ['Cumple', 'No cumple'].includes(ev.cumplimientoColor));
+  const conColor = activas.filter(ev => colorEsperadoParaArea(ev.area?.nombre, ev.fecha) && ev.colorEsperado && ['Cumple', 'No cumple'].includes(ev.cumplimientoColor));
   return {
     totalItems: activas.length,
     promedioGeneral: media(activas, 'generalPorcentaje'),

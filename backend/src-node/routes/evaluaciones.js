@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import * as XLSX from 'xlsx';
+import { generarExcel, ordenExcel } from '../services/exportacionExcel.js';
 import { prisma } from '../prisma.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import { authorize } from '../middlewares/authorize.js';
@@ -66,7 +66,7 @@ router.get('/resumen', async (req, res, next) => {
           id: true, fecha: true, creadoEn: true, trabajadorId: true,
           estado: true, higienePorcentaje: true, uniformePorcentaje: true,
           generalPorcentaje: true, clasificacion: true, colorEsperado: true,
-          cumplimientoColor: true, trabajador: { select: { nombre: true } },
+          cumplimientoColor: true, trabajador: { select: { nombre: true } }, area: { select: { nombre: true } },
         },
       }),
       prisma.usuario.findMany({
@@ -236,27 +236,10 @@ router.get('/exportar', authorize('administrador', 'supervisor'), async (req, re
         area: true,
         evaluador: true,
       },
-      orderBy: { fecha: 'desc' },
+      orderBy: ordenExcel,
     });
 
-    const datos = evaluaciones.map((ev) => ({
-      Fecha: new Date(ev.fecha).toLocaleDateString('es-BO', { timeZone: 'UTC' }),
-      Trabajador: ev.trabajador?.nombre || 'Sin trabajador',
-      'Área': ev.area?.nombre || '',
-      Estado: ev.estado,
-      Clasificación: ev.clasificacion || 'Sin clasificar',
-      'Indicador BPH': ev.generalPorcentaje == null ? 'N/A' : `${ev.generalPorcentaje}%`,
-      Evaluador: ev.evaluador?.nombre || 'Sin evaluador',
-      'Observación': ev.observaciones || '',
-    }));
-
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(datos);
-    if (ws['!ref']) {
-      ws['!autofilter'] = { ref: XLSX.utils.encode_range(XLSX.utils.decode_range(ws['!ref'])) };
-    }
-    XLSX.utils.book_append_sheet(wb, ws, 'Evaluaciones');
-    const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const excelBuffer = generarExcel(evaluaciones);
     const fechaHoy = new Date().toISOString().slice(0, 10);
 
     res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

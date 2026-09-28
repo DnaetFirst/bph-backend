@@ -1,3 +1,4 @@
+import { estadoColorEvaluacion, colorEsperadoParaArea } from '../utils/colorUniforme';
 import { useEffect, useState } from 'react';
 import Modal from '../components/ui/Modal';
 import { useNavigate } from 'react-router-dom';
@@ -240,7 +241,7 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 'var(--space-3)' }}>
           <KpiCard icon={ShieldCheck} titulo="Evaluaciones activas" valor={resumen.totalItems} subtitulo={`${total} registros encontrados con filtros`} color="hsl(var(--color-primary))" />
           <KpiCard icon={TrendingUp} titulo="Promedio general" valor={resumen.promedioGeneral == null ? 'N/A' : `${resumen.promedioGeneral}%`} subtitulo="Promedio del indicador BPH" color="hsl(var(--color-success))" />
-          <KpiCard icon={CalendarRange} titulo="Cumplimiento de color" valor={resumen.cumplimientoColorPorcentaje == null ? 'N/A' : `${resumen.cumplimientoColorPorcentaje}%`} subtitulo="Coincidencia entre color esperado y observado" color="hsl(var(--color-warning))" />
+          <KpiCard icon={CalendarRange} titulo="Cumplimiento de color" valor={resumen.cumplimientoColorPorcentaje == null ? 'N/A' : `${resumen.cumplimientoColorPorcentaje}%`} subtitulo="Producción y Calidad e inocuidad; solo colores registrados" color="hsl(var(--color-warning))" />
           <KpiCard icon={ShieldAlert} titulo="Deficientes" valor={resumen.deficientes} subtitulo="Evaluaciones con resultado crítico" color="hsl(var(--color-danger))" />
         </div>
       </section>
@@ -294,7 +295,7 @@ export default function Dashboard() {
             <ProgressRow label="General" value={resumen.promedioGeneral} color="linear-gradient(90deg, hsla(221, 83%, 53%, 0.75), hsla(217, 91%, 60%, 0.95))" />
             <ProgressRow label="Higiene" value={resumen.promedioHigiene} color="linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))" />
             {resumen.tieneUniforme ? (
-            <ProgressRow label="Uniforme" value={resumen.promedioUniforme} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />
+            <ProgressRow label="Uniforme / color" value={resumen.promedioUniforme} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />
           ) : (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--space-2) 0', fontSize: '0.9rem' }}>
               <span>Uniforme</span>
@@ -362,19 +363,24 @@ export default function Dashboard() {
                   <tr>
                     <th>Fecha</th>
                     <th className="th-nombre">Trabajador</th>
+                    <th>Área</th><th>General</th><th>Clasificación</th><th>Color</th>
                     <th className="th-actions">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {evaluacionesTabla.length === 0 ? (
                     <tr>
-                      <td colSpan="3" className="empty-state">No se encontraron formularios.</td>
+                      <td colSpan="7" className="empty-state">No se encontraron formularios.</td>
                     </tr>
                   ) : (
                     evaluacionesTabla.map(ev => (
                       <tr key={ev.id}>
                          <td>{new Date(ev.fecha).toLocaleDateString('es-AR', { timeZone: 'UTC' })}</td>
                         <td>{ev.trabajador?.nombre || 'N/A'}</td>
+                        <td>{ev.area?.nombre || 'N/A'}</td>
+                        <td>{ev.generalPorcentaje == null ? 'N/A' : `${ev.generalPorcentaje}%`}</td>
+                        <td>{ev.clasificacion || 'N/A'}</td>
+                        <td>{estadoColorEvaluacion(ev)}</td>
                         <td className="td-actions">
                            <button
                             type="button"
@@ -472,7 +478,7 @@ export default function Dashboard() {
                   <strong>{verDetalleEvaluacion.higienePorcentaje !== null ? `${verDetalleEvaluacion.higienePorcentaje}%` : 'N/A'}</strong>
                </div>
                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
-                  <span>Uniforme:</span>
+                  <span>Uniforme / color:</span>
                   <strong>{verDetalleEvaluacion.uniformePorcentaje !== null ? `${verDetalleEvaluacion.uniformePorcentaje}%` : 'N/A'}</strong>
                </div>
                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -481,6 +487,12 @@ export default function Dashboard() {
                </div>
             </div>
             
+            <div style={{ marginBottom: 'var(--space-4)' }}>
+              <p><strong>Color del uniforme:</strong> {estadoColorEvaluacion(verDetalleEvaluacion)}</p>
+              {colorEsperadoParaArea(verDetalleEvaluacion.area?.nombre, verDetalleEvaluacion.fecha) && (
+                <p>Esperado: {verDetalleEvaluacion.colorEsperado || colorEsperadoParaArea(verDetalleEvaluacion.area?.nombre, verDetalleEvaluacion.fecha)} · Observado: {verDetalleEvaluacion.colorObservado || 'Sin registrar'}</p>
+              )}
+            </div>
             {verDetalleEvaluacion.observaciones && (
               <div style={{ marginBottom: 'var(--space-4)' }}>
                  <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Observaciones</p>

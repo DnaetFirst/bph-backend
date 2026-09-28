@@ -1,3 +1,4 @@
+import { colorEsperadoParaArea } from '../utils/colorUniforme';
 import { useEffect, useRef, useState } from 'react';
 import Modal from '../components/ui/Modal';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -6,7 +7,7 @@ import { useEvaluacionesStore } from '../store/evaluacionesStore';
 import { useTrabajadoresStore } from '../store/trabajadoresStore';
 import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
-import { getLocalISODate, getDiaSemanaBolivia, normalizarNombre } from '../utils/fecha';
+import { getLocalISODate, normalizarNombre } from '../utils/fecha';
 import { calcularProgreso, clasificar } from '../utils/evaluacion';
 import LoadingState from '../components/ui/LoadingState';
 import ErrorState from '../components/ui/ErrorState';
@@ -23,7 +24,6 @@ export default function EvaluacionForm() {
 
   const [trabajadorId, setTrabajadorId] = useState('');
   const [areaId, setAreaId] = useState('');
-  const [colorEsperado, setColorEsperado] = useState('');
   const [colorObservado, setColorObservado] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [respuestas, setRespuestas] = useState({});
@@ -55,7 +55,6 @@ export default function EvaluacionForm() {
         setTrabajadorId(String(evaluacion.trabajadorId));
         setAreaId(String(evaluacion.areaId));
         setFecha(String(evaluacion.fecha).slice(0, 10));
-        setColorEsperado(evaluacion.colorEsperado || '');
         setColorObservado(evaluacion.colorObservado || '');
         setObservaciones(evaluacion.observaciones || '');
         setRespuestas(Object.fromEntries(
@@ -91,6 +90,9 @@ export default function EvaluacionForm() {
   const areaSeleccionada = areas.find(a => String(a.id) === String(areaId));
   const areaNormalizada = normalizarNombre(areaSeleccionada?.nombre || evaluacionOriginal?.area?.nombre || '');
   const sinUniforme = ['produccion', 'calidad e inocuidad'].includes(areaNormalizada);
+  const colorEsperado = colorEsperadoParaArea(areaNormalizada, fecha) || '';
+  const requiereColor = Boolean(colorEsperado);
+  const resultadoColor = requiereColor && colorObservado ? (colorEsperado === colorObservado ? 'Cumple' : 'No cumple') : null;
   const parametrosAplicables = parametros.filter(p => {
     if (sinUniforme && p.categoria === 'uniforme') return false;
     try {
@@ -109,33 +111,11 @@ export default function EvaluacionForm() {
     setRespuestas((prev) => Object.fromEntries(
       Object.entries(prev).filter(([parametroId]) => !idsUniforme.has(String(parametroId)))
     ));
-    setColorEsperado('');
-    setColorObservado('');
   }, [sinUniforme, parametros]);
 
   useEffect(() => {
-    if (esEdicion) return;
-    if (!fecha) return;
-    if (sinUniforme) {
-      setColorEsperado('');
-      setColorObservado('');
-      return;
-    }
-    const diaSemana = getDiaSemanaBolivia(fecha);
-
-    // Sábado (6) y Domingo (0) no tienen color de uniforme asignado
-    const coloresPorDia = {
-      1: 'Rojo',      // Lunes
-      2: 'Amarillo',  // Martes
-      3: 'Verde',     // Miércoles
-      4: 'Rojo',      // Jueves
-      5: 'Amarillo',  // Viernes
-    };
-
-    setColorEsperado(coloresPorDia[diaSemana] || '');
-    // Al cambiar de día resetear color observado
-    setColorObservado('');
-  }, [fecha, sinUniforme, esEdicion]);
+    if (!esEdicion) setColorObservado('');
+  }, [fecha, areaId, esEdicion]);
 
   const handleResultadoChange = (parametroId, resultado) => {
     setRespuestas(prev => ({
@@ -149,8 +129,8 @@ export default function EvaluacionForm() {
   }, [trabajadorId, areaId, esEdicion]);
 
   const higieneProgress = calcularProgreso(higieneParams, respuestas);
-  const uniformeProgress = calcularProgreso(uniformeParams, respuestas);
-  const progreso = calcularProgreso([...higieneParams, ...uniformeParams], respuestas);
+  const uniformeProgress = calcularProgreso(uniformeParams, respuestas, resultadoColor);
+  const progreso = calcularProgreso([...higieneParams, ...uniformeParams], respuestas, resultadoColor);
   const progresoGeneral = progreso.porcentaje;
   const clasificacion = clasificar(progresoGeneral);
   const clasificacionColor = progresoGeneral == null ? 'hsl(var(--color-text-secondary))'
@@ -159,10 +139,6 @@ export default function EvaluacionForm() {
 
   const datosBaseCompletos = trabajadorId && areaId;
   const puedeAvanzar = datosBaseCompletos && fecha && !dependenciasCargando && !dependenciasError;
-
-  // Determinar si la fecha corresponde a un día de semana con color de uniforme
-  const diaSemanaActual = fecha ? getDiaSemanaBolivia(fecha) : -1;
-  const esFinDeSemana = diaSemanaActual === 0 || diaSemanaActual === 6;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -176,6 +152,10 @@ export default function EvaluacionForm() {
       mostrarToast({ tipo: 'error', titulo: 'Evaluación incompleta', mensaje: 'Responde todos los parámetros; usa No aplica cuando corresponda.' });
       return;
     }
+    if (requiereColor && !colorObservado) {
+      mostrarToast({ tipo: 'error', titulo: 'Color pendiente', mensaje: 'Selecciona el color observado del uniforme.' });
+      return;
+    }
     const detalles = aplicables.map(p => ({ parametroId: p.id, resultado: respuestas[p.id] }));
 
     const datos = {
@@ -184,9 +164,9 @@ export default function EvaluacionForm() {
       areaId: parseInt(areaId),
       evaluadorId: usuario.id,
       // En fin de semana no se registra color de uniforme
-      colorEsperado: !sinUniforme && !esFinDeSemana && colorEsperado ? colorEsperado : undefined,
-      colorObservado: !sinUniforme && !esFinDeSemana && colorObservado ? colorObservado : undefined,
-      cumplimientoColor: !sinUniforme && !esFinDeSemana && colorEsperado && colorObservado
+      colorEsperado: requiereColor && colorEsperado ? colorEsperado : undefined,
+      colorObservado: requiereColor && colorObservado ? colorObservado : undefined,
+      cumplimientoColor: requiereColor && colorEsperado && colorObservado
         ? (colorEsperado === colorObservado ? 'Cumple' : 'No cumple')
         : undefined,
       observaciones: observaciones || undefined,
@@ -339,7 +319,7 @@ export default function EvaluacionForm() {
             Cumplimiento por dimensión
           </h3>
           <BarraProgreso label="Higiene" value={higieneProgress.porcentaje} color="linear-gradient(90deg, hsla(142, 71%, 45%, 0.8), hsla(171, 77%, 40%, 0.95))" />
-          {uniformeParams.length > 0 && <BarraProgreso label="Uniforme" value={uniformeProgress.porcentaje} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />}
+          {(uniformeParams.length > 0 || requiereColor) && <BarraProgreso label="Uniforme / color" value={uniformeProgress.porcentaje} color="linear-gradient(90deg, hsla(38, 92%, 50%, 0.8), hsla(24, 95%, 53%, 0.95))" />}
           <BarraProgreso label="General" value={progresoGeneral} color="linear-gradient(90deg, hsla(221, 83%, 53%, 0.75), hsla(217, 91%, 60%, 0.95))" />
         </div>
 
@@ -350,7 +330,7 @@ export default function EvaluacionForm() {
               Clasificación: {clasificacion}
             </span>
           </div>
-          {!sinUniforme && !esFinDeSemana && (
+          {requiereColor && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Cumplimiento de color</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', justifyContent: 'flex-end' }}>
@@ -378,7 +358,6 @@ export default function EvaluacionForm() {
             setObservaciones('');
             setTrabajadorId('');
             setAreaId('');
-            setColorEsperado('');
             setColorObservado('');
             setFecha(getLocalISODate());
             setPaso(1);
@@ -401,8 +380,8 @@ export default function EvaluacionForm() {
           <h1 className="page-title">{esEdicion ? 'Editar evaluación BPH' : 'Nueva evaluación BPH'}</h1>
           <p className="page-subtitle">
             {sinUniforme
-              ? 'Registra una evaluación individual con criterios de higiene.'
-              : 'Registra una evaluación individual con criterios de higiene, uniforme y control visual de color.'}
+              ? 'Evalúa higiene y, de lunes a viernes, el color del uniforme.'
+              : 'Registra una evaluación individual con criterios de higiene y uniforme.'}
           </p>
         </div>
       </header>
@@ -493,7 +472,7 @@ export default function EvaluacionForm() {
                 )}
 
                 {/* Control de Color — solo días de semana (Lunes a Viernes) */}
-                {!sinUniforme && !esFinDeSemana && (
+                {requiereColor && (
                   <section className="info-banner" style={{ padding: 'var(--space-4)' }}>
                     <div className="form-grid-2" style={{ gap: 'var(--space-3)' }}>
                       <div>
@@ -507,13 +486,13 @@ export default function EvaluacionForm() {
                         {colorEsperado && (
                           <div style={{ marginTop: 'var(--space-2)', fontSize: '0.78rem', color: 'hsl(var(--color-text-secondary))' }}>
                             <Info size={12} style={{ display: 'inline', marginRight: 'var(--space-1)' }} />
-                            Calculado automáticamente según el día de la semana
+                            Calculado según el día. Cuenta como un criterio en la puntuación general.
                           </div>
                         )}
                       </div>
                       <div>
                         <label className="label">Color observado</label>
-                        <select className="input-field" value={colorObservado} onChange={e => setColorObservado(e.target.value)}>
+                        <select required className="input-field" value={colorObservado} onChange={e => setColorObservado(e.target.value)}>
                           <option value="">Selecciona el color observado...</option>
                           <option value="Rojo">Rojo</option>
                           <option value="Amarillo">Amarillo</option>
