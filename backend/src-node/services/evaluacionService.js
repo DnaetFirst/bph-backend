@@ -1,4 +1,5 @@
 import { resolverColor } from '../utils/colorUniforme.js';
+import { filtrosEvaluaciones } from '../utils/evaluacionFilters.js';
 // ============================================================================
 // evaluacionService — guarda evaluaciones, calcula porcentajes y mantiene
 // el hash encadenado de integridad (mismo esquema que la versión localStorage,
@@ -75,6 +76,14 @@ export class EvaluacionService {
   }
 
   async crearDentroTransaccion({ datos, detalles, parametros, evaluadorId, creadoPorId }) {
+    const dia = new Date(datos.fecha).toISOString().slice(0, 10);
+    const repetida = await this.prisma.evaluacion.findFirst({
+      where: { trabajadorId: datos.trabajadorId, ...filtrosEvaluaciones({ fechaDesde: dia, fechaHasta: dia }) },
+      select: { id: true },
+    });
+    if (repetida) {
+      throw Object.assign(new Error('Este trabajador ya tiene una evaluación registrada para esta fecha.'), { status: 409 });
+    }
     const area = await this.prisma.area.findUnique({
       where: { id: datos.areaId },
       select: { nombre: true, activo: true },

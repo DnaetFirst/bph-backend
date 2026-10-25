@@ -11,6 +11,7 @@ import { getLocalISODate, normalizarNombre } from '../utils/fecha';
 import { calcularProgreso, clasificar } from '../utils/evaluacion';
 import LoadingState from '../components/ui/LoadingState';
 import ErrorState from '../components/ui/ErrorState';
+import { apiClient } from '../api/client';
 
 export default function EvaluacionForm() {
   const navigate = useNavigate();
@@ -33,6 +34,39 @@ export default function EvaluacionForm() {
   const [evaluacionGuardada, setEvaluacionGuardada] = useState(null);
   const [paso, setPaso] = useState(1);
   const formRef = useRef(null);
+  const [evaluados, setEvaluados] = useState([]);
+  const [fechaVerificada, setFechaVerificada] = useState('');
+  const [errorDisponibilidad, setErrorDisponibilidad] = useState(false);
+  const [revisionDisponibilidad, setRevisionDisponibilidad] = useState(0);
+
+  useEffect(() => {
+    if (esEdicion) return;
+    let vigente = true;
+    setFechaVerificada('');
+    setErrorDisponibilidad(false);
+    apiClient.get('/evaluaciones/evaluados', { params: { fecha } })
+      .then(({ data }) => {
+        if (!vigente) return;
+        setEvaluados(data.trabajadorIds.map(String));
+        setFechaVerificada(fecha);
+      })
+      .catch(() => { if (vigente) setErrorDisponibilidad(true); });
+    return () => { vigente = false; };
+  }, [fecha, esEdicion, revisionDisponibilidad]);
+
+  useEffect(() => {
+    if (!esEdicion && evaluados.includes(trabajadorId)) {
+      setTrabajadorId('');
+      setAreaId('');
+      setPaso(1);
+    }
+  }, [evaluados, trabajadorId, esEdicion]);
+
+  useEffect(() => {
+    const actualizar = () => setRevisionDisponibilidad(value => value + 1);
+    window.addEventListener('focus', actualizar);
+    return () => window.removeEventListener('focus', actualizar);
+  }, []);
 
   useEffect(() => {
     fetchDependenciasFormulario();
@@ -138,10 +172,12 @@ export default function EvaluacionForm() {
     : progresoGeneral >= 75 ? 'hsl(var(--color-warning))' : 'hsl(var(--color-danger))';
 
   const datosBaseCompletos = trabajadorId && areaId;
-  const puedeAvanzar = datosBaseCompletos && fecha && !dependenciasCargando && !dependenciasError;
+  const disponibilidadLista = esEdicion || (fechaVerificada === fecha && !errorDisponibilidad);
+  const puedeAvanzar = datosBaseCompletos && fecha && !dependenciasCargando && !dependenciasError && disponibilidadLista;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!disponibilidadLista || (!esEdicion && evaluados.includes(trabajadorId))) return;
     if (!trabajadorId || !areaId) {
       mostrarToast({ tipo: 'error', titulo: 'Datos incompletos', mensaje: 'Completa los datos básicos.' });
       return;
@@ -196,7 +232,9 @@ export default function EvaluacionForm() {
         area: { nombre: area?.nombre || '' },
         evaluador: { nombre: usuario?.nombre || '' },
       });
-    } catch {
+      setEvaluados(prev => [...prev, String(trabajadorId)]);
+    } catch (err) {
+      if (err.response?.status === 409) setRevisionDisponibilidad(value => value + 1);
       // Error manejado en store
     }
   };
@@ -418,13 +456,16 @@ export default function EvaluacionForm() {
                   {esEdicion ? (
                     <input className="input-field" value={evaluacionOriginal?.trabajador?.nombre || ''} disabled />
                   ) : (
-                    <select required className="input-field" value={trabajadorId} onChange={e => setTrabajadorId(e.target.value)}>
+                    <select required className="input-field" value={trabajadorId} disabled={!disponibilidadLista} onChange={e => setTrabajadorId(e.target.value)}>
                       <option value="">Selecciona un trabajador...</option>
-                      {obtenerTrabajadoresActivos().map(t => (
+                      {obtenerTrabajadoresActivos().filter(t => disponibilidadLista && !evaluados.includes(String(t.id))).map(t => (
                         <option key={t.id} value={t.id}>{t.nombre}</option>
                       ))}
                     </select>
                   )}
+                  {!esEdicion && <p className="section-subtitle">Solo se muestran trabajadores sin evaluación en esta fecha.</p>}
+                  {!esEdicion && errorDisponibilidad && <ErrorState error="No se pudo verificar quiénes ya fueron evaluados." onRetry={() => setRevisionDisponibilidad(value => value + 1)} />}
+                  {!esEdicion && !disponibilidadLista && !errorDisponibilidad && <p>Verificando trabajadores disponibles...</p>}
                 </div>
                 <div>
                   <label className="label">Área</label>

@@ -97,7 +97,9 @@ function database() {
     area: { findUnique: async () => ({ nombre: 'Producción', activo: true }) },
     trabajador: { findUnique: async () => ({ activo: true }) },
     evaluacion: {
-      findFirst: async () => rows.at(-1) || null,
+      findFirst: async ({ where } = {}) => where
+        ? rows.find(r => r.trabajadorId === where.trabajadorId && r.fecha >= where.fecha.gte && r.fecha <= where.fecha.lte) || null
+        : rows.at(-1) || null,
       findUnique: async ({ where }) => rows.find(r => r.id === where.id),
       findMany: async () => [...rows],
       create: async ({ data }) => {
@@ -123,11 +125,26 @@ test('crear y eliminar preservan cadena completa dentro de transacciones', async
   const service = new EvaluacionService(db);
   const args = { datos: { fecha: new Date('2026-08-10'), trabajadorId: 1, areaId: 1 },
     detalles: [{ parametroId: 1, resultado: 'Cumple' }], parametros: [{ id: 1, categoria: 'higiene' }], evaluadorId: 1, creadoPorId: 1 };
-  await service.crear(args); await service.crear(args); await service.crear(args);
+  for (const trabajadorId of [1, 2, 3]) await service.crear({ ...args, datos: { ...args.datos, trabajadorId } });
   assert.equal((await service.verificarIntegridadCompleta()).ok, true);
   await service.eliminar('id-2');
   const result = await service.verificarIntegridadCompleta();
   assert.equal(result.ok, true); assert.equal(result.totalVerificado, 2);
+});
+
+test('bloquea otra evaluación del mismo trabajador y día, incluso anulada o de otro evaluador', async () => {
+  const { db } = database();
+  const service = new EvaluacionService(db);
+  const args = { datos: { fecha: new Date('2026-10-25T00:00:00Z'), trabajadorId: 1, areaId: 1 },
+    detalles: [{ parametroId: 1, resultado: 'Cumple' }], parametros: [{ id: 1, categoria: 'higiene' }], evaluadorId: 1, creadoPorId: 1 };
+  const primera = await service.crear(args);
+  await assert.rejects(service.crear({ ...args, evaluadorId: 2,
+    datos: { ...args.datos, fecha: new Date('2026-10-25T23:59:59Z') } }), { status: 409 });
+  await service.anular(primera.id, { motivo: 'Prueba', usuarioId: 1 });
+  await assert.rejects(service.crear(args), { status: 409 });
+  await service.crear({ ...args, datos: { ...args.datos, fecha: new Date('2026-10-26') } });
+  await service.crear({ ...args, datos: { ...args.datos, trabajadorId: 2 } });
+  assert.equal((await service.verificarIntegridadCompleta()).totalVerificado, 3);
 });
 
 test('un fallo al generar el hash revierte la creación', async () => {

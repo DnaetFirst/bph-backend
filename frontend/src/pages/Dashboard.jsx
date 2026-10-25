@@ -81,7 +81,12 @@ export default function Dashboard() {
 
   const handleFilterChange = (field, value) => {
     setPagina(1);
-    setFiltros((prev) => ({ ...prev, [field]: value }));
+    setFiltros((prev) => ({
+      ...prev, [field]: value,
+      ...(field === 'trabajadorId' ? {
+        areaId: String(obtenerTrabajadoresActivos().find(t => String(t.id) === value)?.areaId || ''),
+      } : {}),
+    }));
   };
 
   const limpiarFiltros = () => {
@@ -164,7 +169,7 @@ export default function Dashboard() {
 
             <div>
               <label className="label">Área</label>
-              <select className="input-field" value={filtros.areaId} onChange={(e) => handleFilterChange('areaId', e.target.value)}>
+              <select className="input-field" value={filtros.areaId} disabled={Boolean(filtros.trabajadorId)} onChange={(e) => handleFilterChange('areaId', e.target.value)}>
                 <option value="">Todas</option>
                 {areas.map((area) => (
                   <option key={area.id} value={area.id}>{area.nombre}</option>

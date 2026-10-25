@@ -15,6 +15,17 @@ const service = new EvaluacionService(prisma);
 
 router.use(authenticate);
 
+router.get('/evaluados', async (req, res, next) => {
+  try {
+    if (!req.query.fecha) return res.status(400).json({ error: 'Fecha requerida' });
+    const where = filtrosEvaluaciones({ fechaDesde: req.query.fecha, fechaHasta: req.query.fecha });
+    const items = await prisma.evaluacion.findMany({
+      where, select: { trabajadorId: true }, distinct: ['trabajadorId'],
+    });
+    res.json({ trabajadorIds: items.map(item => item.trabajadorId) });
+  } catch (error) { next(error); }
+});
+
 router.get('/', async (req, res, next) => {
   try {
     const where = filtrosEvaluaciones(req.query);
