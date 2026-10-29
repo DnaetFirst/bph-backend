@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import Modal from '../components/ui/Modal';
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
   Users, UserCheck, UserX, Edit,
   MapPin, Save, Plus, ChevronLeft, ChevronRight, Key,
@@ -19,7 +19,8 @@ const ROLES = [
   { value: 'administrador', label: 'Administrador' },
 ];
 
-export default function Usuarios() {
+export default function Usuarios({ seccion = 'usuarios' }) {
+  const soloAreas = seccion === 'areas';
   const areaFormRef = useRef(null);
   const usuarioFormRef = useRef(null);
   const mostrarToast = useUiStore((state) => state.mostrarToast);
@@ -85,7 +86,7 @@ export default function Usuarios() {
     };
   }, [dropdownOpenId]);
 
-  const fetchUsuarios = async () => {
+  const fetchUsuarios = useCallback(async () => {
     setCargando(true);
     setError(null);
     try {
@@ -98,24 +99,23 @@ export default function Usuarios() {
     } finally {
       setCargando(false);
     }
-  };
+  }, []);
 
-  const fetchAreas = async () => {
+  const fetchAreas = useCallback(async () => {
+    setCargando(true); setError(null);
     try {
       const { data } = await apiClient.get('/admin/areas', {
         headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache' },
       });
       setAreas(data || []);
     } catch (err) {
-      console.error('Error al cargar áreas:', err);
-    }
-  };
-
-  const cargarTodo = () => { fetchUsuarios(); fetchAreas(); };
+      setError(err.response?.data?.error || 'Error al cargar áreas');
+    } finally { setCargando(false); }
+  }, []);
 
   useEffect(() => {
-    cargarTodo();
-  }, []);
+    if (soloAreas) fetchAreas(); else fetchUsuarios();
+  }, [soloAreas, fetchAreas, fetchUsuarios]);
 
   const usuariosFiltrados = useMemo(() => {
     if (!searchDebounced) return usuarios;
@@ -490,15 +490,15 @@ export default function Usuarios() {
     <div className="animate-fade-in page-shell">
       <header className="page-header">
         <div>
-          <h1 className="page-title">Gestión de Usuarios</h1>
+          <h1 className="page-title">{soloAreas ? 'Áreas de trabajo' : 'Usuarios'}</h1>
           <p className="page-subtitle">
-            Administra cuentas de usuarios con sus roles (evaluador, supervisor, administrador) y define las áreas de trabajo.
+            {soloAreas ? 'Organiza las áreas de trabajo de BPH.' : 'Administra las cuentas y sus roles.'}
           </p>
         </div>
       </header>
 
-      <div className="tables-grid">
-        <section className="section-card">
+      <div>
+        {!soloAreas && <section className="section-card">
           <div className="section-card-body">
             <div className="section-heading-row" style={{ marginBottom: 'var(--space-3)' }}>
               <h2 className="section-title">Usuarios</h2>
@@ -594,9 +594,9 @@ export default function Usuarios() {
               </>
             )}
           </div>
-        </section>
+        </section>}
 
-        <section className="section-card">
+        {soloAreas && <section className="section-card">
           <div className="section-card-body">
             <div className="section-heading-row" style={{ marginBottom: 'var(--space-3)' }}>
               <h2 className="section-title">Áreas</h2>
@@ -605,6 +605,7 @@ export default function Usuarios() {
               </button>
             </div>
 
+            {error && <ErrorState error={error} onRetry={fetchAreas} />}
             {cargando ? (
               <LoadingState mensaje="Cargando áreas..." />
             ) : areas.length === 0 ? (
@@ -630,7 +631,7 @@ export default function Usuarios() {
               </div>
             )}
           </div>
-        </section>
+        </section>}
       </div>
 
       {mostrarFormUsuario && (

@@ -107,6 +107,16 @@ test('Bajas: integración PostgreSQL y API con datos aislados', async t => {
       assert.equal((await request('/accesos', 'supervisor')).status, 403);
       assert.equal((await request('/catalogos/productos', 'supervisor')).status, 200);
     });
+    await t.test('auditoría global paginada respeta roles y restringe cambios de acceso', async () => {
+      assert.equal((await request('/auditoria', 'evaluador')).status, 403);
+      assert.equal((await request('/auditoria?entidad=accesos', 'supervisor')).status, 403);
+      assert.equal((await request('/auditoria?pagina=0', 'administrador')).status, 400);
+      const supervisor = await (await request('/auditoria', 'supervisor')).json();
+      assert.ok(supervisor.items.length <= 20);
+      assert.ok(supervisor.items.every(e => e.entidad !== 'accesos'));
+      const accesos = await (await request('/auditoria?entidad=accesos', 'administrador')).json();
+      assert.ok(accesos.total > 0); assert.ok(accesos.items.every(e => e.entidad === 'accesos'));
+    });
     await t.test('revocación inmediata y usuario inactivo invalidan acceso', async () => {
       await request(`/accesos/${usuarios.evaluador.id}`, 'administrador', 'PUT', { activo: false, version: 1, motivo: 'Retirar prueba' });
       assert.equal((await request('/catalogos/productos', 'evaluador')).status, 403);

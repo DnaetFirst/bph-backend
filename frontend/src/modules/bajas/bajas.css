@@ -1,4 +1,16 @@
 .bajas-page { min-width: 0; }
+.audit-json { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .8rem; max-width: 100%; }
+.catalogo-selector { position: relative; min-width: 0; display: grid; gap: .4rem; }
+.catalogo-control { display: flex; position: relative; }
+.catalogo-control .input-field { padding-right: 88px; width: 100%; }
+.catalogo-arrow, .catalogo-clear { position: absolute; right: 0; top: 0; height: 100%; min-width: 44px; border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 1.3rem; }
+.catalogo-clear { right: 44px; }
+.catalogo-popup { position: absolute; top: 100%; left: 0; right: 0; z-index: 30; max-height: 300px; overflow-y: auto; background: hsl(var(--color-surface)); border: 1px solid hsl(var(--color-table-border)); border-radius: 10px; box-shadow: 0 8px 24px #0002; padding: .4rem; }
+.catalogo-popup ul { list-style: none; padding: 0; margin: 0; }
+.catalogo-popup li { padding: .75rem; cursor: pointer; min-height: 44px; overflow-wrap: anywhere; }
+.catalogo-popup li:hover, .catalogo-popup li.highlighted, .catalogo-popup li[aria-selected=true] { background: hsla(var(--color-primary), .12); }
+.catalogo-popup p { padding: .5rem; }
+.catalogo-popup .btn { width: 100%; margin-top: .3rem; }
 .bajas-page .bajas-tabs, .bajas-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 .bajas-page .bajas-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; margin-bottom: 1rem; }
 .bajas-toolbar label { flex: 1 1 200px; min-width: 0; }

@@ -2,9 +2,9 @@
 
 ## Uso por rol
 
-El administrador encuentra **Bajas** en Inicio y en la navegación. En **Administrar catálogos → Accesos** habilita individualmente a supervisores y registradores, indicando el motivo. No se conceden accesos automáticamente a cuentas existentes. Quitar el acceso se aplica en la siguiente petición al servidor.
+El administrador encuentra **Bajas** en Inicio y en la navegación. En **Administración → Accesos a módulos** habilita individualmente a supervisores y registradores, indicando el motivo. No se conceden accesos automáticamente a cuentas existentes. Quitar el acceso se aplica en la siguiente petición al servidor. Administración separa Catálogos de bajas, Trabajadores, Áreas, Usuarios y Accesos; conserva los permisos anteriores (Áreas y Usuarios solo administrador).
 
-Para registrar: **Bajas → Registrar baja**, elegir producto, comprobar categoría y presentación automática, indicar cantidad y motivo, completar proveedor cuando corresponda y guardar. “Otro” exige explicación. **Registrar otra baja** inicia una operación independiente. Ante un fallo de conexión, reintentar conservando los datos; el servidor evita repetir la misma solicitud. Sí se permiten bajas distintas del mismo producto el mismo día.
+**Bajas** abre directamente el formulario. Elegir categoría y después su producto (tipo de plato, corte, embutido, queso o salsa según la configuración). Cada selector permite escribir o abrir la flecha en el mismo campo; escribir texto no crea una opción. Una presentación única se asigna automáticamente; si existen varias se pueden elegir. Indicar cantidad y motivo, completar proveedor cuando corresponda y guardar. “Otro” exige explicación. El guardado confirma el resultado y limpia los campos manteniendo la categoría para otro registro. Ante un fallo de conexión, reintentar conservando los datos; el servidor evita repetir la misma solicitud. Sí se permiten bajas distintas del mismo producto el mismo día.
 
 El registrador ve únicamente sus registros y registra con la fecha actual de Bolivia. Administrador y supervisor consultan todos, pueden registrar fechas anteriores con justificación y corregir o anular con un motivo. No se aceptan fechas futuras. Anular conserva el registro y sus cambios, pero excluye su cantidad de los indicadores efectivos.
 
@@ -16,7 +16,7 @@ Categorías, tipos/cortes, productos, presentaciones, unidades, proveedores y mo
 
 ## Consulta
 
-El historial abre en el día actual; permite rango de fechas, todos los registros, estado, responsable y filtros por catálogo. El resumen distingue registradas de anuladas y separa cantidades por producto y presentación, mostrando hasta 20 grupos. Las distribuciones usan nombres actuales de catálogo; detalle y exportaciones usan nombres históricos.
+**Analytics** separa Evaluaciones BPH y Bajas de productos. El historial de bajas abre en el día actual; permite rango de fechas, todos los registros, estado, responsable y filtros por catálogo. Los filtros se conservan por módulo dentro de la sesión del navegador. El resumen distingue registradas de anuladas y separa cantidades por producto y presentación, mostrando hasta 20 grupos. Las distribuciones usan nombres actuales de catálogo; detalle y exportaciones usan nombres históricos. **Auditoría** separa los eventos BPH y los eventos de Bajas. Solo administrador consulta eventos de cambios de acceso; supervisor consulta operaciones y catálogos del módulo habilitado.
 
 Solo gestores exportan o imprimen. Excel/CSV incluye hasta 10.000 registros del filtro, independientemente de la página visible. Impresión admite 1.000. Si se supera el límite se pide reducir el filtro. No se suman unidades heterogéneas.
 
@@ -30,6 +30,7 @@ Todas las rutas están bajo `/api/v1/bajas`, con sesión existente:
 - `GET /catalogos/:tipo`: búsqueda/paginación; `POST /catalogos/:tipo`, `PUT /catalogos/:tipo/:id`, `POST /catalogos/:tipo/:id/desactivar|restaurar`: gestores. Las ediciones/estados requieren versión y motivo.
 - `GET /`, `/resumen`, `/:id`: consulta con alcance del usuario. `POST /`: registrar con `claveIdempotencia` UUID. `PATCH /:id`: corregir con versión y motivo. `POST /:id/anular`: versión y motivo.
 - `GET /exportar?formato=xlsx|csv`, `/imprimir`, `/responsables`, `/:id/eventos` y `/catalogos/:tipo/:id/eventos`: gestores.
+- `GET /auditoria?pagina=1&entidad=productos`: eventos globales del módulo, paginados de 20 en 20; gestores con acceso. El filtro de entidad es opcional; `accesos` se restringe al administrador.
 - Filtros de bajas: `fechaDesde`, `fechaHasta`, `estado` (TODOS/REGISTRADA/ANULADA), `q`, identificadores de catálogo y `creadoPorId`; paginación `pagina` y `porPagina` (máximo 100). Un registrador no puede ampliar su alcance manipulando estos parámetros.
 
 Los eventos registran antes/después, actor, fecha, acción y motivo en la misma transacción. Un trigger rechaza UPDATE/DELETE sobre auditoría; esto no sustituye controles de acceso del propietario de la base. Versiones evitan sobrescribir cambios simultáneos. Las escrituras de Bajas comparten un bloqueo transaccional para validar dependencias; BPH no toma ese bloqueo.

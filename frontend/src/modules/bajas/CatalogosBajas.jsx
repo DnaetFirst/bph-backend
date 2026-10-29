@@ -15,44 +15,10 @@ const defaults = {
 };
 const mensaje = e => e.response?.data?.error || 'No se pudo conectar. Tus cambios siguen en el formulario.';
 
-// Selector paginado: nunca descarga todo el catálogo ni pierde una opción fuera de página.
-export function Selector({ tipo, label, value, onChange, onCreate, categoriaId, productoId, selectedLabel, estado = 'activos' }) {
-  const [q, setQ] = useState('');
-  const [pagina, setPagina] = useState(1);
-  const [result, setResult] = useState({ items: [], total: 0 });
-  const [error, setError] = useState('');
-  const [cargando, setCargando] = useState(false);
-  useEffect(() => { setPagina(1); }, [tipo, categoriaId, productoId, estado]);
-  useEffect(() => {
-    let vigente = true;
-    setCargando(true);
-    const timer = setTimeout(() => {
-      apiClient.get(`/bajas/catalogos/${tipo}`, { params: { q, pagina, porPagina: 20, estado, ...(categoriaId ? { categoriaId } : {}), ...(productoId ? { productoId } : {}) } })
-        .then(({ data }) => { if (vigente) { setResult(data); setError(''); } })
-        .catch(e => vigente && setError(mensaje(e)))
-        .finally(() => vigente && setCargando(false));
-    }, 200);
-    return () => { vigente = false; clearTimeout(timer); };
-  }, [tipo, q, pagina, categoriaId, productoId, value, estado]);
-  return <fieldset className="bajas-selector"><legend>{label}</legend>
-    <input className="input-field" aria-label={`Buscar ${label}`} placeholder="Escribe para buscar…" value={q} onChange={e => { setQ(e.target.value); setPagina(1); }} />
-    <select className="input-field" aria-label={label} value={value || ''} onChange={e => onChange(e.target.value, result.items.find(r => String(r.id) === e.target.value))}>
-      <option value="">Selecciona una opción</option>
-      {value && !result.items.some(r => String(r.id) === String(value)) && <option value={value}>{selectedLabel || `Selección actual #${value}`}</option>}
-      {result.items.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-    </select>
-    {cargando && <small role="status">Buscando opciones…</small>}
-    {error && <p role="alert">{error} Modifica la búsqueda para reintentar.</p>}
-    <div className="bajas-actions">
-      <button type="button" className="btn btn-outline btn-small" disabled={pagina === 1} onClick={() => setPagina(p => p - 1)}>Anterior</button>
-      <small>{pagina} / {Math.max(1, Math.ceil(result.total / 20))}</small>
-      <button type="button" className="btn btn-outline btn-small" disabled={pagina * 20 >= result.total} onClick={() => setPagina(p => p + 1)}>Siguiente</button>
-      {onCreate && <button type="button" className="btn btn-outline btn-small" onClick={onCreate}>Agregar…</button>}
-    </div>
-  </fieldset>;
-}
+export { default as Selector } from '../../components/ui/CatalogoSelector';
+import Selector from '../../components/ui/CatalogoSelector';
 
-export default function CatalogosBajas({ soloAlta = null, onCreado, onCerrar, contexto = {} }) {
+export default function CatalogosBajas({ soloAlta = null, onCreado, onCerrar, contexto = {}, contextoLabels = {} }) {
   const [sesion, setSesion] = useState(null);
   const [tipo, setTipo] = useState('productos');
   const [q, setQ] = useState('');
@@ -64,12 +30,11 @@ export default function CatalogosBajas({ soloAlta = null, onCreado, onCerrar, co
   const [cargando, setCargando] = useState(true);
   const [busy, setBusy] = useState(false);
   const [aviso, setAviso] = useState('');
-  const [stack, setStack] = useState(() => soloAlta ? [{ tipo: soloAlta, row: null, form: { ...defaults[soloAlta], ...contexto }, labels: {} }] : []);
+  const [stack, setStack] = useState(() => soloAlta ? [{ tipo: soloAlta, row: null, form: { ...defaults[soloAlta], ...contexto }, labels: contextoLabels }] : []);
   const [dialogError, setDialogError] = useState('');
   const [accion, setAccion] = useState(null);
   const [motivo, setMotivo] = useState('');
   const [historial, setHistorial] = useState(null);
-  const [accesos, setAccesos] = useState(null);
   const submitting = useRef(false);
   const current = stack.at(-1);
   const reload = () => setRevision(v => v + 1);
@@ -146,10 +111,7 @@ export default function CatalogosBajas({ soloAlta = null, onCreado, onCerrar, co
     e.preventDefault(); if (submitting.current) return;
     submitting.current = true; setBusy(true); setDialogError('');
     try {
-      if (accion.acceso) {
-        await apiClient.put(`/bajas/accesos/${accion.row.id}`, { activo: !accion.row.acceso, version: accion.row.version, motivo });
-        setAccesos((await apiClient.get('/bajas/accesos')).data);
-      } else await apiClient.post(`/bajas/catalogos/${tipo}/${accion.row.id}/${accion.row.activo ? 'desactivar' : 'restaurar'}`, { version: accion.row.version, motivo });
+      await apiClient.post(`/bajas/catalogos/${tipo}/${accion.row.id}/${accion.row.activo ? 'desactivar' : 'restaurar'}`, { version: accion.row.version, motivo });
       setAccion(null); setAviso('Estado actualizado. El historial se conserva.'); reload();
     } catch (e) { setDialogError(mensaje(e)); }
     finally { submitting.current = false; setBusy(false); }
@@ -166,7 +128,6 @@ export default function CatalogosBajas({ soloAlta = null, onCreado, onCerrar, co
   return <div className="bajas-page page-shell">
     {!soloAlta && <>
     <header className="page-header"><div><h1 className="page-title">Catálogos de Bajas</h1><p>Prepara las opciones del registro. Desactivar conserva toda la información.</p></div>
-      {sesion.administrarAccesos && <button className="btn btn-outline" onClick={async () => { try { setAccesos((await apiClient.get('/bajas/accesos')).data); } catch (e) { setError(mensaje(e)); } }}>Accesos al módulo</button>}
     </header>
     <nav className="bajas-tabs" aria-label="Catálogos">{Object.entries(nombres).map(([k, label]) => <button key={k} type="button" className={`btn ${tipo === k ? 'btn-primary' : 'btn-outline'}`} aria-current={tipo === k ? 'page' : undefined} onClick={() => { setTipo(k); setPagina(1); setQ(''); setError(''); }}>{label}</button>)}</nav>
     <section className="section-card"><div className="section-card-body">
@@ -180,7 +141,7 @@ export default function CatalogosBajas({ soloAlta = null, onCreado, onCerrar, co
         <p>{result.total} opciones · Página {pagina} de {Math.max(1, Math.ceil(result.total / 12))}</p>
         {!result.items.length && <p className="bajas-empty">No hay opciones para estos filtros. Puedes cambiar la búsqueda o agregar una nueva.</p>}
         <ul className="bajas-list">{result.items.map(row => <li key={row.id}>
-          <div><strong>{row.nombre}</strong><p>{row.categoria?.nombre || row.producto?.nombre || row.abreviatura || ''}{row.unidad ? ` · ${row.unidad.nombre}` : ''}{row.predeterminada ? ' · Predeterminada' : ''}</p><small>{row.activo ? 'Activo' : 'Desactivado'} · Versión {row.version}{row.categoria && !row.categoria.activo ? ' · Categoría desactivada' : ''}</small></div>
+          <div><strong>{row.nombre}</strong><p>{row.categoria?.nombre || row.producto?.nombre || row.abreviatura || ''}{row.unidad ? ` · ${row.unidad.nombre}` : ''}{row.predeterminada ? ' · Predeterminada' : ''}</p><small>{row.activo ? 'Activo' : 'Desactivado'}{row.categoria && !row.categoria.activo ? ' · Categoría desactivada' : ''}</small></div>
           <div className="bajas-actions"><button className="btn btn-outline" disabled={!row.activo} onClick={() => abrir(tipo, row)}>Editar</button><button className="btn btn-outline" onClick={() => { setAccion({ row }); setMotivo(''); setDialogError(''); }}>{row.activo ? 'Desactivar' : 'Restaurar'}</button><button className="btn btn-outline" onClick={() => verEventos(row)}>Historial</button></div>
         </li>)}</ul>
         <div className="bajas-actions"><button className="btn btn-outline" disabled={pagina === 1} onClick={() => setPagina(v => v - 1)}>Anterior</button><button className="btn btn-outline" disabled={pagina * 12 >= result.total} onClick={() => setPagina(v => v + 1)}>Siguiente</button></div>
@@ -194,7 +155,7 @@ export default function CatalogosBajas({ soloAlta = null, onCreado, onCerrar, co
         {text('nombre', 'Nombre', { required: true, minLength: 2, maxLength: 100 })}
         {['productos', 'proveedores'].includes(current.tipo) && text('codigo', 'Código interno (opcional)', { maxLength: 40 })}
         {current.tipo === 'categorias' && <>{text('etiquetaTipo', 'Cómo llamar al tipo', { required: true, maxLength: 60 })}{text('orden', 'Orden', { type: 'number', min: 0, max: 9999, required: true })}{check('requiereTipo', 'Exigir tipo de producto')}{check('requiereProveedor', 'Exigir proveedor')}</>}
-        {['tipos', 'productos'].includes(current.tipo) && select('categoriaId', 'categorias', 'Categoría')}
+        {['tipos', 'productos'].includes(current.tipo) && (soloAlta === 'productos' && current.tipo === 'productos' && stack.length === 1 && contexto.categoriaId ? <p>Categoría: <strong>{contextoLabels.categoriaId}</strong></p> : select('categoriaId', 'categorias', 'Categoría'))}
         {current.tipo === 'productos' && <>
           {current.form.categoriaId && select('tipoId', 'tipos', 'Tipo (según categoría)', { categoriaId: current.form.categoriaId })}
           {!current.row && <>{text('presentacionNombre', 'Nombre de la presentación inicial', { required: true, minLength: 2, maxLength: 100 })}{select('unidadId', 'unidades', 'Unidad de registro')}</>}
@@ -214,6 +175,5 @@ export default function CatalogosBajas({ soloAlta = null, onCreado, onCerrar, co
     </form></Modal>}
     {accion && <Modal label="Cambiar estado" busy={busy} onClose={() => !busy && setAccion(null)}><form className="modal-content bajas-dialog" onSubmit={cambiar}><h2>{accion.acceso ? (accion.row.acceso ? 'Retirar acceso' : 'Dar acceso') : accion.row.activo ? 'Desactivar opción' : 'Restaurar opción'}</h2><p>{accion.row.nombre}</p><p>{accion.acceso ? 'El permiso se verificará en cada solicitud.' : 'La información histórica se conservará. Las dependencias se comprobarán antes de guardar.'}</p><label>Motivo<textarea className="input-field" required minLength={3} maxLength={500} value={motivo} onChange={e => setMotivo(e.target.value)} disabled={busy} /></label>{dialogError && <p role="alert">{dialogError}</p>}<div className="bajas-actions"><button type="button" className="btn btn-outline" disabled={busy} onClick={() => setAccion(null)}>Cancelar</button><button className="btn btn-primary" disabled={busy}>Confirmar</button></div></form></Modal>}
     {historial && <Modal label="Historial de cambios" onClose={() => setHistorial(null)}><div className="modal-content bajas-dialog"><h2>Historial · {historial.row.nombre}</h2>{historial.items.map(ev => <article key={ev.id}><h3>{ev.accion}</h3><p>{new Date(ev.creadoEn).toLocaleString('es-BO', { timeZone: 'America/La_Paz' })} · {ev.usuarioId ? `Usuario #${ev.usuarioId}` : 'Inicialización del sistema'}</p><p>{ev.motivo}</p><details><summary>Ver valores anteriores y posteriores</summary><pre>{JSON.stringify({ antes: ev.antes, despues: ev.despues }, null, 2)}</pre></details></article>)}<div className="bajas-actions"><button className="btn btn-outline" disabled={historial.pagina <= 1} onClick={() => verEventos(historial.row, historial.pagina - 1)}>Anterior</button><button className="btn btn-outline" disabled={historial.pagina * 20 >= historial.total} onClick={() => verEventos(historial.row, historial.pagina + 1)}>Siguiente</button><button className="btn btn-primary" onClick={() => setHistorial(null)}>Cerrar</button></div></div></Modal>}
-    {accesos && !accion && <Modal label="Accesos al módulo" onClose={() => setAccesos(null)}><div className="modal-content bajas-dialog"><h2>Accesos a Bajas</h2><p>El rol define las acciones. Dar acceso no convierte a un registrador en supervisor.</p><ul className="bajas-list">{accesos.map(u => <li key={u.id}><div><strong>{u.nombre}</strong><p>{u.rol} · {u.acceso ? 'Con acceso' : 'Sin acceso'}</p></div>{u.rol !== 'administrador' && <button className="btn btn-outline" onClick={() => { setAccion({ row: u, acceso: true }); setMotivo(''); setDialogError(''); }}>{u.acceso ? 'Retirar' : 'Dar acceso'}</button>}</li>)}</ul><button className="btn btn-primary" onClick={() => setAccesos(null)}>Cerrar</button></div></Modal>}
   </div>;
 }

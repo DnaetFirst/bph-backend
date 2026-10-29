@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
-import { ArrowRight, ClipboardList, Users, LayoutDashboard, History, Settings } from 'lucide-react';
+import { ArrowRight, ClipboardList, LayoutDashboard, History, Settings } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 const ROLES = { administrador: 'Administrador', supervisor: 'Supervisor', evaluador: 'Evaluador' };
@@ -17,14 +17,11 @@ export default function Inicio() {
   }, [usuario]);
   const canManage = ['administrador', 'supervisor'].includes(usuario?.rol);
   const opciones = [
-    ...(accesoBajas ? [{ to: '/bajas', icon: ClipboardList, titulo: 'Bajas de productos', texto: 'Registra una baja, consulta el historial y administra tus catálogos según tus permisos.' }] : []),
-    { to: '/dashboard', icon: LayoutDashboard, titulo: 'Evaluaciones y resultados', texto: 'Consulta indicadores, gráficos y el historial de evaluaciones.' },
+    ...(accesoBajas ? [{ to: '/bajas', icon: ClipboardList, titulo: 'Registrar baja', texto: 'Selecciona una categoría y registra la baja de productos.' }] : []),
+    { to: '/analytics', icon: LayoutDashboard, titulo: 'Analytics', texto: 'Consulta evaluaciones BPH o bajas en sus secciones independientes.' },
     ...(canManage ? [
-      { to: '/trabajadores', icon: Users, titulo: 'Trabajadores', texto: 'Registra personal y actualiza sus datos y áreas de trabajo.' },
-      { to: '/bitacora', icon: History, titulo: 'Bitácora', texto: 'Consulta las acciones realizadas y su registro de auditoría.' },
-    ] : []),
-    ...(usuario?.rol === 'administrador' ? [
-      { to: '/usuarios', icon: Settings, titulo: 'Usuarios y áreas', texto: 'Administra las cuentas, los permisos y las áreas de trabajo.' },
+      { to: '/administracion', icon: Settings, titulo: 'Administración', texto: 'Gestiona catálogos, personal y configuración según tus permisos.' },
+      { to: '/auditoria', icon: History, titulo: 'Auditoría', texto: 'Consulta las acciones realizadas en cada módulo.' },
     ] : []),
   ];
 
@@ -32,9 +29,9 @@ export default function Inicio() {
     <div className="home-page animate-fade-in">
       <header className="home-header">
         <div className="home-heading">
-          <p className="home-eyebrow">CONTROL BPH · CEPROD</p>
+          <p className="home-eyebrow">CEPROD</p>
           <h1 className="home-title">Bienvenido, {usuario?.nombre || 'usuario'}</h1>
-          <p className="home-description">Realiza una evaluación o consulta la información de tu equipo.</p>
+          <p className="home-description">Registra operaciones, consulta resultados o administra la información.</p>
         </div>
         <span className="home-role">{ROLES[usuario?.rol] || usuario?.rol}</span>
       </header>

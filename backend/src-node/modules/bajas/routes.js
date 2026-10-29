@@ -28,6 +28,15 @@ export function crearRouterBajas(db, autenticar, habilitado = () => process.env.
     const accesos = await db.accesoModulo.findMany({ where: { modulo: 'bajas' } });
     res.json(usuarios.map(u => ({ ...u, acceso: u.rol === 'administrador' || Boolean(accesos.find(a => a.usuarioId === u.id)?.activo), version: accesos.find(a => a.usuarioId === u.id)?.version || 0 })));
   }));
+  router.get('/auditoria', gestionar, run(async (req, res) => {
+    const parsed = z.object({ pagina: z.coerce.number().int().min(1).default(1), entidad: z.enum(['bajas', ...Object.keys(catalogos), 'accesos']).optional() }).strict().safeParse(req.query);
+    if (!parsed.success) fail('Filtros inválidos', 400);
+    const { pagina, entidad } = parsed.data;
+    if (entidad === 'accesos' && req.usuario.rol !== 'administrador') fail('Solo el administrador consulta cambios de accesos', 403);
+    const where = { ...(entidad ? { entidad } : {}), ...(req.usuario.rol !== 'administrador' ? { NOT: { entidad: 'accesos' } } : {}) };
+    const [items,total] = await db.$transaction([db.eventoAuditoriaBajas.findMany({where,orderBy:[{creadoEn:'desc'},{id:'desc'}],skip:(pagina-1)*20,take:20}),db.eventoAuditoriaBajas.count({where})]);
+    res.json({items,total,pagina});
+  }));
   router.put('/accesos/:id', admin, run(async (req, res) => {
     const body = z.object({ activo: z.boolean(), version: z.number().int().min(0), motivo: z.string().trim().min(3).max(500) }).strict().safeParse(req.body);
     if (!body.success) fail('Acceso, versión y motivo requeridos', 400);

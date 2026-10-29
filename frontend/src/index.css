@@ -1042,3 +1042,7 @@ textarea.input-field { min-height: 112px; }
   .page-header > .action-group > .btn { flex: 1 1 auto; }
   .modal-content { padding: var(--space-3); }
 }
+.section-navigation { margin-bottom: 1.25rem; }
+.section-tabs { display: flex; flex-wrap: wrap; gap: .5rem; padding: .5rem 0; border-bottom: 1px solid hsl(var(--color-table-border)); }
+.section-tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: .6rem 1rem; border-radius: 8px; text-decoration: none; color: inherit; }
+.section-tabs a.active { background: hsla(var(--color-primary), .14); color: hsl(var(--color-primary)); font-weight: 700; }

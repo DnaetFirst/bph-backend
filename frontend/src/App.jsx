@@ -5,7 +5,7 @@ const Bajas = lazy(() => import('./modules/bajas/Bajas'));
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import {
   CheckCircle2, AlertCircle, Info, X, User, LogOut, Shield,
-  LayoutDashboard, ClipboardList, Users, History, Menu,
+  LayoutDashboard, ClipboardList, History, Menu,
 } from 'lucide-react';
 import { useAuthStore } from './store/authStore';
 import { useUiStore } from './store/uiStore';
@@ -18,6 +18,9 @@ import EvaluacionForm from './pages/EvaluacionForm';
 import Trabajadores from './pages/Trabajadores';
 import Bitacora from './pages/Bitacora';
 import Usuarios from './pages/Usuarios';
+import Accesos from './pages/Accesos';
+import AuditoriaBajas from './pages/AuditoriaBajas';
+import Secciones from './components/Secciones';
 
 const Navbar = () => {
   const { usuario, logout } = useAuthStore();
@@ -63,17 +66,9 @@ const Navbar = () => {
   const navItems = [
     { to: '/', label: 'Inicio', icon: LayoutDashboard },
     { to: '/evaluar', label: 'Evaluar', icon: ClipboardList },
-    ...(canManageTrabajadores
-      ? [{ to: '/trabajadores', label: 'Trabajadores', icon: Users }]
-      : []),
-    { to: '/dashboard', label: 'Analytics', icon: LayoutDashboard },
     ...(bajas ? [{ to: '/bajas', label: 'Bajas', icon: ClipboardList }] : []),
-    ...(canManageTrabajadores
-      ? [{ to: '/bitacora', label: 'Bitácora', icon: History }]
-      : []),
-    ...(isAdmin
-      ? [{ to: '/usuarios', label: 'Usuarios', icon: Shield }]
-      : []),
+    { to: '/analytics', label: 'Analytics', icon: LayoutDashboard },
+    ...(canManageTrabajadores ? [{ to: '/administracion', label: 'Administración', icon: Shield }, { to: '/auditoria', label: 'Auditoría', icon: History }] : []),
   ];
 
   return (
@@ -95,7 +90,7 @@ const Navbar = () => {
           <Link
             key={item.to}
             to={item.to}
-            className={location.pathname === item.to ? 'active' : ''}
+            className={(location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to + '/'))) ? 'active' : ''}
             onClick={() => setMenuOpen(false)}
           >
             {item.icon && <item.icon size={16} style={{ marginRight: 'var(--space-1)' }} />}
@@ -213,14 +208,20 @@ const AppRoutes = () => {
       <SessionMessage />
       <Toasts />
       <main className="layout-container animate-fade-in">
+        <Secciones />
         <Routes>
           <Route path="/login" element={!usuario ? <Login /> : <Navigate to="/" replace />} />
           <Route path="/login/recuperar" element={!usuario ? <ForgotPin /> : <Navigate to="/" replace />} />
           <Route path="/reset-pin" element={!usuario ? <ResetPin /> : <Navigate to="/" replace />} />
           <Route path="/" element={<ProtectedRoute usuario={usuario}><Inicio /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute usuario={usuario}><Dashboard /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<RutaAnterior to="/analytics/evaluaciones" />} />
+          <Route path="/analytics" element={<ProtectedRoute usuario={usuario}><></></ProtectedRoute>} />
+          <Route path="/analytics/evaluaciones" element={<ProtectedRoute usuario={usuario}><Dashboard /></ProtectedRoute>} />
+          <Route path="/administracion" element={<RoleProtectedRoute usuario={usuario} allowedRoles={['administrador','supervisor']}><></></RoleProtectedRoute>} />
+          <Route path="/administracion/areas" element={<RoleProtectedRoute usuario={usuario} allowedRoles={['administrador']}><Usuarios key="areas" seccion="areas" /></RoleProtectedRoute>} />
+          <Route path="/administracion/accesos" element={<RoleProtectedRoute usuario={usuario} allowedRoles={['administrador']}><Accesos /></RoleProtectedRoute>} />
           <Route path="/evaluar" element={<ProtectedRoute usuario={usuario}><EvaluacionForm /></ProtectedRoute>} />
-          {['/bajas', '/bajas/nueva', '/bajas/:id', '/bajas/:id/editar'].map(path => <Route key={path} path={path} element={<ProtectedRoute usuario={usuario}><Suspense fallback={<div className="loading-state">Cargando Bajas…</div>}><Bajas /></Suspense></ProtectedRoute>} />)}
+          {['/bajas', '/bajas/nueva', '/bajas/:id', '/bajas/:id/editar', '/analytics/bajas'].map(path => <Route key={path} path={path} element={<ProtectedRoute usuario={usuario}><Suspense fallback={<div className="loading-state">Cargando Bajas…</div>}><Bajas /></Suspense></ProtectedRoute>} />)}
           <Route path="/administracion/catalogos-bajas" element={
             <RoleProtectedRoute usuario={usuario} allowedRoles={['administrador', 'supervisor']}>
               <Suspense fallback={<div className="loading-state">Cargando catálogos…</div>}><CatalogosBajas /></Suspense>
@@ -231,19 +232,24 @@ const AppRoutes = () => {
               <EvaluacionForm />
             </RoleProtectedRoute>
           } />
-          <Route path="/trabajadores" element={
+          <Route path="/trabajadores" element={<RutaAnterior to="/administracion/trabajadores" />} />
+          <Route path="/administracion/trabajadores" element={
             <RoleProtectedRoute usuario={usuario} allowedRoles={['administrador', 'supervisor']}>
               <Trabajadores />
             </RoleProtectedRoute>
           } />
-          <Route path="/bitacora" element={
+          <Route path="/bitacora" element={<RutaAnterior to="/auditoria/bph" />} />
+          <Route path="/auditoria" element={<RoleProtectedRoute usuario={usuario} allowedRoles={['administrador','supervisor']}><></></RoleProtectedRoute>} />
+          <Route path="/auditoria/bajas" element={<RoleProtectedRoute usuario={usuario} allowedRoles={['administrador','supervisor']}><AuditoriaBajas /></RoleProtectedRoute>} />
+          <Route path="/auditoria/bph" element={
             <RoleProtectedRoute usuario={usuario} allowedRoles={['administrador', 'supervisor']}>
               <Bitacora />
             </RoleProtectedRoute>
           } />
-          <Route path="/usuarios" element={
+          <Route path="/usuarios" element={<RutaAnterior to="/administracion/usuarios" />} />
+          <Route path="/administracion/usuarios" element={
             <RoleProtectedRoute usuario={usuario} allowedRoles={['administrador']}>
-              <Usuarios />
+              <Usuarios key="usuarios" />
             </RoleProtectedRoute>
           } />
           <Route path="*" element={<Navigate to={usuario ? '/' : '/login'} replace />} />
@@ -252,6 +258,8 @@ const AppRoutes = () => {
     </>
   );
 };
+
+function RutaAnterior({to}) { const location = useLocation(); return <Navigate to={to + location.search} replace />; }
 
 function App() {
   return (

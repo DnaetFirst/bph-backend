@@ -47,9 +47,12 @@ export default function Dashboard() {
   const { usuario } = useAuthStore();
   const mostrarToast = useUiStore((state) => state.mostrarToast);
   const navigate = useNavigate();
+  const [consultaGuardada] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem(`analytics-bph:${usuario.id}`) || '{}'); } catch { return {}; }
+  });
 
   const [verDetalleEvaluacion, setVerDetalleEvaluacion] = useState(null);
-  const [busquedaTabla, setBusquedaTabla] = useState('');
+  const [busquedaTabla, setBusquedaTabla] = useState(typeof consultaGuardada.q === 'string' ? consultaGuardada.q : '');
 
   const [pagina, setPagina] = useState(1);
   const porPagina = 12;
@@ -57,7 +60,8 @@ export default function Dashboard() {
     if (!cargando && !error) setPagina(p => Math.min(p, Math.max(1, Math.ceil(total / porPagina))));
   }, [total, cargando, error]);
   const [mostrarFiltrosExportar, setMostrarFiltrosExportar] = useState(false);
-  const [filtros, setFiltros] = useState(DEFAULT_FILTERS);
+  const [filtros, setFiltros] = useState(() => Object.fromEntries(Object.entries(DEFAULT_FILTERS).map(([k,v]) => [k, typeof consultaGuardada.filtros?.[k] === 'string' ? consultaGuardada.filtros[k] : v])));
+  useEffect(() => { try { sessionStorage.setItem(`analytics-bph:${usuario.id}`, JSON.stringify({filtros,q:busquedaTabla})); } catch { /* almacenamiento no disponible */ } }, [filtros,busquedaTabla,usuario.id]);
 
   useEffect(() => {
     fetchTrabajadores();
