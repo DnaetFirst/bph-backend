@@ -1,4 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { apiClient } from './api/client';
+const CatalogosBajas = lazy(() => import('./modules/bajas/CatalogosBajas'));
+const Bajas = lazy(() => import('./modules/bajas/Bajas'));
 import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import {
   CheckCircle2, AlertCircle, Info, X, User, LogOut, Shield,
@@ -22,6 +25,13 @@ const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [bajas, setBajas] = useState(false);
+  useEffect(() => {
+    let vigente = true;
+    setBajas(false);
+    if (usuario) apiClient.get('/bajas/sesion').then(({ data }) => vigente && setBajas(data.acceso)).catch(() => {});
+    return () => { vigente = false; };
+  }, [usuario, location.pathname]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -57,6 +67,7 @@ const Navbar = () => {
       ? [{ to: '/trabajadores', label: 'Trabajadores', icon: Users }]
       : []),
     { to: '/dashboard', label: 'Analytics', icon: LayoutDashboard },
+    ...(bajas ? [{ to: '/bajas', label: 'Bajas', icon: ClipboardList }] : []),
     ...(canManageTrabajadores
       ? [{ to: '/bitacora', label: 'Bitácora', icon: History }]
       : []),
@@ -209,6 +220,12 @@ const AppRoutes = () => {
           <Route path="/" element={<ProtectedRoute usuario={usuario}><Inicio /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute usuario={usuario}><Dashboard /></ProtectedRoute>} />
           <Route path="/evaluar" element={<ProtectedRoute usuario={usuario}><EvaluacionForm /></ProtectedRoute>} />
+          {['/bajas', '/bajas/nueva', '/bajas/:id', '/bajas/:id/editar'].map(path => <Route key={path} path={path} element={<ProtectedRoute usuario={usuario}><Suspense fallback={<div className="loading-state">Cargando Bajas…</div>}><Bajas /></Suspense></ProtectedRoute>} />)}
+          <Route path="/administracion/catalogos-bajas" element={
+            <RoleProtectedRoute usuario={usuario} allowedRoles={['administrador', 'supervisor']}>
+              <Suspense fallback={<div className="loading-state">Cargando catálogos…</div>}><CatalogosBajas /></Suspense>
+            </RoleProtectedRoute>
+          } />
           <Route path="/evaluar/:id/editar" element={
             <RoleProtectedRoute usuario={usuario} allowedRoles={['administrador', 'supervisor']}>
               <EvaluacionForm />

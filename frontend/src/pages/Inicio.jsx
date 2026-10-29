@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { apiClient } from '../api/client';
 import { ArrowRight, ClipboardList, Users, LayoutDashboard, History, Settings } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
@@ -6,8 +8,16 @@ const ROLES = { administrador: 'Administrador', supervisor: 'Supervisor', evalua
 
 export default function Inicio() {
   const usuario = useAuthStore(state => state.usuario);
+  const [accesoBajas, setAccesoBajas] = useState(false);
+  useEffect(() => {
+    let vigente = true;
+    setAccesoBajas(false);
+    apiClient.get('/bajas/sesion').then(({ data }) => vigente && setAccesoBajas(data.acceso)).catch(() => {});
+    return () => { vigente = false; };
+  }, [usuario]);
   const canManage = ['administrador', 'supervisor'].includes(usuario?.rol);
   const opciones = [
+    ...(accesoBajas ? [{ to: '/bajas', icon: ClipboardList, titulo: 'Bajas de productos', texto: 'Registra una baja, consulta el historial y administra tus catálogos según tus permisos.' }] : []),
     { to: '/dashboard', icon: LayoutDashboard, titulo: 'Evaluaciones y resultados', texto: 'Consulta indicadores, gráficos y el historial de evaluaciones.' },
     ...(canManage ? [
       { to: '/trabajadores', icon: Users, titulo: 'Trabajadores', texto: 'Registra personal y actualiza sus datos y áreas de trabajo.' },

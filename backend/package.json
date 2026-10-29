@@ -6,13 +6,14 @@
   "scripts": {
     "dev:node": "node src-node/server.js",
     "start:node": "node src-node/server.js",
-    "build:node": "prisma generate --schema prisma/schema.node.prisma && prisma migrate deploy --schema prisma/schema.node.prisma",
+    "build:node": "prisma generate --schema prisma/schema.node.prisma && prisma migrate deploy --schema prisma/schema.node.prisma && node scripts/seed-bajas.mjs --confirmar-catalogos",
     "prisma:generate:node": "prisma generate --schema prisma/schema.node.prisma",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:migrate:deploy:node": "prisma migrate deploy --schema prisma/schema.node.prisma",
     "seed": "node prisma/seed.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "test:bajas:integration": "node --test --test-concurrency=1 tests/bajas.integration.mjs tests/bajas-operaciones.integration.mjs"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

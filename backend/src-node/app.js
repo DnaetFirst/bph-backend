@@ -8,6 +8,8 @@ import authRoutes from './routes/auth.js';
 import trabajadoresRoutes from './routes/trabajadores.js';
 import evaluacionesRoutes from './routes/evaluaciones.js';
 import adminRoutes from './routes/admin.js';
+import { crearRouterBajas } from './modules/bajas/routes.js';
+import { authenticate } from './middlewares/authenticate.js';
 
 const app = express();
 const allowedOrigins = getAllowedOrigins();
@@ -41,7 +43,7 @@ app.get('/', (req, res) => {
 app.get('/api/v1/health', async (req, res, next) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    res.json({ ok: true });
+    res.json({ ok: true, version: process.env.RENDER_GIT_COMMIT || 'local', bajasHabilitado: process.env.BAJAS_ENABLED !== 'false' });
   } catch (error) {
     next(error);
   }
@@ -77,6 +79,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/trabajadores', trabajadoresRoutes);
 app.use('/api/v1/evaluaciones', evaluacionesRoutes);
 app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/bajas', crearRouterBajas(prisma, authenticate));
 
 app.use((error, req, res, next) => {
   console.error('[backend-node]', error);

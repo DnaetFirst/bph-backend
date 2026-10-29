@@ -22,6 +22,32 @@ datasource db {
 }
 
 model Usuario {
+  CategoriaProducto_creador         CategoriaProducto[]    @relation("CategoriaProducto_creador")
+  CategoriaProducto_editor          CategoriaProducto[]    @relation("CategoriaProducto_editor")
+  CategoriaProducto_desactivador    CategoriaProducto[]    @relation("CategoriaProducto_desactivador")
+  TipoProducto_creador              TipoProducto[]         @relation("TipoProducto_creador")
+  TipoProducto_editor               TipoProducto[]         @relation("TipoProducto_editor")
+  TipoProducto_desactivador         TipoProducto[]         @relation("TipoProducto_desactivador")
+  UnidadMedida_creador              UnidadMedida[]         @relation("UnidadMedida_creador")
+  UnidadMedida_editor               UnidadMedida[]         @relation("UnidadMedida_editor")
+  UnidadMedida_desactivador         UnidadMedida[]         @relation("UnidadMedida_desactivador")
+  ProductoBaja_creador              ProductoBaja[]         @relation("ProductoBaja_creador")
+  ProductoBaja_editor               ProductoBaja[]         @relation("ProductoBaja_editor")
+  ProductoBaja_desactivador         ProductoBaja[]         @relation("ProductoBaja_desactivador")
+  PresentacionProducto_creador      PresentacionProducto[] @relation("PresentacionProducto_creador")
+  PresentacionProducto_editor       PresentacionProducto[] @relation("PresentacionProducto_editor")
+  PresentacionProducto_desactivador PresentacionProducto[] @relation("PresentacionProducto_desactivador")
+  ProveedorBaja_creador             ProveedorBaja[]        @relation("ProveedorBaja_creador")
+  ProveedorBaja_editor              ProveedorBaja[]        @relation("ProveedorBaja_editor")
+  ProveedorBaja_desactivador        ProveedorBaja[]        @relation("ProveedorBaja_desactivador")
+  MotivoBaja_creador                MotivoBaja[]           @relation("MotivoBaja_creador")
+  MotivoBaja_editor                 MotivoBaja[]           @relation("MotivoBaja_editor")
+  MotivoBaja_desactivador           MotivoBaja[]           @relation("MotivoBaja_desactivador")
+  AccesoModulo_usuario              AccesoModulo[]         @relation("AccesoModulo_usuario")
+  EventoAuditoriaBajas_usuario      EventoAuditoriaBajas[] @relation("EventoAuditoriaBajas_usuario")
+  BajaProducto_creador              BajaProducto[]         @relation("BajaProducto_creador")
+  BajaProducto_anulador             BajaProducto[]         @relation("BajaProducto_anulador")
+
   id                Int       @id @default(autoincrement())
   nombre            String    @unique
   email             String    @unique
@@ -33,9 +59,9 @@ model Usuario {
   bloqueadoHasta    DateTime?
   creadoEn          DateTime  @default(now())
 
-  evaluacionesCreadas   Evaluacion[] @relation("creador")
+  evaluacionesCreadas    Evaluacion[] @relation("creador")
   evaluacionesRealizadas Evaluacion[] @relation("evaluador")
-  evaluacionesAnuladas  Evaluacion[] @relation("anulador")
+  evaluacionesAnuladas   Evaluacion[] @relation("anulador")
   bitacoras              Bitacora[]
 
   @@index([activo])
@@ -52,12 +78,12 @@ model Area {
 }
 
 model Trabajador {
-  id        Int       @id @default(autoincrement())
-  nombre    String    @unique
-  areaId    Int
-  area      Area      @relation(fields: [areaId], references: [id])
-  activo    Boolean   @default(true)
-  creadoEn  DateTime  @default(now())
+  id       Int      @id @default(autoincrement())
+  nombre   String   @unique
+  areaId   Int
+  area     Area     @relation(fields: [areaId], references: [id])
+  activo   Boolean  @default(true)
+  creadoEn DateTime @default(now())
 
   evaluaciones Evaluacion[]
 
@@ -66,55 +92,55 @@ model Trabajador {
 }
 
 model Parametro {
-  id                Int                 @id @default(autoincrement())
-  categoria         String              // "higiene" | "uniforme"
-  texto             String
-  orden             Int                 @default(0)
-  activo            Boolean             @default(true)
-  excluyeAreasJson  String?             // JSON array of area names where this param is excluded
-  detalles          DetalleEvaluacion[]
+  id               Int                 @id @default(autoincrement())
+  categoria        String // "higiene" | "uniforme"
+  texto            String
+  orden            Int                 @default(0)
+  activo           Boolean             @default(true)
+  excluyeAreasJson String? // JSON array of area names where this param is excluded
+  detalles         DetalleEvaluacion[]
 
   @@index([categoria, activo])
 }
 
 model Evaluacion {
-  id                 String      @id @default(uuid())
-  fecha              DateTime
-  trabajadorId       Int
-  trabajador         Trabajador  @relation(fields: [trabajadorId], references: [id], onDelete: Cascade)
-  areaId             Int
-  area               Area        @relation(fields: [areaId], references: [id])
-  evaluadorId        Int
-  evaluador          Usuario     @relation("evaluador", fields: [evaluadorId], references: [id])
-  creadoPorId        Int
-  creadoPor          Usuario     @relation("creador", fields: [creadoPorId], references: [id])
-  creadoEn           DateTime    @default(now())
+  id           String     @id @default(uuid())
+  fecha        DateTime
+  trabajadorId Int
+  trabajador   Trabajador @relation(fields: [trabajadorId], references: [id], onDelete: Cascade)
+  areaId       Int
+  area         Area       @relation(fields: [areaId], references: [id])
+  evaluadorId  Int
+  evaluador    Usuario    @relation("evaluador", fields: [evaluadorId], references: [id])
+  creadoPorId  Int
+  creadoPor    Usuario    @relation("creador", fields: [creadoPorId], references: [id])
+  creadoEn     DateTime   @default(now())
 
   higienePorcentaje  Int?
   uniformePorcentaje Int?
   generalPorcentaje  Int?
   clasificacion      String?
 
-  colorEsperado      String?
-  colorObservado     String?
-  cumplimientoColor  String?
+  colorEsperado     String?
+  colorObservado    String?
+  cumplimientoColor String?
 
-  observaciones      String?     @db.VarChar(500)
+  observaciones String? @db.VarChar(500)
 
-  estado             String      @default("ACTIVA") // "ACTIVA" | "ANULADA"
-  anuladoEn          DateTime?
-  anuladoPorId       Int?
-  anuladoPor         Usuario?    @relation("anulador", fields: [anuladoPorId], references: [id])
-  motivoAnulacion    String?     @db.VarChar(300)
+  estado          String    @default("ACTIVA") // "ACTIVA" | "ANULADA"
+  anuladoEn       DateTime?
+  anuladoPorId    Int?
+  anuladoPor      Usuario?  @relation("anulador", fields: [anuladoPorId], references: [id])
+  motivoAnulacion String?   @db.VarChar(300)
 
   // Migración desde la versión localStorage: si "anuladoPor" (string) de la
   // versión anterior no matcheaba ningún usuario existente, se guarda acá.
-  anuladoPorLegado   String?
+  anuladoPorLegado String?
 
-  hashAnterior       String?
-  hashIntegridad     String?
+  hashAnterior   String?
+  hashIntegridad String?
 
-  detalles           DetalleEvaluacion[]
+  detalles DetalleEvaluacion[]
 
   @@index([areaId, fecha])
   @@index([trabajadorId])
@@ -128,18 +154,306 @@ model DetalleEvaluacion {
   evaluacion   Evaluacion @relation(fields: [evaluacionId], references: [id], onDelete: Cascade)
   parametroId  Int
   parametro    Parametro  @relation(fields: [parametroId], references: [id])
-  resultado    String     // "Cumple" | "No cumple" | "No aplica"
+  resultado    String // "Cumple" | "No cumple" | "No aplica"
 }
 
 model Bitacora {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   accion    String
   usuarioId Int
-  usuario   Usuario   @relation(fields: [usuarioId], references: [id])
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
   ip        String?
-  detalles  String?   @db.VarChar(500)
-  creadoEn  DateTime  @default(now())
+  detalles  String?  @db.VarChar(500)
+  creadoEn  DateTime @default(now())
 
   @@index([creadoEn])
   @@index([usuarioId])
+}
+
+// MODULO BAJAS — catálogos y fundamento transaccional
+
+model CategoriaProducto {
+  semilla      String?  @unique
+  creador      Usuario? @relation("CategoriaProducto_creador", fields: [creadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  editor       Usuario? @relation("CategoriaProducto_editor", fields: [actualizadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  desactivador Usuario? @relation("CategoriaProducto_desactivador", fields: [desactivadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  id                  Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(100)
+  clave               String    @db.VarChar(100)
+  activo              Boolean   @default(true)
+  version             Int       @default(1)
+  creadoEn            DateTime  @default(now()) @db.Timestamptz(3)
+  actualizadoEn       DateTime  @default(now()) @db.Timestamptz(3)
+  creadoPorId         Int?
+  actualizadoPorId    Int?
+  desactivadoEn       DateTime? @db.Timestamptz(3)
+  desactivadoPorId    Int?
+  motivoDesactivacion String?   @db.VarChar(500)
+
+  orden             Int                  @default(0)
+  etiquetaTipo      String               @default("Tipo de producto") @db.VarChar(60)
+  requiereTipo      Boolean              @default(false)
+  requiereProveedor Boolean              @default(false)
+  tipos             TipoProducto[]
+  productos         ProductoBaja[]
+  proveedores       ProveedorCategoria[]
+  motivos           MotivoCategoria[]
+
+  @@unique([clave])
+  @@index([activo, nombre])
+}
+
+model TipoProducto {
+  semilla      String?  @unique
+  creador      Usuario? @relation("TipoProducto_creador", fields: [creadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  editor       Usuario? @relation("TipoProducto_editor", fields: [actualizadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  desactivador Usuario? @relation("TipoProducto_desactivador", fields: [desactivadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  id                  Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(100)
+  clave               String    @db.VarChar(100)
+  activo              Boolean   @default(true)
+  version             Int       @default(1)
+  creadoEn            DateTime  @default(now()) @db.Timestamptz(3)
+  actualizadoEn       DateTime  @default(now()) @db.Timestamptz(3)
+  creadoPorId         Int?
+  actualizadoPorId    Int?
+  desactivadoEn       DateTime? @db.Timestamptz(3)
+  desactivadoPorId    Int?
+  motivoDesactivacion String?   @db.VarChar(500)
+
+  categoriaId Int
+  categoria   CategoriaProducto @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  productos   ProductoBaja[]
+
+  @@unique([categoriaId, clave])
+  @@index([activo, nombre])
+}
+
+model UnidadMedida {
+  semilla      String?  @unique
+  creador      Usuario? @relation("UnidadMedida_creador", fields: [creadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  editor       Usuario? @relation("UnidadMedida_editor", fields: [actualizadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  desactivador Usuario? @relation("UnidadMedida_desactivador", fields: [desactivadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  id                  Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(100)
+  clave               String    @db.VarChar(100)
+  activo              Boolean   @default(true)
+  version             Int       @default(1)
+  creadoEn            DateTime  @default(now()) @db.Timestamptz(3)
+  actualizadoEn       DateTime  @default(now()) @db.Timestamptz(3)
+  creadoPorId         Int?
+  actualizadoPorId    Int?
+  desactivadoEn       DateTime? @db.Timestamptz(3)
+  desactivadoPorId    Int?
+  motivoDesactivacion String?   @db.VarChar(500)
+
+  abreviatura    String                 @db.VarChar(12)
+  decimales      Int                    @default(0)
+  presentaciones PresentacionProducto[]
+
+  @@unique([clave])
+  @@index([activo, nombre])
+}
+
+model ProductoBaja {
+  semilla      String?  @unique
+  creador      Usuario? @relation("ProductoBaja_creador", fields: [creadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  editor       Usuario? @relation("ProductoBaja_editor", fields: [actualizadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  desactivador Usuario? @relation("ProductoBaja_desactivador", fields: [desactivadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  id                  Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(100)
+  clave               String    @db.VarChar(100)
+  activo              Boolean   @default(true)
+  version             Int       @default(1)
+  creadoEn            DateTime  @default(now()) @db.Timestamptz(3)
+  actualizadoEn       DateTime  @default(now()) @db.Timestamptz(3)
+  creadoPorId         Int?
+  actualizadoPorId    Int?
+  desactivadoEn       DateTime? @db.Timestamptz(3)
+  desactivadoPorId    Int?
+  motivoDesactivacion String?   @db.VarChar(500)
+
+  codigo         String?                @unique @db.VarChar(40)
+  categoriaId    Int
+  categoria      CategoriaProducto      @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  tipoId         Int?
+  tipo           TipoProducto?          @relation(fields: [tipoId], references: [id], onDelete: Restrict)
+  presentaciones PresentacionProducto[]
+  bajas          BajaProducto[]
+
+  @@unique([categoriaId, clave])
+  @@index([activo, nombre])
+}
+
+model PresentacionProducto {
+  semilla      String?  @unique
+  creador      Usuario? @relation("PresentacionProducto_creador", fields: [creadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  editor       Usuario? @relation("PresentacionProducto_editor", fields: [actualizadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  desactivador Usuario? @relation("PresentacionProducto_desactivador", fields: [desactivadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  id                  Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(100)
+  clave               String    @db.VarChar(100)
+  activo              Boolean   @default(true)
+  version             Int       @default(1)
+  creadoEn            DateTime  @default(now()) @db.Timestamptz(3)
+  actualizadoEn       DateTime  @default(now()) @db.Timestamptz(3)
+  creadoPorId         Int?
+  actualizadoPorId    Int?
+  desactivadoEn       DateTime? @db.Timestamptz(3)
+  desactivadoPorId    Int?
+  motivoDesactivacion String?   @db.VarChar(500)
+
+  productoId     Int
+  producto       ProductoBaja   @relation(fields: [productoId], references: [id], onDelete: Restrict)
+  unidadId       Int
+  unidad         UnidadMedida   @relation(fields: [unidadId], references: [id], onDelete: Restrict)
+  predeterminada Boolean        @default(false)
+  bajas          BajaProducto[]
+
+  @@unique([productoId, clave])
+  @@index([activo, nombre])
+}
+
+model ProveedorBaja {
+  semilla      String?  @unique
+  creador      Usuario? @relation("ProveedorBaja_creador", fields: [creadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  editor       Usuario? @relation("ProveedorBaja_editor", fields: [actualizadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  desactivador Usuario? @relation("ProveedorBaja_desactivador", fields: [desactivadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  id                  Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(100)
+  clave               String    @db.VarChar(100)
+  activo              Boolean   @default(true)
+  version             Int       @default(1)
+  creadoEn            DateTime  @default(now()) @db.Timestamptz(3)
+  actualizadoEn       DateTime  @default(now()) @db.Timestamptz(3)
+  creadoPorId         Int?
+  actualizadoPorId    Int?
+  desactivadoEn       DateTime? @db.Timestamptz(3)
+  desactivadoPorId    Int?
+  motivoDesactivacion String?   @db.VarChar(500)
+
+  codigo          String?              @unique @db.VarChar(40)
+  todasCategorias Boolean              @default(true)
+  categorias      ProveedorCategoria[]
+  bajas           BajaProducto[]
+
+  @@unique([clave])
+  @@index([activo, nombre])
+}
+
+model MotivoBaja {
+  semilla      String?  @unique
+  creador      Usuario? @relation("MotivoBaja_creador", fields: [creadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  editor       Usuario? @relation("MotivoBaja_editor", fields: [actualizadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  desactivador Usuario? @relation("MotivoBaja_desactivador", fields: [desactivadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  id                  Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(100)
+  clave               String    @db.VarChar(100)
+  activo              Boolean   @default(true)
+  version             Int       @default(1)
+  creadoEn            DateTime  @default(now()) @db.Timestamptz(3)
+  actualizadoEn       DateTime  @default(now()) @db.Timestamptz(3)
+  creadoPorId         Int?
+  actualizadoPorId    Int?
+  desactivadoEn       DateTime? @db.Timestamptz(3)
+  desactivadoPorId    Int?
+  motivoDesactivacion String?   @db.VarChar(500)
+
+  explicacionObligatoria Boolean           @default(false)
+  todasCategorias        Boolean           @default(true)
+  categorias             MotivoCategoria[]
+  bajas                  BajaProducto[]
+
+  @@unique([clave])
+  @@index([activo, nombre])
+}
+
+model ProveedorCategoria {
+  proveedorId Int
+  categoriaId Int
+  proveedor   ProveedorBaja     @relation(fields: [proveedorId], references: [id], onDelete: Restrict)
+  categoria   CategoriaProducto @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+
+  @@id([proveedorId, categoriaId])
+}
+
+model MotivoCategoria {
+  motivoId    Int
+  categoriaId Int
+  motivo      MotivoBaja        @relation(fields: [motivoId], references: [id], onDelete: Restrict)
+  categoria   CategoriaProducto @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+
+  @@id([motivoId, categoriaId])
+}
+
+model AccesoModulo {
+  usuario Usuario @relation("AccesoModulo_usuario", fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  usuarioId     Int
+  modulo        String   @db.VarChar(30)
+  activo        Boolean  @default(true)
+  version       Int      @default(1)
+  actualizadoEn DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([usuarioId, modulo])
+}
+
+model EventoAuditoriaBajas {
+  usuario Usuario? @relation("EventoAuditoriaBajas_usuario", fields: [usuarioId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  id        String   @id @default(uuid())
+  entidad   String   @db.VarChar(40)
+  entidadId String   @db.VarChar(50)
+  accion    String   @db.VarChar(40)
+  usuarioId Int?
+  creadoEn  DateTime @default(now()) @db.Timestamptz(3)
+  motivo    String   @db.VarChar(500)
+  antes     Json?
+  despues   Json?
+
+  @@index([entidad, entidadId, creadoEn])
+}
+
+model BajaProducto {
+  anulador Usuario? @relation("BajaProducto_anulador", fields: [anuladoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  creador Usuario @relation("BajaProducto_creador", fields: [creadoPorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+
+  id                String               @id @default(uuid())
+  productoId        Int
+  producto          ProductoBaja         @relation(fields: [productoId], references: [id], onDelete: Restrict)
+  presentacionId    Int
+  presentacion      PresentacionProducto @relation(fields: [presentacionId], references: [id], onDelete: Restrict)
+  proveedorId       Int?
+  proveedor         ProveedorBaja?       @relation(fields: [proveedorId], references: [id], onDelete: Restrict)
+  motivoId          Int
+  motivo            MotivoBaja           @relation(fields: [motivoId], references: [id], onDelete: Restrict)
+  cantidad          Decimal              @db.Decimal(14, 3)
+  fechaOperativa    DateTime             @db.Date
+  creadoEn          DateTime             @default(now()) @db.Timestamptz(3)
+  creadoPorId       Int
+  estado            String               @default("REGISTRADA") @db.VarChar(20)
+  version           Int                  @default(1)
+  snapshot          Json
+  observaciones     String?              @db.VarChar(500)
+  explicacion       String?              @db.VarChar(500)
+  motivoRetroactivo String?              @db.VarChar(500)
+  claveIdempotencia String               @db.VarChar(100)
+  huella            String               @db.VarChar(64)
+  anuladoEn         DateTime?            @db.Timestamptz(3)
+  anuladoPorId      Int?
+  motivoAnulacion   String?              @db.VarChar(500)
+
+  @@unique([creadoPorId, claveIdempotencia])
+  @@index([fechaOperativa, id])
+  @@index([productoId, fechaOperativa])
+  @@index([creadoPorId, fechaOperativa])
+  @@index([estado, fechaOperativa])
 }
