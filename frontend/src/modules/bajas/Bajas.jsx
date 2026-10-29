@@ -146,7 +146,7 @@ export default function Bajas() {
       {!enFormulario && <Link className="btn btn-primary" to="/bajas">{id ? 'Registrar otra baja' : 'Registrar baja'}</Link>}
       {gestor && !enFormulario && <Link className="btn btn-outline" to="/administracion/catalogos-bajas">Administrar catálogos</Link>}
     </div></header>
-    {error && <div role="alert" className="section-card bajas-error"><p>{error}</p>{!enFormulario && <button className="btn btn-outline" onClick={actualizar}>Reintentar</button>}</div>}
+    {error && <div role="alert" className="section-card bajas-error"><p>{error}</p>{!enFormulario ? <button className="btn btn-outline" onClick={actualizar}>Reintentar</button> : <p style={{ fontSize: '0.85rem', color: 'hsl(var(--color-text-secondary))' }}>Los datos se han conservado en el formulario. Puedes revisarlos y pulsar «{editar ? 'Guardar corrección' : 'Registrar baja'}» para reintentar.</p>}</div>}
     {cargando && <p role="status">Cargando…</p>}
     {guardada && nueva && <div className="section-card" role="status"><div className="section-card-body"><strong>Baja registrada correctamente.</strong><p>Puedes registrar otra baja en {categoria?.nombre}.</p><Link className="btn btn-outline" to={`/bajas/${guardada.id}`} state={{volver:'/analytics/bajas'}}>Ver registro</Link></div></div>}
     {!cargando && enFormulario && (nueva || detalle) && <form onSubmit={guardar} className="section-card"><div className="section-card-body">
@@ -169,7 +169,7 @@ export default function Bajas() {
         <label className="bajas-field">Observaciones (opcional)<textarea className="input-field" maxLength={500} value={form.observaciones} onChange={e => cambiar('observaciones', e.target.value)} /></label>
         {editar && <label className="bajas-field">Motivo de la corrección<textarea className="input-field" required minLength={3} maxLength={500} value={form.motivoCambio} onChange={e => cambiar('motivoCambio', e.target.value)} /></label>}
         <p>Se registrará con tu usuario. Revisa el producto, la cantidad y la fecha antes de guardar.</p>
-        <button className="btn btn-primary" disabled={!form.productoId || !form.presentacionId || !form.motivoId}>{busy ? 'Guardando…' : editar ? 'Guardar corrección' : 'Registrar baja'}</button>
+        <button className="btn btn-primary" disabled={busy || !form.productoId || !form.presentacionId || !form.motivoId || (snapshot?.requiereProveedor && !form.proveedorId) || (requiereExplicacion && (!form.explicacion || form.explicacion.trim().length < 3)) || (editar && (!form.motivoCambio || form.motivoCambio.trim().length < 3))}>{busy ? 'Guardando…' : editar ? 'Guardar corrección' : 'Registrar baja'}</button>
         </>}
       </fieldset>
     </div></form>}

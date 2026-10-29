@@ -823,6 +823,13 @@ textarea.input-field {
   align-items: center;
   gap: var(--space-4);
 }
+.navbar-nav-group {
+  display: flex;
+  align-items: center;
+}
+.navbar-subitems {
+  display: none;
+}
 
 /* ============================================================
    Responsive overrides (mobile ≤ 767px)
@@ -846,6 +853,33 @@ textarea.input-field {
     display: none;
   }
   .navbar-nav-panel.open { display: flex; }
+  .navbar-nav-group {
+    flex-direction: column;
+    width: 100%;
+    align-items: stretch;
+  }
+  .navbar-subitems {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding-left: var(--space-4);
+    gap: 2px;
+  }
+  .navbar-sublink {
+    font-size: 0.82rem;
+    padding: var(--space-1) var(--space-3);
+    color: hsl(var(--color-text-secondary));
+    border-radius: var(--radius-md);
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .navbar-sublink:hover {
+    color: hsl(var(--color-primary));
+  }
+  .navbar-sublink.active {
+    color: hsl(var(--color-primary)) !important;
+    font-weight: 600;
+    background: hsla(var(--color-primary), 0.08);
+  }
 
   .form-grid-2 { grid-template-columns: 1fr; }
 

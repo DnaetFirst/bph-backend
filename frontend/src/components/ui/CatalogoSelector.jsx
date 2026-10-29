@@ -18,12 +18,13 @@ export default function CatalogoSelector({ tipo, label, value, onChange, onCreat
     if (!open || disabled) return;
     let vigente = true;
     setLoading(true); setError('');
+    const delay = query === null ? 0 : 200;
     const timer = setTimeout(() => {
       apiClient.get(`/bajas/catalogos/${tipo}`, { params: { q, pagina, porPagina: 20, estado, ...(categoriaId ? { categoriaId } : {}), ...(productoId ? { productoId } : {}) } })
         .then(({data}) => { if (vigente) { setRows(prev => pagina === 1 ? data.items : [...new Map([...prev, ...data.items].map(r => [r.id,r])).values()]); setTotal(data.total); setActive(-1); } })
         .catch(e => { if (vigente) setError(e.response?.data?.error || 'No se pudieron cargar las opciones.'); })
         .finally(() => { if (vigente) setLoading(false); });
-    }, 200);
+    }, delay);
     return () => { vigente = false; clearTimeout(timer); };
   }, [open, disabled, tipo, q, pagina, categoriaId, productoId, estado, revision]);
   function choose(row) { cache.current = row; setQuery(null); setOpen(false); setActive(-1); onChange(String(row.id), row); input.current?.focus(); }

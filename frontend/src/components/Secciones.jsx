@@ -11,11 +11,18 @@ export default function Secciones() {
   const admin=pathname.startsWith('/administracion'), analytics=pathname.startsWith('/analytics'), auditoria=pathname.startsWith('/auditoria');
   if(!usuario||(!admin&&!analytics&&!auditoria))return null;
   const gestor=['administrador','supervisor'].includes(usuario.rol), esAdmin=usuario.rol==='administrador';
-  const links=auditoria ? (gestor ? [['/auditoria/bph','BPH','Acciones sobre evaluaciones, personal y configuración.'],...(bajas?.gestionar?[['/auditoria/bajas','Bajas','Registros, catálogos y cambios auditados.']]:[])] : []) : admin ? [
-    ...(gestor&&bajas?.gestionar?[['/administracion/catalogos-bajas','Catálogos de bajas','Categorías, productos y opciones de registro.']]:[]),
-    ...(gestor?[['/administracion/trabajadores','Trabajadores','Personal y asignación de áreas.']]:[]),
-    ...(esAdmin?[['/administracion/areas','Áreas','Áreas de trabajo de BPH.'],['/administracion/usuarios','Usuarios','Cuentas y roles.'],['/administracion/accesos','Accesos a módulos','Habilitación individual de Bajas.']]:[]),
-  ] : [['/analytics/evaluaciones','Evaluaciones BPH','Indicadores, historial y resultados de evaluaciones.'],...(bajas?.acceso?[['/analytics/bajas','Bajas de productos','Indicadores, historial y exportaciones de bajas.']]:[])];
+  const links = auditoria ? (gestor ? [
+    ['/auditoria/bph', 'Evaluaciones BPH', 'Acciones sobre evaluaciones, personal y configuración.'],
+    ...(bajas?.gestionar ? [['/auditoria/bajas', 'Bajas de productos', 'Registros, catálogos y cambios auditados.']] : []),
+  ] : []) : admin ? [
+    ...(gestor && bajas?.gestionar ? [['/administracion/catalogos-bajas', 'Catálogos de bajas', 'Categorías, productos y opciones de registro.']] : []),
+    ...(esAdmin ? [['/administracion/areas', 'Áreas', 'Áreas de trabajo de BPH.']] : []),
+    ...(gestor ? [['/administracion/trabajadores', 'Trabajadores', 'Personal y asignación de áreas.']] : []),
+    ...(esAdmin ? [['/administracion/usuarios', 'Usuarios y accesos', 'Cuentas, roles y habilitación de módulos.']] : []),
+  ] : [
+    ['/analytics/evaluaciones', 'Evaluaciones BPH', 'Indicadores, historial y resultados de evaluaciones.'],
+    ...(bajas?.acceso ? [['/analytics/bajas', 'Bajas de productos', 'Indicadores, historial y exportaciones de bajas.']] : []),
+  ];
   const raiz=pathname===(admin?'/administracion':auditoria?'/auditoria':'/analytics');
   const destino=to=>{try{return to + (to.startsWith('/analytics/') ? sessionStorage.getItem(`consulta:${usuario.id}:${to}`) || '' : '');}catch{return to;}};
   return <section className="section-navigation">

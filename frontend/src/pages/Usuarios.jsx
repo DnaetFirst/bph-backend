@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'react-router-dom';
 import Modal from '../components/ui/Modal';
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import {
@@ -12,6 +13,7 @@ import ErrorState from '../components/ui/ErrorState';
 import EmptyState from '../components/ui/EmptyState';
 import LoadingState from '../components/ui/LoadingState';
 import Badge from '../components/ui/Badge';
+import Accesos from './Accesos';
 
 const ROLES = [
   { value: 'evaluador', label: 'Evaluador' },
@@ -21,6 +23,8 @@ const ROLES = [
 
 export default function Usuarios({ seccion = 'usuarios' }) {
   const soloAreas = seccion === 'areas';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get('tab') === 'accesos' ? 'accesos' : 'usuarios';
   const areaFormRef = useRef(null);
   const usuarioFormRef = useRef(null);
   const mostrarToast = useUiStore((state) => state.mostrarToast);
@@ -114,8 +118,9 @@ export default function Usuarios({ seccion = 'usuarios' }) {
   }, []);
 
   useEffect(() => {
-    if (soloAreas) fetchAreas(); else fetchUsuarios();
-  }, [soloAreas, fetchAreas, fetchUsuarios]);
+    if (soloAreas) fetchAreas();
+    else if (tab === 'usuarios') fetchUsuarios();
+  }, [soloAreas, tab, fetchAreas, fetchUsuarios]);
 
   const usuariosFiltrados = useMemo(() => {
     if (!searchDebounced) return usuarios;
@@ -490,15 +495,40 @@ export default function Usuarios({ seccion = 'usuarios' }) {
     <div className="animate-fade-in page-shell">
       <header className="page-header">
         <div>
-          <h1 className="page-title">{soloAreas ? 'Áreas de trabajo' : 'Usuarios'}</h1>
+          <h1 className="page-title">{soloAreas ? 'Áreas de trabajo' : 'Usuarios y accesos'}</h1>
           <p className="page-subtitle">
-            {soloAreas ? 'Organiza las áreas de trabajo de BPH.' : 'Administra las cuentas y sus roles.'}
+            {soloAreas ? 'Organiza las áreas de trabajo de BPH.' : 'Administra las cuentas, roles y habilitación de módulos.'}
           </p>
         </div>
       </header>
 
+      {!soloAreas && (
+        <nav className="section-tabs" aria-label="Usuarios y accesos" style={{ marginBottom: 'var(--space-2)' }}>
+          <button
+            type="button"
+            className={tab === 'usuarios' ? 'active' : ''}
+            onClick={() => setSearchParams({ tab: 'usuarios' })}
+          >
+            Cuentas y roles
+          </button>
+          <button
+            type="button"
+            className={tab === 'accesos' ? 'active' : ''}
+            onClick={() => setSearchParams({ tab: 'accesos' })}
+          >
+            Accesos a módulos
+          </button>
+        </nav>
+      )}
+
       <div>
-        {!soloAreas && <section className="section-card">
+        {!soloAreas && tab === 'accesos' && (
+          <section className="section-card">
+            <Accesos embedded={true} />
+          </section>
+        )}
+
+        {!soloAreas && tab === 'usuarios' && <section className="section-card">
           <div className="section-card-body">
             <div className="section-heading-row" style={{ marginBottom: 'var(--space-3)' }}>
               <h2 className="section-title">Usuarios</h2>

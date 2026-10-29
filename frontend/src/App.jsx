@@ -67,8 +67,37 @@ const Navbar = () => {
     { to: '/', label: 'Inicio', icon: LayoutDashboard },
     { to: '/evaluar', label: 'Evaluar', icon: ClipboardList },
     ...(bajas ? [{ to: '/bajas', label: 'Bajas', icon: ClipboardList }] : []),
-    { to: '/analytics', label: 'Analytics', icon: LayoutDashboard },
-    ...(canManageTrabajadores ? [{ to: '/administracion', label: 'Administración', icon: Shield }, { to: '/auditoria', label: 'Auditoría', icon: History }] : []),
+    {
+      to: '/analytics',
+      label: 'Analytics',
+      icon: LayoutDashboard,
+      subItems: [
+        { to: '/analytics/evaluaciones', label: 'Evaluaciones BPH' },
+        ...(bajas ? [{ to: '/analytics/bajas', label: 'Bajas de productos' }] : []),
+      ],
+    },
+    ...(canManageTrabajadores ? [
+      {
+        to: '/administracion',
+        label: 'Administración',
+        icon: Shield,
+        subItems: [
+          ...(bajas ? [{ to: '/administracion/catalogos-bajas', label: 'Catálogos de bajas' }] : []),
+          ...(isAdmin ? [{ to: '/administracion/areas', label: 'Áreas' }] : []),
+          { to: '/administracion/trabajadores', label: 'Trabajadores' },
+          ...(isAdmin ? [{ to: '/administracion/usuarios', label: 'Usuarios y accesos' }] : []),
+        ],
+      },
+      {
+        to: '/auditoria',
+        label: 'Auditoría',
+        icon: History,
+        subItems: [
+          { to: '/auditoria/bph', label: 'Evaluaciones BPH' },
+          ...(bajas ? [{ to: '/auditoria/bajas', label: 'Bajas de productos' }] : []),
+        ],
+      },
+    ] : []),
   ];
 
   return (
@@ -86,17 +115,38 @@ const Navbar = () => {
         </button>
       </div>
       <div className={`navbar-nav-panel ${menuOpen ? 'open' : ''}`}>
-        {navItems.map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={(location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to + '/'))) ? 'active' : ''}
-            onClick={() => setMenuOpen(false)}
-          >
-            {item.icon && <item.icon size={16} style={{ marginRight: 'var(--space-1)' }} />}
-            {item.label}
-          </Link>
-        ))}
+        {navItems.map((item) => {
+          const isItemActive = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to + '/'));
+          return (
+            <div key={item.to} className="navbar-nav-group">
+              <Link
+                to={item.to}
+                className={isItemActive ? 'active' : ''}
+                onClick={() => setMenuOpen(false)}
+              >
+                {item.icon && <item.icon size={16} style={{ marginRight: 'var(--space-1)' }} />}
+                {item.label}
+              </Link>
+              {item.subItems && (
+                <div className="navbar-subitems">
+                  {item.subItems.map((sub) => {
+                    const isSubActive = location.pathname === sub.to || location.pathname.startsWith(sub.to + '/');
+                    return (
+                      <Link
+                        key={sub.to}
+                        to={sub.to}
+                        className={`navbar-sublink ${isSubActive ? 'active' : ''}`}
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        {sub.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
       <div className="navbar-user">
         <div className="dropdown" ref={dropdownRef}>
@@ -219,7 +269,7 @@ const AppRoutes = () => {
           <Route path="/analytics/evaluaciones" element={<ProtectedRoute usuario={usuario}><Dashboard /></ProtectedRoute>} />
           <Route path="/administracion" element={<RoleProtectedRoute usuario={usuario} allowedRoles={['administrador','supervisor']}><></></RoleProtectedRoute>} />
           <Route path="/administracion/areas" element={<RoleProtectedRoute usuario={usuario} allowedRoles={['administrador']}><Usuarios key="areas" seccion="areas" /></RoleProtectedRoute>} />
-          <Route path="/administracion/accesos" element={<RoleProtectedRoute usuario={usuario} allowedRoles={['administrador']}><Accesos /></RoleProtectedRoute>} />
+          <Route path="/administracion/accesos" element={<RoleProtectedRoute usuario={usuario} allowedRoles={['administrador']}><RutaAnterior to="/administracion/usuarios?tab=accesos" /></RoleProtectedRoute>} />
           <Route path="/evaluar" element={<ProtectedRoute usuario={usuario}><EvaluacionForm /></ProtectedRoute>} />
           {['/bajas', '/bajas/nueva', '/bajas/:id', '/bajas/:id/editar', '/analytics/bajas'].map(path => <Route key={path} path={path} element={<ProtectedRoute usuario={usuario}><Suspense fallback={<div className="loading-state">Cargando Bajas…</div>}><Bajas /></Suspense></ProtectedRoute>} />)}
           <Route path="/administracion/catalogos-bajas" element={
