@@ -36,11 +36,11 @@ export async function auditar(tx, entidad, antes, despues, usuarioId, accion, mo
 }
 
 // Serialización entre escrituras de catálogos, accesos y bajas. No bloquea BPH.
-export async function transaccion(db, fn) {
+export async function transaccion(db, fn, opciones = {}) {
   return db.$transaction(async tx => {
     await tx.$executeRawUnsafe('SELECT pg_advisory_xact_lock(7281028)');
     return fn(tx);
-  }, { maxWait: 10000, timeout: 60000 });
+  }, { maxWait: 10000, timeout: 60000, ...opciones });
 }
 async function activo(tx, model, id) {
   const row = await tx[model].findUnique({ where: { id } });

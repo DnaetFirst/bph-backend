@@ -46,5 +46,5 @@ export async function sembrarCatalogos(db) {
         await ensure('presentacionProducto', 'presentaciones', { productoId_clave: { productoId: p.id, clave: normalizar(unidad) } }, { nombre: unidad, clave: normalizar(unidad), productoId: p.id, unidadId: unidades[unidad].id, predeterminada: true });
       }
     }
-  });
+  }, { timeout: 300000 });
 }
